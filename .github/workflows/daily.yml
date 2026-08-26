@@ -1,0 +1,29 @@
+name: Daily Stock Bot
+
+on:
+  schedule:
+    # 毎朝 8:00 JST に自動実行 (UTC 23:00)
+    - cron: '0 23 * * *'
+  workflow_dispatch: # 手動テスト実行ボタンを追加
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install requests yfinance
+
+      - name: Run script
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+        run: python app.py
