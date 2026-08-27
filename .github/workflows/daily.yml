@@ -1,10 +1,10 @@
 name: Daily Stock Bot
 
 on:
+  workflow_dispatch: # 手動実行用ボタンを残す
   schedule:
-    # 毎朝 8:00 JST に自動実行 (UTC 23:00)
+    # UTC 23:00 ＝ 日本時間(JST)の翌朝 08:00
     - cron: '0 23 * * *'
-  workflow_dispatch: # 手動テスト実行ボタンを追加
 
 jobs:
   run-bot:
