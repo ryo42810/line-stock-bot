@@ -1,6 +1,7 @@
 import calendar
 import datetime
 import json
+import logging
 import os
 import re
 import sys
@@ -15,6 +16,9 @@ import yfinance as yf
 from bs4 import BeautifulSoup
 
 import x_media
+
+# yfinanceは、ETFなど決算データが無い銘柄で「HTTP Error 404」を表示するので、ログに出さない
+logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 
 # GitHubのSecretsから取得し、先頭・末尾の余計な空白や改行を除去（strip）
 LINE_ACCESS_TOKEN = (os.environ.get("LINE_ACCESS_TOKEN") or "").strip()
@@ -1503,36 +1507,68 @@ EVENING_SCHEMA = {
 }
 
 
+def quarterly_growth_text(code):
+    """yfinanceの四半期業績から、直近四半期の前年同期比（売上高・営業利益・純利益）を文章にする"""
+    try:
+        q = yf.Ticker(f"{code}.T").quarterly_income_stmt
+        if q is None or q.empty or q.shape[1] < 5:
+            return ""
+        latest, year_ago = q.columns[0], q.columns[4]
+        parts = []
+        for key, label in (("Total Revenue", "売上高"), ("Operating Income", "営業利益"), ("Net Income", "純利益")):
+            if key in q.index:
+                now, before = q.at[key, latest], q.at[key, year_ago]
+                if now == now and before == before and before:  # NaNを除外
+                    if before > 0:
+                        parts.append(f"{label} {(now / before - 1) * 100:+.1f}%")
+                    elif now > 0:
+                        parts.append(f"{label} 黒字転換")
+        if not parts:
+            return ""
+        return f"業績データ（{latest:%Y年%m月}末までの四半期・前年同期比）: " + "、".join(parts)
+    except Exception as e:
+        print(f"四半期業績の取得失敗 ({code}):", e)
+        return ""
+
+
+def ensure_x_format(post, default_hook):
+    """X下書きの最低限の形をそろえる：1行目がフックでなければ補い、最後に #株クラ を付ける"""
+    if not post:
+        return ""
+    lines = post.strip().splitlines()
+    if re.search(r"\(\d{3}[0-9A-Z]\)", lines[0]):  # 1行目からいきなり銘柄が始まっている
+        lines = [default_hook, ""] + lines
+    text = "\n".join(lines).rstrip()
+    if "#株クラ" not in text:
+        text += "\n\n#株クラ"
+    return text
+
+
 def earnings_tomorrow(codes, tomorrow):
     """yfinanceの決算予定日が明日の銘柄（対象は配信履歴・ランキングに出た銘柄）"""
     found = []
+    with_dates = 0  # 決算予定日が1つでも入っていた銘柄数（0ならyfinanceにデータが無いと判断できる）
     for code, name in codes.items():
         try:
             cal = yf.Ticker(f"{code}.T").calendar or {}
             dates = cal.get("Earnings Date") or []
+            if dates:
+                with_dates += 1
             if any(getattr(d, "date", lambda: d)() == tomorrow for d in dates):
                 found.append((code, name))
         except Exception as e:
             print(f"決算予定日の取得失敗 ({code}):", e)
-    return found
+    return found, with_dates
 
 
 def evening_with_claude(client, today):
     """今日動いた銘柄の理由解説と、明日の決算予告（X下書き付き）"""
     tomorrow = next_business_day(today)
     mover_blocks = fetch_pages(EVENING_MOVER_PAGES, max_chars=8000)
-    earnings_blocks = fetch_pages(EARNINGS_PAGES, max_chars=8000, require_word="決算")
     # 前営業日の引け後〜今日の開示（今日の値動きの理由は、前日夕方の開示であることが多い）
     start = prev_business_day(today)
     disclosures = fetch_tdnet([start + datetime.timedelta(days=i) for i in range((today - start).days + 1)])
-    print(f"夕方ページ取得: 値動き{len(mover_blocks)}件 / 決算予定{len(earnings_blocks)}件 / 開示{len(disclosures)}件")
-
-    # 決算予定ページに明日の日付が載っているか（載っていなければ決算予告は出ない）
-    date_marks = [f"{tomorrow.month}/{tomorrow.day}", f"{tomorrow:%m/%d}", f"{tomorrow.month}月{tomorrow.day}日"]
-    for block in earnings_blocks:
-        url = block.split('"')[1]
-        hit = [m for m in date_marks if m in block]
-        print(f"決算予定ページ {url}: 明日の日付 {'あり ' + str(hit) if hit else 'なし'} / 冒頭: {block[block.index('>') + 1:][:120]!r}")
+    print(f"夕方ページ取得: 値動き{len(mover_blocks)}件 / 開示{len(disclosures)}件")
 
     # 値動きランキングに載った銘柄に、関連する開示・朝の選定理由を紐づける
     history = load_history()
@@ -1546,6 +1582,10 @@ def evening_with_claude(client, today):
         related = [f"適時開示: {d['title']}" for d in disclosures if d["code"] == code][:3]
         if code in morning and morning[code].get("headline"):
             related.append(f"今朝の注目理由: {morning[code]['headline']}")
+        if any("決算" in d["title"] for d in disclosures if d["code"] == code):
+            perf = quarterly_growth_text(code)
+            if perf:
+                related.append(perf)
         if related:
             lines = ranking_text.splitlines()
             idx = next((i for i, l in enumerate(lines) if f"/quote/{code}.T" in l), None)
@@ -1571,8 +1611,8 @@ def evening_with_claude(client, today):
                 watch.setdefault(e["code"], e["name"])
     for code, name in movers.items():
         watch.setdefault(code, name)
-    tomorrow_earnings = earnings_tomorrow(dict(list(watch.items())[:150]), tomorrow)
-    print(f"決算予定日の確認: {len(watch)}銘柄 → 明日決算 {len(tomorrow_earnings)}件")
+    tomorrow_earnings, with_dates = earnings_tomorrow(dict(list(watch.items())[:150]), tomorrow)
+    print(f"決算予定日の確認: {min(len(watch), 150)}銘柄（うち予定日データあり {with_dates}銘柄）→ 明日決算 {len(tomorrow_earnings)}件")
     earnings_info = "\n".join(f"- {name}({code})" for code, name in tomorrow_earnings)
 
     prompt = f"""今日は{today:%Y年%m月%d日}、明日（次の営業日）は{tomorrow:%m月%d日}です。夕方のLINE配信とX投稿の文章を作ります。
@@ -1582,6 +1622,9 @@ def evening_with_claude(client, today):
 - 「理由の手がかりがある値動き銘柄」から、今日大きく動いた銘柄を選び、「なぜ動いたのか」を解説する
 - 理由は、その銘柄に紐づいた適時開示・今朝の注目理由に書いてあることだけを使う
 - 「今日+15%🚀」のように騰落率を入れ、次の行に理由
+- 「業績データ」がある銘柄は、「営業利益+30%」のように具体的な数字で理由を書く。ただし業績データの四半期が今回の決算と違いそうなら使わない
+- 1行目は必ずフック（例: 「今日爆上げした銘柄、理由はこれ🚀↓↓」）。銘柄名から書き始めない
+- 最後の行は必ず #株クラ
 - 理由がわかる銘柄が1つもなければ空文字
 
 ## 2. earnings（明日の決算予告・LINE用）
@@ -1624,8 +1667,8 @@ def evening_with_claude(client, today):
         lines = [f"📊 明日（{tomorrow:%m/%d}）決算の注目銘柄"]
         lines += [f"・{e['name']}({e['code']}) {e['note']}" for e in data["earnings"]]
         earnings_text = "\n".join(lines)
-    movers = format_x_post(data["movers_post"]) if data["movers_post"] else ""
-    earnings_post = format_x_post(data["earnings_post"]) if data["earnings_post"] else ""
+    movers = format_x_post(ensure_x_format(data["movers_post"], "今日大きく動いた銘柄、理由はこれ🚀↓↓")) if data["movers_post"] else ""
+    earnings_post = format_x_post(ensure_x_format(data["earnings_post"], "明日決算の注目銘柄📊↓↓")) if data["earnings_post"] else ""
     return earnings_text, movers, earnings_post
 
 
