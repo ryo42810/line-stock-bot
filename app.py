@@ -203,17 +203,18 @@ def pick_material_disclosures(tdnet_items):
 
 
 # ---------------------------------------------------------------
-# 3. みんかぶ・株探・Yahoo!ファイナンスのページ取得（スクレイピング）
+# 3. Yahoo!ファイナンス・日経のページ取得（スクレイピング）
 # ---------------------------------------------------------------
 HTTP_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36",
     "Accept-Language": "ja,en;q=0.8",
 }
 
-# 話題の銘柄を探すときに読むページ（みんかぶはGitHub Actionsから403になるため外した）
+# 話題の銘柄を探すときに読むページ
+# （みんかぶは403、株探は405でGitHub Actionsから取れないため、Yahoo!ファイナンスに寄せた）
 TOPIC_PAGES = [
-    "https://kabutan.jp/news/marketnews/",
-    "https://kabutan.jp/",
+    "https://finance.yahoo.co.jp/",
+    "https://finance.yahoo.co.jp/stocks/ranking/hot",
     "https://finance.yahoo.co.jp/stocks/ranking/up",
     "https://finance.yahoo.co.jp/stocks/ranking/down",
 ]
@@ -229,15 +230,15 @@ YUTAI_LIST_PAGES = [
 ]
 
 # サイト内のリンクから、決算予定・優待一覧のページを自動で探すための入口
+# （優待のある銘柄の優待ページから、優待ランキング・権利月別一覧へのリンクを探す）
 INDEX_PAGES = [
     "https://finance.yahoo.co.jp/",
-    "https://kabutan.jp/",
+    "https://finance.yahoo.co.jp/quote/2702.T/incentive",
 ]
 
 # 各銘柄の優待ページ（上から順に試す）
 YUTAI_STOCK_PAGES = [
     "https://finance.yahoo.co.jp/quote/{code}.T/incentive",
-    "https://kabutan.jp/stock/yutai?code={code}",
 ]
 
 
@@ -385,7 +386,9 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
     months = [today.month, today.month % 12 + 1]
 
     # 優待一覧（固定の候補＋サイト内で見つけた「優待」リンク）
-    yutai_urls = YUTAI_LIST_PAGES + links_matching(links, "優待")
+    yutai_urls = YUTAI_LIST_PAGES + [
+        u for u in links_matching(links, "優待") if "/news/" not in u and "/quote/" not in u
+    ]
     yutai_blocks = fetch_pages(yutai_urls, limit=2, max_chars=6000, require_word="優待")
     print(f"優待一覧ページ取得: {len(yutai_blocks)}件（候補{len(set(yutai_urls))}件）")
 
@@ -494,7 +497,7 @@ def fallback_picks(disclosures):
 
 
 # ---------------------------------------------------------------
-# 6. 優待内容・権利確定月（Yahoo!ファイナンス→株探の優待ページから）
+# 6. 優待内容・権利確定月（Yahoo!ファイナンスの優待ページから）
 # ---------------------------------------------------------------
 YUTAI_SCHEMA = {
     "type": "object",
@@ -523,7 +526,7 @@ YUTAI_SCHEMA = {
 
 
 def add_yutai_info(client, picks):
-    """各銘柄の優待ページ（Yahoo!→株探の順）を取ってきて、AIで優待内容と権利確定月を抜き出す"""
+    """各銘柄のYahoo!ファイナンス優待ページを取ってきて、AIで優待内容と権利確定月を抜き出す"""
     page_blocks = []
     for p in picks:
         for template in YUTAI_STOCK_PAGES:
