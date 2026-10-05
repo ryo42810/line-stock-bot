@@ -42,6 +42,15 @@ CATEGORY_COLORS = {
     "優待": COLORS["gold"],
     "買い場候補": COLORS["accent"],
 }
+# 配色テーマ（環境変数 IMAGE_THEME で切り替え）
+THEMES = {
+    "navy": {"head": "#1A2530", "title": "white", "sub": "#C9D6E2", "line": "#00A8E8", "pill": "#00A8E8", "foot": "#1A2530", "foot_text": "#C9D6E2", "bars": "category", "bar": "#00A8E8", "chart": "#00A8E8"},
+    "white": {"head": "#FFFFFF", "title": "#1A2530", "sub": "#6B7785", "line": "#00A8E8", "pill": "#1A2530", "foot": "#F2F5F8", "foot_text": "#6B7785", "bars": "single", "bar": "#00A8E8", "chart": "#00A8E8"},
+    "blue": {"head": "#0B4F9C", "title": "white", "sub": "#CFE3F5", "line": "#E6A100", "pill": "#E6A100", "foot": "#0B4F9C", "foot_text": "#CFE3F5", "bars": "single", "bar": "#1E73D8", "chart": "#1E73D8"},
+    "green": {"head": "#0F3B3A", "title": "white", "sub": "#CFE5DF", "line": "#E6A100", "pill": "#2E7D32", "foot": "#0F3B3A", "foot_text": "#CFE5DF", "bars": "single", "bar": "#2E7D32", "chart": "#00A8E8"},
+    "gold": {"head": "#1A2530", "title": "white", "sub": "#C9D6E2", "line": "#E6A100", "pill": "#E6A100", "foot": "#1A2530", "foot_text": "#C9D6E2", "bars": "single", "bar": "#1A2530", "chart": "#00A8E8"},
+}
+THEME = THEMES.get((os.environ.get("IMAGE_THEME") or "navy").strip(), THEMES["navy"])
 WHALE_ICON = os.path.join("assets", "whale.png")  # 右上のクジラアイコン（置いてあれば使う）
 W, H = 1080, 1350  # Xで見やすい4:5
 
@@ -153,10 +162,10 @@ def _pill(ax, x, y, text, size, fg, bg, pad_x=14, h=None, align="left", bold=Tru
 
 def _header(fig, ax, title, subtitle, date_text, accent):
     """上部：ネイビーの帯に白抜きの大見出し・日付・クジラアイコン"""
-    _box(ax, 0, 0, W, 200, COLORS["ink"], r=0)
-    ax.add_patch(plt.Rectangle((0, 200), W, 10, color=accent, zorder=2))  # 帯の下のアクセントライン
-    ax.text(50, 82, title, fontsize=52, color="white", weight="bold", va="center")
-    ax.text(52, 152, subtitle, fontsize=22, color="#C9D6E2", weight="bold", va="center")
+    _box(ax, 0, 0, W, 200, THEME["head"], r=0)
+    ax.add_patch(plt.Rectangle((0, 200), W, 10, color=THEME["line"], zorder=2))  # 帯の下のアクセントライン
+    ax.text(50, 82, title, fontsize=52, color=THEME["title"], weight="bold", va="center")
+    ax.text(52, 152, subtitle, fontsize=22, color=THEME["sub"], weight="bold", va="center")
     right = W - 40
     if os.path.exists(WHALE_ICON):
         try:
@@ -168,12 +177,12 @@ def _header(fig, ax, title, subtitle, date_text, accent):
         except Exception as e:
             print("クジラアイコンの読み込みに失敗:", e)
     if date_text:
-        _pill(ax, right, 136, date_text, 16, "white", accent, align="right")
+        _pill(ax, right, 136, date_text, 16, "white", THEME["pill"], align="right")
 
 
 def _footer(ax, note):
-    _box(ax, 0, H - 52, W, 52, COLORS["ink"], r=0)
-    ax.text(W - 40, H - 26, note, fontsize=14, color="#C9D6E2", ha="right", va="center")
+    _box(ax, 0, H - 52, W, 52, THEME["foot"], r=0)
+    ax.text(W - 40, H - 26, note, fontsize=14, color=THEME["foot_text"], ha="right", va="center")
 
 
 def _sparkline(fig, closes, x, y, w, h, color):
@@ -205,7 +214,8 @@ def render_stock_card(path, title, subtitle, stocks, accent, get_history, date_t
     x, w, bar_h = 36, W - 72, 66
     for i, s in enumerate(stocks[:3]):
         y = top + i * (panel_h + gap)
-        color = CATEGORY_COLORS.get(s.get("category"), accent)
+        cat_color = CATEGORY_COLORS.get(s.get("category"), accent)
+        color = cat_color if THEME["bars"] == "category" else THEME["bar"]
 
         # カード本体と、色ベタのタイトルバー
         _box(ax, x, y, w, panel_h, "white", color, r=16, lw=2.5)
@@ -227,7 +237,7 @@ def render_stock_card(path, title, subtitle, stocks, accent, get_history, date_t
         if change_text:
             rx -= _pill(ax, rx, y + 13, change_text, 22, _change_color(change), "white", align="right") + 10
         if cat:
-            _pill(ax, rx, y + 18, cat, 15, "white", COLORS["ink"], align="right")
+            _pill(ax, rx, y + 18, cat, 15, "white", COLORS["ink"] if THEME["bars"] == "category" else cat_color, align="right")
 
         body_y = y + bar_h + 16
         # 左：株価と利回りの数字ボックス
@@ -265,7 +275,7 @@ def render_stock_card(path, title, subtitle, stocks, accent, get_history, date_t
         # 右：3ヶ月チャート
         try:
             closes = get_history(s["code"])["Close"].iloc[-60:]
-            _sparkline(fig, closes, x + w - 330, body_y + 10, 305, 180, accent)
+            _sparkline(fig, closes, x + w - 330, body_y + 10, 305, 180, THEME["chart"])
             ax.text(x + w - 24, body_y + 214, "3ヶ月チャート", fontsize=13, color=COLORS["sub"], weight="bold", ha="right", va="center")
         except Exception as e:
             print(f"チャート描画失敗 ({s['code']}):", e)
