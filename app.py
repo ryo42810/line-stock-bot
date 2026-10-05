@@ -36,6 +36,31 @@ CATEGORY_STYLE = {
     "優待": {"color": "#F5A623", "label": "🎁 今月の優待"},
     "買い場候補": {"color": "#16A085", "label": "買い場候補👀"},
 }
+# X投稿の書き方（朝の通常版・買い場候補版で共通）
+X_POST_STYLE = """## X投稿の書き方
+- 1行目で「誰向けか・なぜ読むべきか」を言い切るフックにする（地合いの説明から始めない）
+- 銘柄は3つ。①②③で番号を付け、銘柄名(コード)の次の行に「材料＋まだ上がりきっていない根拠」を1行で書く
+- 1銘柄ごとに空行を入れ、スマホで読みやすくする
+- 絵文字は多めに使う（1行に1つ程度）。必ず言葉の後に付け、行頭には置かない（例: 「好材料📈」「出来高急増🔥」）
+- 「自社株買い」など、略さずに伝わる言葉を使う。「アナリスト好評価」のようなあいまいな表現は避け、何が起きたかを書く
+- 「必ず上がる」「買うべき」などの断定や煽りはしない
+- 最後の行はハッシュタグ #株クラ だけ（免責文は書かない）
+- 長さは200字程度まで
+
+## お手本（雰囲気・形の参考。内容はそのまま使わない）
+上がる前にチェックしたい銘柄👀
+
+①ハイデイ日高(7611)
+自社株買い＋増配を発表✨株価の反応はまだ小さめ
+
+②カネコ種苗(1376)
+1Qが大幅増益📈株価は横ばいなのに出来高2.4倍🔥
+
+③きょくとう(2300)
+株価は動かず出来高だけ4.4倍💡値動きの前ぶれになることも
+
+#株クラ"""
+
 MAX_BUY_CANDIDATES = 5
 BUY_UNIVERSE_LIMIT = 40  # 買い場候補を探す銘柄数の上限（株価取得の時間を抑えるため）
 
@@ -226,11 +251,13 @@ TOPIC_PAGES = [
 # 今日の決算発表予定を探すページの候補（取れたものだけ使う）
 EARNINGS_PAGES = [
     "https://www.nikkei.com/markets/kigyo/money-schedule/kessan/",
+    "https://kabuyoho.ifis.co.jp/index.php?id=100",
 ]
 
 # 優待一覧ページの候補（取れたものだけ使う）
 YUTAI_LIST_PAGES = [
-    "https://finance.yahoo.co.jp/stocks/incentive",
+    "https://finance.yahoo.co.jp/stocks/incentive/popular-ranking/all",
+    "https://finance.yahoo.co.jp/stocks/incentive/popular-ranking",
 ]
 
 # サイト内のリンクから、決算予定・優待一覧のページを自動で探すための入口
@@ -354,7 +381,7 @@ PICKS_SCHEMA = {
     "type": "object",
     "properties": {
         "market_comment": {"type": "string", "description": "今日の地合いのまとめ（80字程度）"},
-        "x_post": {"type": "string", "description": "X（旧Twitter）投稿用の下書き。130字以内"},
+        "x_post": {"type": "string", "description": "X（旧Twitter）投稿用の下書き。200字程度まで"},
         "picks": {
             "type": "array",
             "items": {
@@ -430,11 +457,11 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
 6. 合計{MIN_PICKS}〜{MAX_PICKS}件。10件以上を目標にする。根拠の弱い銘柄は入れない
 7. 証券コードはページに書いてあるものだけを使う。わからない銘柄は入れない
 8. market_comment には、地合いデータとニュースから今日の日本株の見通しを80字程度で書く
-9. x_post には、X（旧Twitter）にそのまま投稿できる文章を130字以内で書く
-   - 地合いを一言＋注目銘柄2〜3件（銘柄名とコード、理由を短く）
-   - 最後に「※投資判断はご自身で」と、ハッシュタグ #日本株 を付ける
-   - 「必ず上がる」などの断定や煽る表現は使わない
-   - 絵文字を使うときは、言葉の後に付ける（例: 「注目銘柄👀」「好材料📈」）。行頭には置かない
+9. x_post には、X（旧Twitter）にそのまま投稿できる文章を、下の「X投稿の書き方」に沿って書く
+   - 今日選んだ銘柄から3銘柄。基本は、材料が出たばかりで読み手が今から注目する意味がある銘柄を優先する
+   - ただし、前日にすでに大きく上がった銘柄があり、上がった理由がページに書いてあれば、3銘柄のうち1銘柄までは「なぜ跳ねたのか」の解説にしてよい（例: 「前日+15%🚀理由は〇〇」）
+
+{X_POST_STYLE}
 
 ## 今日の地合いデータ（前営業日終値ベース）
 {market_text}
@@ -881,7 +908,7 @@ def run():
 
     buy_cards = []
     try:
-        buy_cards = find_buy_candidates(picks, disclosures, topic_text, blocked_codes)
+        buy_cards = find_buy_candidates(picks, disclosures, topic_text, blocked_codes, today)
     except Exception as e:
         print("買い場候補の探索に失敗:", e)
 
@@ -947,7 +974,7 @@ def buy_rule_reasons(hist, has_good_news):
     gap25 = (last - ma25) / ma25 * 100
 
     # 材料の織り込み前：適時開示で好材料が出たのに、株価はまだ大きく反応しておらず、過熱もしていない
-    if has_good_news and change < 3 and gap25 < 5:
+    if has_good_news and -2 < change < 3 and gap25 < 5:
         reasons.append(f"好材料の開示が出たが株価の反応はまだ小さい（前日比{change:+.1f}%）")
 
     # 押し目：75日線が上向きの上昇トレンド中に、25日線から-5〜-15%まで下げている（年初来安値は除く）
@@ -973,10 +1000,21 @@ def yutai_advance_reason(stock, today):
     return ""
 
 
-def find_buy_candidates(picks, disclosures, topic_text, blocked_codes):
+def is_after_last_close(pubdate, today):
+    """開示時刻が、今日より前の最後の営業日の15:30以降か。時刻が読めなければ True"""
+    try:
+        published = datetime.datetime.fromisoformat(pubdate.strip()[:19])
+    except Exception:
+        return True
+    last_close = datetime.datetime.combine(prev_business_day(today), datetime.time(15, 30))
+    return published >= last_close
+
+
+def find_buy_candidates(picks, disclosures, topic_text, blocked_codes, today):
     """ルールで買い場候補を探す。朝の選定銘柄は印を付け、それ以外は新しいカードにする"""
-    # 「材料の織り込み前」は、AIの判断ではなく適時開示（公式の発表）で好材料が出た銘柄だけを対象にする
-    good_codes = {d["code"] for d in disclosures if d["category"] == "好材料"}
+    # 「材料の織り込み前」は、AIの判断ではなく適時開示（公式の発表）で好材料が出た銘柄だけを対象にする。
+    # さらに、前営業日の引け（15:30）以降に出た開示に限る（それより前の開示は、すでに株価が反応している）
+    good_codes = {d["code"] for d in disclosures if d["category"] == "好材料" and is_after_last_close(d["pubdate"], today)}
     pick_by_code = {p["code"]: p for p in picks}
     universe = build_universe(picks, disclosures, topic_text)
     print(f"買い場候補の探索対象: {len(universe)}銘柄")
@@ -1020,7 +1058,7 @@ BUY_REASON_SCHEMA = {
                 "additionalProperties": False,
             },
         },
-        "x_post": {"type": "string", "description": "買い場候補を紹介するX投稿の下書き（130字以内）"},
+        "x_post": {"type": "string", "description": "買い場候補を紹介するX投稿の下書き（200字程度まで）"},
     },
     "required": ["items", "x_post"],
     "additionalProperties": False,
@@ -1046,11 +1084,12 @@ def add_buy_reasons(client, candidates, disclosures, topic_text):
 - 関連情報がない銘柄は、ルールの条件だけで書く。書いていない材料やニュースを作らない
 - 「必ず上がる」「買うべき」などの断定はしない
 
-あわせて、x_post にX（旧Twitter）投稿用の下書きを130字以内で書いてください。
-- 書き出しは「今日の買い場候補👀」
-- 2〜3銘柄を、銘柄名とコード、注目理由を短く
-- 絵文字を使うときは言葉の後に付ける（行頭に置かない）
-- 最後に「※投資判断はご自身で」と #日本株 を付ける
+あわせて、x_post にX（旧Twitter）投稿用の下書きを、下の「X投稿の書き方」に沿って書いてください。
+- 買い場候補から3銘柄（3つ未満ならあるだけ）。それぞれ「なぜまだ上がる前と言えるのか」を伝える
+- 材料が出たばかりの銘柄を優先する
+- 下の情報に書いていない材料は作らない
+
+{X_POST_STYLE}
 
 {chr(10).join(blocks)}"""
     try:
