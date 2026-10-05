@@ -6,6 +6,9 @@ on:
     # UTC 22:00 ＝ 日本時間(JST)の翌朝 07:00
     - cron: '0 22 * * *'
 
+permissions:
+  contents: write # 配信履歴（history.json）を保存するため
+
 jobs:
   run-bot:
     runs-on: ubuntu-latest
@@ -20,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests yfinance anthropic
+          pip install requests yfinance anthropic beautifulsoup4 jpholiday
 
       - name: Run script
         env:
@@ -28,3 +31,22 @@ jobs:
           USER_ID: ${{ secrets.USER_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python app.py
+
+      - name: Save history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add history.json
+          git diff --cached --quiet || (git commit -m "配信履歴を更新" && git push)
+
+      # Pythonが動く前に失敗したとき（インストール失敗など）もLINEに知らせる
+      - name: Notify failure
+        if: failure() && hashFiles('notified.flag') == ''
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+        run: |
+          curl -sS -X POST https://api.line.me/v2/bot/message/push \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${LINE_ACCESS_TOKEN}" \
+            -d "{\"to\":\"${USER_ID}\",\"messages\":[{\"type\":\"text\",\"text\":\"⚠️ 注目株botのGitHub Actionsが失敗しました。ログを確認してください。\"}]}"
