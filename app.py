@@ -1503,6 +1503,43 @@ EVENING_SCHEMA = {
 }
 
 
+def quarterly_growth_text(code):
+    """yfinanceの四半期業績から、直近四半期の前年同期比（売上高・営業利益・純利益）を文章にする"""
+    try:
+        q = yf.Ticker(f"{code}.T").quarterly_income_stmt
+        if q is None or q.empty or q.shape[1] < 5:
+            return ""
+        latest, year_ago = q.columns[0], q.columns[4]
+        parts = []
+        for key, label in (("Total Revenue", "売上高"), ("Operating Income", "営業利益"), ("Net Income", "純利益")):
+            if key in q.index:
+                now, before = q.at[key, latest], q.at[key, year_ago]
+                if now == now and before == before and before:  # NaNを除外
+                    if before > 0:
+                        parts.append(f"{label} {(now / before - 1) * 100:+.1f}%")
+                    elif now > 0:
+                        parts.append(f"{label} 黒字転換")
+        if not parts:
+            return ""
+        return f"業績データ（{latest:%Y年%m月}末までの四半期・前年同期比）: " + "、".join(parts)
+    except Exception as e:
+        print(f"四半期業績の取得失敗 ({code}):", e)
+        return ""
+
+
+def ensure_x_format(post, default_hook):
+    """X下書きの最低限の形をそろえる：1行目がフックでなければ補い、最後に #株クラ を付ける"""
+    if not post:
+        return ""
+    lines = post.strip().splitlines()
+    if re.search(r"\(\d{3}[0-9A-Z]\)", lines[0]):  # 1行目からいきなり銘柄が始まっている
+        lines = [default_hook, ""] + lines
+    text = "\n".join(lines).rstrip()
+    if "#株クラ" not in text:
+        text += "\n\n#株クラ"
+    return text
+
+
 def earnings_tomorrow(codes, tomorrow):
     """yfinanceの決算予定日が明日の銘柄（対象は配信履歴・ランキングに出た銘柄）"""
     found = []
@@ -1546,6 +1583,10 @@ def evening_with_claude(client, today):
         related = [f"適時開示: {d['title']}" for d in disclosures if d["code"] == code][:3]
         if code in morning and morning[code].get("headline"):
             related.append(f"今朝の注目理由: {morning[code]['headline']}")
+        if any("決算" in d["title"] for d in disclosures if d["code"] == code):
+            perf = quarterly_growth_text(code)
+            if perf:
+                related.append(perf)
         if related:
             lines = ranking_text.splitlines()
             idx = next((i for i, l in enumerate(lines) if f"/quote/{code}.T" in l), None)
@@ -1582,6 +1623,9 @@ def evening_with_claude(client, today):
 - 「理由の手がかりがある値動き銘柄」から、今日大きく動いた銘柄を選び、「なぜ動いたのか」を解説する
 - 理由は、その銘柄に紐づいた適時開示・今朝の注目理由に書いてあることだけを使う
 - 「今日+15%🚀」のように騰落率を入れ、次の行に理由
+- 「業績データ」がある銘柄は、「営業利益+30%」のように具体的な数字で理由を書く。ただし業績データの四半期が今回の決算と違いそうなら使わない
+- 1行目は必ずフック（例: 「今日爆上げした銘柄、理由はこれ🚀↓↓」）。銘柄名から書き始めない
+- 最後の行は必ず #株クラ
 - 理由がわかる銘柄が1つもなければ空文字
 
 ## 2. earnings（明日の決算予告・LINE用）
@@ -1624,8 +1668,8 @@ def evening_with_claude(client, today):
         lines = [f"📊 明日（{tomorrow:%m/%d}）決算の注目銘柄"]
         lines += [f"・{e['name']}({e['code']}) {e['note']}" for e in data["earnings"]]
         earnings_text = "\n".join(lines)
-    movers = format_x_post(data["movers_post"]) if data["movers_post"] else ""
-    earnings_post = format_x_post(data["earnings_post"]) if data["earnings_post"] else ""
+    movers = format_x_post(ensure_x_format(data["movers_post"], "今日大きく動いた銘柄、理由はこれ🚀↓↓")) if data["movers_post"] else ""
+    earnings_post = format_x_post(ensure_x_format(data["earnings_post"], "明日決算の注目銘柄📊↓↓")) if data["earnings_post"] else ""
     return earnings_text, movers, earnings_post
 
 
