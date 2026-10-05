@@ -232,7 +232,7 @@ def render_stock_card(path, title, subtitle, stocks, accent, get_history, date_t
         chips = []
         if s.get("price"):
             chips.append((f"株価 {s['price']:,.0f}円", COLORS["ink"], COLORS["panel"]))
-        if s.get("yield_fmt") and "取得できず" not in s["yield_fmt"]:
+        if s.get("yield_fmt") and not any(w in s["yield_fmt"] for w in ("取得できず", "なし", "不明")):
             chips.append((s["yield_fmt"].replace("＝", " = "), COLORS["gold"], "#FFF6E0"))
         for sig in s.get("signals", [])[:1]:
             sig = re.sub(r"^[^\w（]+", "", sig).split("（")[0]
