@@ -7,6 +7,8 @@ from zoneinfo import ZoneInfo
 import anthropic
 import requests
 import yfinance as yf
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 # GitHubのSecretsから取得し、先頭・末尾の余計な空白や改行を除去（strip）
 LINE_ACCESS_TOKEN = (os.environ.get("LINE_ACCESS_TOKEN") or "").strip()
@@ -75,7 +77,48 @@ def pick_material_disclosures(tdnet_items):
 
 
 # ---------------------------------------------------------------
-# 2. Claudeで調査（Web検索）→ 銘柄の選定
+# 2. みんかぶ・株探のページ取得（スクレイピング）
+# ---------------------------------------------------------------
+HTTP_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36",
+    "Accept-Language": "ja,en;q=0.8",
+}
+
+# 話題の銘柄を探すときに読むページ
+TOPIC_PAGES = [
+    "https://minkabu.jp/",
+    "https://minkabu.jp/news",
+    "https://kabutan.jp/news/marketnews/",
+]
+
+
+def fetch_page_text(url, max_chars=15000, start_word=None):
+    """ページを取ってきて、リンク付きのテキストにする。失敗したら空文字"""
+    try:
+        res = requests.get(url, headers=HTTP_HEADERS, timeout=20)
+        res.raise_for_status()
+        res.encoding = res.apparent_encoding or res.encoding
+    except Exception as e:
+        print(f"ページ取得失敗 ({url}):", e)
+        return ""
+
+    soup = BeautifulSoup(res.text, "html.parser")
+    for tag in soup(["script", "style", "noscript", "svg", "header", "footer", "nav"]):
+        tag.decompose()
+    for a in soup.find_all("a", href=True):
+        text = a.get_text(" ", strip=True)
+        if text:
+            a.replace_with(f"{text} <{urljoin(url, a['href'])}>")
+    lines = [line.strip() for line in soup.get_text("\n").splitlines()]
+    text = "\n".join(line for line in lines if line)
+
+    if start_word and start_word in text:
+        text = text[max(0, text.index(start_word) - 300):]
+    return text[:max_chars]
+
+
+# ---------------------------------------------------------------
+# 3. Claudeで調査（ニュース・話題の銘柄）→ 銘柄の選定
 # ---------------------------------------------------------------
 def research_with_claude(client, today, is_weekend, disclosures):
     weekday_str = "月火水木金土日"[today.weekday()]
@@ -84,36 +127,48 @@ def research_with_claude(client, today, is_weekend, disclosures):
         for d in disclosures[:80]
     ) or "（取得できず）"
 
+    page_blocks = []
+    for url in TOPIC_PAGES:
+        text = fetch_page_text(url)
+        if text:
+            page_blocks.append(f"<page url=\"{url}\">\n{text}\n</page>")
+    print(f"話題ページ取得: {len(page_blocks)}/{len(TOPIC_PAGES)}件")
+    pages_text = "\n\n".join(page_blocks) or "（取得できず。Web検索で探してください）"
+
     market_note = (
         "今日は土日で市場が休み。株価は動かないので、金曜〜今日までに出たニュースと、今月が権利確定月の優待株を中心に選ぶ。"
         if is_weekend
         else "今日は平日。前日〜今朝までに出たニュース・開示で、今日の株価に影響しそうな銘柄を優先する。"
     )
 
-    prompt = f"""今日は{today:%Y年%m月%d日}（{weekday_str}曜）です。日本株の個人投資家向けに、今朝LINEで送る注目銘柄リストを作るための調査をしてください。
+    prompt = f"""今日は{today:%Y年%m月%d日}（{weekday_str}曜）です。毎朝自動でLINEに送る「今日の注目株」リストの銘柄を選んでください。
+これは自動処理で、人が途中で確認・指示することはありません。質問や「配信前に必要な作業」は書かず、手元の情報で最善のリストを完成させてください。
 
 {market_note}
 
 ## 選び方
-1. 当日・前日にニュースや適時開示が出た東証上場銘柄を優先する
+1. まず下の「みんかぶ・株探のページ」で話題・トピックになっている銘柄を拾う（ニュース見出し、ランキング、注目銘柄など）
    - 好材料（上方修正、増配、自社株買い、大型受注、提携など）
    - 懸念材料（下方修正、減配、不祥事、優待廃止など）
-   - 個人投資家に影響が大きいものを優先
-2. ニュース銘柄だけで{MIN_PICKS}件に届かない、または枠が余るときは、{today.month}月が権利確定月で、優待内容が魅力的な株主優待銘柄で埋める
-3. 合計{MIN_PICKS}〜{MAX_PICKS}件。多いほうがよいが、根拠の弱い銘柄は入れない
-4. すべての銘柄について、現在の株主優待の内容と権利確定月をWebで確認する（優待がない銘柄は「なし」）
-   - 優待内容は古い情報を使わず、最新の内容をWeb検索で確認すること
+   - 見出しだけで中身がわからないものは、記事をweb_fetchで開いて確認してよい
+2. TDnetの適時開示も参考にする。ただし「自己株式の取得状況」のような定期報告は材料にしない
+3. ニュース銘柄で枠が埋まらないときは、{today.month}月が権利確定月で優待が魅力的な銘柄を加える（みんかぶの優待情報をWeb検索で探す）
+4. 合計{MIN_PICKS}〜{MAX_PICKS}件。10件以上を目標にする。根拠の弱い銘柄は入れない
+5. 優待内容と権利確定月は後の処理でみんかぶから取得するので、ここでは調べなくてよい
+
+## みんかぶ・株探のページ（今朝取得したもの）
+{pages_text}
 
 ## 参考：TDnetの適時開示（キーワードで抽出したもの）
 {disclosure_text}
 
 ## 出力
-銘柄ごとに、証券コード（4桁）、銘柄名、分類（好材料／懸念材料／優待）、選んだ理由の要約（40字程度）、優待内容、権利確定月、根拠となった記事のURLをまとめてください。
-確認できなかった情報は推測で埋めず「不明」と書いてください。"""
+銘柄ごとに、証券コード（4桁）、銘柄名、分類（好材料／懸念材料／優待）、選んだ理由の要約（40字程度）、根拠となった記事のURLを書いてください。
+確認できなかった情報は推測で埋めないでください。"""
 
     tools = [
-        {"type": "web_search_20260209", "name": "web_search", "max_uses": 15, "user_location": {"type": "approximate", "country": "JP", "timezone": "Asia/Tokyo"}},
-        {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": 10},
+        {"type": "web_search_20260209", "name": "web_search", "max_uses": 10, "user_location": {"type": "approximate", "country": "JP", "timezone": "Asia/Tokyo"}},
+        {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": 15},
     ]
     messages = [{"role": "user", "content": prompt}]
 
@@ -154,11 +209,9 @@ PICKS_SCHEMA = {
                     "name": {"type": "string"},
                     "category": {"type": "string", "enum": ["好材料", "懸念材料", "優待"]},
                     "headline": {"type": "string", "description": "選んだ理由の要約（40字程度）"},
-                    "yutai": {"type": "string", "description": "株主優待の内容。なければ「なし」、不明なら「不明」"},
-                    "kenri_month": {"type": "string", "description": "権利確定月（例: 3月・9月）。不明なら「不明」"},
                     "source_url": {"type": "string", "description": "根拠記事のURL。なければ空文字"},
                 },
-                "required": ["code", "name", "category", "headline", "yutai", "kenri_month", "source_url"],
+                "required": ["code", "name", "category", "headline", "source_url"],
                 "additionalProperties": False,
             },
         }
@@ -196,7 +249,7 @@ def clean_picks(picks):
         if not re.fullmatch(r"\d{3}[0-9A-Z]", code) or code in seen:
             continue
         seen.add(code)
-        result.append({**p, "code": code})
+        result.append({"yutai": "不明", "kenri_month": "不明", **p, "code": code})
     return result[:MAX_PICKS]
 
 
@@ -223,7 +276,73 @@ def fallback_picks(disclosures):
 
 
 # ---------------------------------------------------------------
-# 3. 株価の取得
+# 4. 優待内容・権利確定月（みんかぶの優待ページから）
+# ---------------------------------------------------------------
+YUTAI_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "code": {"type": "string"},
+                    "yutai": {"type": "string", "description": "優待内容を60字以内で要約（例: 自社店舗で使える買物券3,000円分）。優待がない銘柄は「なし」、ページから読み取れなければ「不明」"},
+                    "kenri_month": {"type": "string", "description": "権利確定月（例: 3月・9月）。優待がない場合は「-」、読み取れなければ「不明」"},
+                },
+                "required": ["code", "yutai", "kenri_month"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["items"],
+    "additionalProperties": False,
+}
+
+
+def add_yutai_info(client, picks):
+    """各銘柄のみんかぶ優待ページを取ってきて、AIで優待内容と権利確定月を抜き出す"""
+    page_blocks = []
+    for p in picks:
+        url = f"https://minkabu.jp/stock/{p['code']}/yutai"
+        text = fetch_page_text(url, max_chars=10000, start_word="優待")
+        if text:
+            page_blocks.append(f"<page code=\"{p['code']}\" name=\"{p['name']}\" url=\"{url}\">\n{text}\n</page>")
+    print(f"みんかぶ優待ページ取得: {len(page_blocks)}/{len(picks)}件")
+    if not page_blocks:
+        return picks
+
+    try:
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=16000,
+            output_config={"effort": "low", "format": {"type": "json_schema", "schema": YUTAI_SCHEMA}},
+            messages=[
+                {
+                    "role": "user",
+                    "content": "次はみんかぶの株主優待ページです。銘柄ごとに、現在の優待内容と権利確定月を抜き出してください。"
+                    "ページに書いていないことは推測せず「不明」にしてください。\n\n" + "\n\n".join(page_blocks),
+                }
+            ],
+        )
+        if response.stop_reason == "refusal":
+            raise RuntimeError("拒否されました")
+        text = next(b.text for b in response.content if b.type == "text")
+        found = {item["code"].upper(): item for item in json.loads(text)["items"]}
+    except Exception as e:
+        print("優待情報の抜き出しに失敗:", e)
+        return picks
+
+    for p in picks:
+        item = found.get(p["code"])
+        if item:
+            p["yutai"] = item["yutai"] or "不明"
+            p["kenri_month"] = item["kenri_month"] or "不明"
+    return picks
+
+
+# ---------------------------------------------------------------
+# 5. 株価の取得
 # ---------------------------------------------------------------
 def add_price_info(picks):
     for p in picks:
@@ -246,7 +365,7 @@ def add_price_info(picks):
 
 
 # ---------------------------------------------------------------
-# 4. LINE送信
+# 6. LINE送信
 # ---------------------------------------------------------------
 def build_bubble(stock, is_weekend):
     style = CATEGORY_STYLE.get(stock["category"], CATEGORY_STYLE["優待"])
@@ -381,6 +500,7 @@ def main():
     print(f"材料になりそうな開示: {len(disclosures)}件")
 
     picks = []
+    client = None
     try:
         client = anthropic.Anthropic()
         notes = research_with_claude(client, today, is_weekend, disclosures)
@@ -399,6 +519,8 @@ def main():
         send_line_text("今日の注目株は取得できませんでした。GitHub Actionsのログを確認してください。")
         return
 
+    if client is not None:
+        picks = add_yutai_info(client, picks)
     send_line_flex_message(add_price_info(picks), today, is_weekend)
 
 

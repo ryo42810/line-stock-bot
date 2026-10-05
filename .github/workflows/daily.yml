@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests yfinance anthropic
+          pip install requests yfinance anthropic beautifulsoup4
 
       - name: Run script
         env:
