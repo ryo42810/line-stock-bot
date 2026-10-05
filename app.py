@@ -1002,15 +1002,17 @@ def run():
     # X下書きと画像（本文だけ送る。順番はニュース版→買い場候補版→アンケート版）
     by_code = {p["code"]: p for p in picks}
     images = {}
-    for kind, post, title, accent in (
-        ("news", x_post_news, "今朝のニュース銘柄", "#2D7FF9"),
-        ("buy", x_post_buy, "買い場候補", "#16A085"),
+    weekday_str = "月火水木金土日"[today.weekday()]
+    date_text = f"{today:%Y.%m.%d}（{weekday_str}）"
+    for kind, post, title, subtitle, accent in (
+        ("news", x_post_news, "今朝のニュース銘柄", "材料が出た注目の3銘柄", x_media.COLORS["green"]),
+        ("buy", x_post_buy, "買い場候補", "上がる前にチェックしたい3銘柄", x_media.COLORS["accent"]),
     ):
         stocks = [by_code[c] for c in x_media.codes_in_post(post) if c in by_code]
         if post and stocks:
             try:
                 images[kind] = x_media.render_stock_card(
-                    x_media.image_path(today, kind), title, f"{today:%Y年%m月%d日}", stocks, accent, get_history
+                    x_media.image_path(today, kind), title, subtitle, stocks, accent, get_history, date_text
                 )
             except Exception as e:
                 print(f"画像の作成に失敗 ({kind}):", e)
@@ -1655,7 +1657,7 @@ def run_evening():
     perf_image = None
     if rows:
         try:
-            perf_image = x_media.render_performance_chart(x_media.image_path(today, "performance"), rows, "買い場候補 1週間後の成績")
+            perf_image = x_media.render_performance_chart(x_media.image_path(today, "performance"), rows, "買い場候補の成績", f"{today:%Y.%m.%d}")
         except Exception as e:
             print("成績グラフの作成に失敗:", e)
     urls = x_media.publish_images([perf_image] if perf_image else [], today)
