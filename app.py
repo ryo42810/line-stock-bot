@@ -1,6 +1,7 @@
 import calendar
 import datetime
 import json
+import logging
 import os
 import re
 import sys
@@ -15,6 +16,9 @@ import yfinance as yf
 from bs4 import BeautifulSoup
 
 import x_media
+
+# yfinanceは、ETFなど決算データが無い銘柄で「HTTP Error 404」を表示するので、ログに出さない
+logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 
 # GitHubのSecretsから取得し、先頭・末尾の余計な空白や改行を除去（strip）
 LINE_ACCESS_TOKEN = (os.environ.get("LINE_ACCESS_TOKEN") or "").strip()
@@ -1543,33 +1547,28 @@ def ensure_x_format(post, default_hook):
 def earnings_tomorrow(codes, tomorrow):
     """yfinanceの決算予定日が明日の銘柄（対象は配信履歴・ランキングに出た銘柄）"""
     found = []
+    with_dates = 0  # 決算予定日が1つでも入っていた銘柄数（0ならyfinanceにデータが無いと判断できる）
     for code, name in codes.items():
         try:
             cal = yf.Ticker(f"{code}.T").calendar or {}
             dates = cal.get("Earnings Date") or []
+            if dates:
+                with_dates += 1
             if any(getattr(d, "date", lambda: d)() == tomorrow for d in dates):
                 found.append((code, name))
         except Exception as e:
             print(f"決算予定日の取得失敗 ({code}):", e)
-    return found
+    return found, with_dates
 
 
 def evening_with_claude(client, today):
     """今日動いた銘柄の理由解説と、明日の決算予告（X下書き付き）"""
     tomorrow = next_business_day(today)
     mover_blocks = fetch_pages(EVENING_MOVER_PAGES, max_chars=8000)
-    earnings_blocks = fetch_pages(EARNINGS_PAGES, max_chars=8000, require_word="決算")
     # 前営業日の引け後〜今日の開示（今日の値動きの理由は、前日夕方の開示であることが多い）
     start = prev_business_day(today)
     disclosures = fetch_tdnet([start + datetime.timedelta(days=i) for i in range((today - start).days + 1)])
-    print(f"夕方ページ取得: 値動き{len(mover_blocks)}件 / 決算予定{len(earnings_blocks)}件 / 開示{len(disclosures)}件")
-
-    # 決算予定ページに明日の日付が載っているか（載っていなければ決算予告は出ない）
-    date_marks = [f"{tomorrow.month}/{tomorrow.day}", f"{tomorrow:%m/%d}", f"{tomorrow.month}月{tomorrow.day}日"]
-    for block in earnings_blocks:
-        url = block.split('"')[1]
-        hit = [m for m in date_marks if m in block]
-        print(f"決算予定ページ {url}: 明日の日付 {'あり ' + str(hit) if hit else 'なし'} / 冒頭: {block[block.index('>') + 1:][:120]!r}")
+    print(f"夕方ページ取得: 値動き{len(mover_blocks)}件 / 開示{len(disclosures)}件")
 
     # 値動きランキングに載った銘柄に、関連する開示・朝の選定理由を紐づける
     history = load_history()
@@ -1612,8 +1611,8 @@ def evening_with_claude(client, today):
                 watch.setdefault(e["code"], e["name"])
     for code, name in movers.items():
         watch.setdefault(code, name)
-    tomorrow_earnings = earnings_tomorrow(dict(list(watch.items())[:150]), tomorrow)
-    print(f"決算予定日の確認: {len(watch)}銘柄 → 明日決算 {len(tomorrow_earnings)}件")
+    tomorrow_earnings, with_dates = earnings_tomorrow(dict(list(watch.items())[:150]), tomorrow)
+    print(f"決算予定日の確認: {min(len(watch), 150)}銘柄（うち予定日データあり {with_dates}銘柄）→ 明日決算 {len(tomorrow_earnings)}件")
     earnings_info = "\n".join(f"- {name}({code})" for code, name in tomorrow_earnings)
 
     prompt = f"""今日は{today:%Y年%m月%d日}、明日（次の営業日）は{tomorrow:%m月%d日}です。夕方のLINE配信とX投稿の文章を作ります。
