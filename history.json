@@ -1,14 +1,109 @@
 {
  "2026-10-05": [
-  "153A",
-  "593A",
-  "338A",
-  "6762",
-  "6723",
-  "6866",
-  "7611",
-  "6387",
-  "4475",
-  "9042"
+  {
+   "code": "4552",
+   "name": "ＪＣＲファーマ",
+   "category": "好材料",
+   "price": 506.0,
+   "buy": false
+  },
+  {
+   "code": "6652",
+   "name": "ＩＤＥＣ",
+   "category": "好材料",
+   "price": 4045.0,
+   "buy": false
+  },
+  {
+   "code": "6407",
+   "name": "ＣＫＤ",
+   "category": "好材料",
+   "price": 6040.0,
+   "buy": false
+  },
+  {
+   "code": "4968",
+   "name": "荒川化学工業",
+   "category": "好材料",
+   "price": 2496.0,
+   "buy": false
+  },
+  {
+   "code": "4973",
+   "name": "日本高純度化学",
+   "category": "好材料",
+   "price": 5050.0,
+   "buy": false
+  },
+  {
+   "code": "6762",
+   "name": "ＴＤＫ",
+   "category": "好材料",
+   "price": 3414.0,
+   "buy": false
+  },
+  {
+   "code": "1376",
+   "name": "カネコ種苗",
+   "category": "決算",
+   "price": 1539.0,
+   "buy": true
+  },
+  {
+   "code": "2300",
+   "name": "きょくとう",
+   "category": "決算",
+   "price": 512.0,
+   "buy": true
+  },
+  {
+   "code": "2753",
+   "name": "あみやき亭",
+   "category": "決算",
+   "price": 1317.0,
+   "buy": false
+  },
+  {
+   "code": "593A",
+   "name": "ティアフォー",
+   "category": "好材料",
+   "price": 2169.0,
+   "buy": false
+  },
+  {
+   "code": "6866",
+   "name": "ＨＩＯＫＩ",
+   "category": "好材料",
+   "price": 11840.0,
+   "buy": false
+  },
+  {
+   "code": "6323",
+   "name": "ローツェ",
+   "category": "好材料",
+   "price": 4497.0,
+   "buy": false
+  },
+  {
+   "code": "7611",
+   "name": "ハイデ日高",
+   "category": "買い場候補",
+   "price": 2972.0,
+   "buy": true
+  },
+  {
+   "code": "2185",
+   "name": "シイエム・シイ",
+   "category": "買い場候補",
+   "price": 1929.0,
+   "buy": true
+  },
+  {
+   "code": "4475",
+   "name": "Ｇ－ＨＥＮＮＧＥ",
+   "category": "買い場候補",
+   "price": 1681.0,
+   "buy": true
+  }
  ]
 }
