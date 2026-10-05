@@ -3,8 +3,8 @@ name: Daily Stock Bot
 on:
   workflow_dispatch: # 手動実行用ボタンを残す
   schedule:
-    # UTC 23:00 ＝ 日本時間(JST)の翌朝 08:00
-    - cron: '0 23 * * *'
+    # UTC 22:00 ＝ 日本時間(JST)の翌朝 07:00
+    - cron: '0 22 * * *'
 
 jobs:
   run-bot:
@@ -20,10 +20,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests yfinance
+          pip install requests yfinance anthropic
 
       - name: Run script
         env:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
           USER_ID: ${{ secrets.USER_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python app.py
