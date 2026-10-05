@@ -245,6 +245,7 @@ def save_history(history, today, picks):
             "category": p["category"],
             "price": p.get("price"),
             "buy": bool(p.get("buy_reasons")),
+            "headline": p.get("headline", ""),
             "yutai": p.get("yutai", ""),
             "kenri_months": p.get("kenri_months", []),
             "kenri_day": p.get("kenri_day", 0),
@@ -1457,8 +1458,9 @@ EVENING_SCHEMA = {
             },
         },
         "earnings_post": {"type": "string", "description": "明日の決算予告のX下書き。明日の予定が見つからなければ空文字"},
+        "note": {"type": "string", "description": "空にした項目があれば、その理由を一言で"},
     },
-    "required": ["movers_post", "earnings", "earnings_post"],
+    "required": ["movers_post", "earnings", "earnings_post", "note"],
     "additionalProperties": False,
 }
 
@@ -1467,17 +1469,45 @@ def evening_with_claude(client, today):
     """今日動いた銘柄の理由解説と、明日の決算予告（X下書き付き）"""
     tomorrow = next_business_day(today)
     mover_blocks = fetch_pages(EVENING_MOVER_PAGES, max_chars=8000)
-    earnings_blocks = fetch_pages(EARNINGS_PAGES, max_chars=6000, require_word="決算")
-    disclosures = fetch_tdnet([today])
+    earnings_blocks = fetch_pages(EARNINGS_PAGES, max_chars=8000, require_word="決算")
+    # 前営業日の引け後〜今日の開示（今日の値動きの理由は、前日夕方の開示であることが多い）
+    start = prev_business_day(today)
+    disclosures = fetch_tdnet([start + datetime.timedelta(days=i) for i in range((today - start).days + 1)])
     print(f"夕方ページ取得: 値動き{len(mover_blocks)}件 / 決算予定{len(earnings_blocks)}件 / 開示{len(disclosures)}件")
-    disclosure_text = "\n".join(f"- {d['code']} {d['name']}: {d['title']}" for d in disclosures[:100]) or "（なし）"
+
+    # 決算予定ページに明日の日付が載っているか（載っていなければ決算予告は出ない）
+    date_marks = [f"{tomorrow.month}/{tomorrow.day}", f"{tomorrow:%m/%d}", f"{tomorrow.month}月{tomorrow.day}日"]
+    for block in earnings_blocks:
+        url = block.split('"')[1]
+        hit = [m for m in date_marks if m in block]
+        print(f"決算予定ページ {url}: 明日の日付 {'あり ' + str(hit) if hit else 'なし'} / 冒頭: {block[block.index('>') + 1:][:120]!r}")
+
+    # 値動きランキングに載った銘柄に、関連する開示・朝の選定理由を紐づける
+    history = load_history()
+    morning = {e["code"]: e for e in history.get(today.isoformat(), []) if isinstance(e, dict)}
+    ranking_text = "\n".join(mover_blocks)
+    movers = {}
+    for name, code in re.findall(r"([^\n<>]{1,40}?) <https://finance\.yahoo\.co\.jp/quote/(\d{3}[0-9A-Z])\.T>", ranking_text):
+        movers.setdefault(code, name.strip())
+    mover_info = []
+    for code, name in list(movers.items())[:40]:
+        related = [f"適時開示: {d['title']}" for d in disclosures if d["code"] == code][:3]
+        if code in morning and morning[code].get("headline"):
+            related.append(f"今朝の注目理由: {morning[code]['headline']}")
+        if related:
+            lines = ranking_text.splitlines()
+            idx = next((i for i, l in enumerate(lines) if f"/quote/{code}.T" in l), None)
+            # ページの表は1セルずつ改行されるので、銘柄の行から数行分（株価・騰落率）をまとめて渡す
+            row = " ".join(lines[idx:idx + 6]) if idx is not None else ""
+            mover_info.append(f"<stock code=\"{code}\" name=\"{name}\">\nランキングの行: {row[:200]}\n" + "\n".join(related) + "\n</stock>")
+    print(f"値動きランキングの銘柄: {len(movers)}件 / うち理由の手がかりあり: {len(mover_info)}件")
 
     prompt = f"""今日は{today:%Y年%m月%d日}、明日（次の営業日）は{tomorrow:%m月%d日}です。夕方のLINE配信とX投稿の文章を作ります。
 下の情報だけを使い、書いていない材料やニュースは作らないでください。
 
 ## 1. movers_post（なぜ動いたか・X下書き）
-- 「値上がり・値下がりランキング」から今日大きく動いた銘柄を選び、「なぜ動いたのか」を解説する
-- 理由は、今日の適時開示やページ内のニュースで確認できるものだけ。理由がわからない銘柄は入れない
+- 「理由の手がかりがある値動き銘柄」から、今日大きく動いた銘柄を選び、「なぜ動いたのか」を解説する
+- 理由は、その銘柄に紐づいた適時開示・今朝の注目理由に書いてあることだけを使う
 - 「今日+15%🚀」のように騰落率を入れ、次の行に理由
 - 理由がわかる銘柄が1つもなければ空文字
 
@@ -1498,14 +1528,11 @@ def evening_with_claude(client, today):
 ### お手本（形・雰囲気の参考。内容は使わない）
 {X_EXAMPLE_NEWS}
 
-## 値上がり・値下がりランキング（今日）
-{chr(10).join(mover_blocks) or "（取得できず）"}
-
 ## 決算発表予定のページ
 {chr(10).join(earnings_blocks) or "（取得できず）"}
 
-## 今日の適時開示
-{disclosure_text}"""
+## 理由の手がかりがある値動き銘柄
+{chr(10).join(mover_info) or "（なし）"}"""
     response = client.messages.create(
         model=MODEL,
         max_tokens=4000,
@@ -1516,6 +1543,7 @@ def evening_with_claude(client, today):
     if response.stop_reason == "refusal":
         raise RuntimeError("拒否されました")
     data = json.loads(next(b.text for b in response.content if b.type == "text"))
+    print(f"夕方のAI結果: なぜ動いたか {'あり' if data['movers_post'] else 'なし'} / 決算予告 {len(data['earnings'])}件 / メモ: {data['note']}")
 
     earnings_text = ""
     if data["earnings"]:
