@@ -3,8 +3,8 @@ name: Daily Stock Bot
 on:
   workflow_dispatch: # 手動実行用ボタンを残す
   schedule:
-    # UTC 22:00 ＝ 日本時間(JST)の翌朝 07:00
-    - cron: '0 22 * * *'
+    # UTC 21:43 ＝ 日本時間(JST)の翌朝 06:43（ちょうど0分は混んで遅れやすいので避ける）
+    - cron: '43 21 * * *'
 
 permissions:
   contents: write # 配信履歴（history.json）を保存するため
