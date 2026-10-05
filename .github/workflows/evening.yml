@@ -26,6 +26,7 @@ jobs:
         env:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
           USER_ID: ${{ secrets.USER_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python app.py evening
 
       - name: Notify failure
