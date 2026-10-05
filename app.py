@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import re
+import sys
 import traceback
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
@@ -24,6 +25,7 @@ MAX_PICKS = 15
 BUBBLES_PER_CAROUSEL = 12  # LINEのカルーセルは1つにつき最大12枚
 
 HISTORY_FILE = "history.json"
+HISTORY_KEEP_DAYS = 60  # 成績集計用に60日分残す
 WEEKLY_LIMIT = 2  # 同じ銘柄は直近7日間で2回まで
 NOTIFIED_FLAG = "notified.flag"  # エラー通知済みの目印（ワークフロー側の二重通知防止）
 
@@ -32,7 +34,10 @@ CATEGORY_STYLE = {
     "懸念材料": {"color": "#E0352B", "label": "📉 懸念材料"},
     "決算": {"color": "#2D7FF9", "label": "📊 今日決算"},
     "優待": {"color": "#F5A623", "label": "🎁 今月の優待"},
+    "買い場候補": {"color": "#16A085", "label": "買い場候補👀"},
 }
+MAX_BUY_CANDIDATES = 5
+BUY_UNIVERSE_LIMIT = 40  # 買い場候補を探す銘柄数の上限（株価取得の時間を抑えるため）
 
 # AIが使えないとき（案A方式）のキーワード判定用
 GOOD_WORDS = ["上方修正", "増配", "自社株買い", "自己株式の取得", "株式分割", "優待新設", "優待拡充", "復配", "最高益", "黒字転換"]
@@ -133,7 +138,8 @@ def history_status(history, today):
     counts = {}
     prev_codes = []
     prev_date = ""
-    for date_str, codes in history.items():
+    for date_str, entries in history.items():
+        codes = [e["code"] if isinstance(e, dict) else e for e in entries]
         d = datetime.date.fromisoformat(date_str)
         if d >= today:
             continue  # 当日分（手動実行のやり直し）は数えない
@@ -146,9 +152,12 @@ def history_status(history, today):
     return blocked, set(prev_codes)
 
 
-def save_history(history, today, codes):
-    history[today.isoformat()] = codes
-    cutoff = (today - datetime.timedelta(days=14)).isoformat()
+def save_history(history, today, picks):
+    history[today.isoformat()] = [
+        {"code": p["code"], "name": p["name"], "category": p["category"], "price": p.get("price"), "buy": bool(p.get("buy_reasons"))}
+        for p in picks
+    ]
+    cutoff = (today - datetime.timedelta(days=HISTORY_KEEP_DAYS)).isoformat()
     history = {k: v for k, v in sorted(history.items()) if k >= cutoff}
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=1)
@@ -198,17 +207,18 @@ def pick_material_disclosures(tdnet_items):
 
 
 # ---------------------------------------------------------------
-# 3. みんかぶ・株探・Yahoo!ファイナンスのページ取得（スクレイピング）
+# 3. Yahoo!ファイナンス・日経のページ取得（スクレイピング）
 # ---------------------------------------------------------------
 HTTP_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36",
     "Accept-Language": "ja,en;q=0.8",
 }
 
-# 話題の銘柄を探すときに読むページ（みんかぶはGitHub Actionsから403になるため外した）
+# 話題の銘柄を探すときに読むページ
+# （みんかぶは403、株探は405でGitHub Actionsから取れないため、Yahoo!ファイナンスに寄せた）
 TOPIC_PAGES = [
-    "https://kabutan.jp/news/marketnews/",
-    "https://kabutan.jp/",
+    "https://finance.yahoo.co.jp/",
+    "https://finance.yahoo.co.jp/stocks/ranking/hot",
     "https://finance.yahoo.co.jp/stocks/ranking/up",
     "https://finance.yahoo.co.jp/stocks/ranking/down",
 ]
@@ -224,15 +234,15 @@ YUTAI_LIST_PAGES = [
 ]
 
 # サイト内のリンクから、決算予定・優待一覧のページを自動で探すための入口
+# （優待のある銘柄の優待ページから、優待ランキング・権利月別一覧へのリンクを探す）
 INDEX_PAGES = [
     "https://finance.yahoo.co.jp/",
-    "https://kabutan.jp/",
+    "https://finance.yahoo.co.jp/quote/2702.T/incentive",
 ]
 
 # 各銘柄の優待ページ（上から順に試す）
 YUTAI_STOCK_PAGES = [
     "https://finance.yahoo.co.jp/quote/{code}.T/incentive",
-    "https://kabutan.jp/stock/yutai?code={code}",
 ]
 
 
@@ -344,6 +354,7 @@ PICKS_SCHEMA = {
     "type": "object",
     "properties": {
         "market_comment": {"type": "string", "description": "今日の地合いのまとめ（80字程度）"},
+        "x_post": {"type": "string", "description": "X（旧Twitter）投稿用の下書き。130字以内"},
         "picks": {
             "type": "array",
             "items": {
@@ -360,7 +371,7 @@ PICKS_SCHEMA = {
             },
         },
     },
-    "required": ["market_comment", "picks"],
+    "required": ["market_comment", "x_post", "picks"],
     "additionalProperties": False,
 }
 
@@ -379,7 +390,9 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
     months = [today.month, today.month % 12 + 1]
 
     # 優待一覧（固定の候補＋サイト内で見つけた「優待」リンク）
-    yutai_urls = YUTAI_LIST_PAGES + links_matching(links, "優待")
+    yutai_urls = YUTAI_LIST_PAGES + [
+        u for u in links_matching(links, "優待") if "/news/" not in u and "/quote/" not in u
+    ]
     yutai_blocks = fetch_pages(yutai_urls, limit=2, max_chars=6000, require_word="優待")
     print(f"優待一覧ページ取得: {len(yutai_blocks)}件（候補{len(set(yutai_urls))}件）")
 
@@ -417,6 +430,11 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
 6. 合計{MIN_PICKS}〜{MAX_PICKS}件。10件以上を目標にする。根拠の弱い銘柄は入れない
 7. 証券コードはページに書いてあるものだけを使う。わからない銘柄は入れない
 8. market_comment には、地合いデータとニュースから今日の日本株の見通しを80字程度で書く
+9. x_post には、X（旧Twitter）にそのまま投稿できる文章を130字以内で書く
+   - 地合いを一言＋注目銘柄2〜3件（銘柄名とコード、理由を短く）
+   - 最後に「※投資判断はご自身で」と、ハッシュタグ #日本株 を付ける
+   - 「必ず上がる」などの断定や煽る表現は使わない
+   - 絵文字を使うときは、言葉の後に付ける（例: 「注目銘柄👀」「好材料📈」）。行頭には置かない
 
 ## 今日の地合いデータ（前営業日終値ベース）
 {market_text}
@@ -445,7 +463,15 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
     text = next(b.text for b in response.content if b.type == "text")
     data = json.loads(text)
     print("地合いコメント:", data["market_comment"])
-    return data["market_comment"], data["picks"]
+
+    # 4. AIが返したURLが、実際に読んだページ・開示の中にあるかを確認（なければリンクを出さない）
+    allowed_urls = set(re.findall(r"<(https?://[^>\s]+)>", "\n".join(topic_blocks + earnings_blocks + yutai_blocks)))
+    allowed_urls |= {d["url"] for d in disclosures if d.get("url")}
+    for pick in data["picks"]:
+        if pick.get("source_url") and pick["source_url"] not in allowed_urls:
+            print(f"根拠URLが取得ページに無いため除外 ({pick.get('code')}): {pick['source_url']}")
+            pick["source_url"] = ""
+    return data["market_comment"], data["picks"], data["x_post"], "\n".join(topic_blocks)
 
 
 def clean_picks(picks, blocked_codes):
@@ -476,7 +502,7 @@ def fallback_picks(disclosures):
 
 
 # ---------------------------------------------------------------
-# 6. 優待内容・権利確定月（Yahoo!ファイナンス→株探の優待ページから）
+# 6. 優待内容・権利確定月（Yahoo!ファイナンスの優待ページから）
 # ---------------------------------------------------------------
 YUTAI_SCHEMA = {
     "type": "object",
@@ -505,7 +531,7 @@ YUTAI_SCHEMA = {
 
 
 def add_yutai_info(client, picks):
-    """各銘柄の優待ページ（Yahoo!→株探の順）を取ってきて、AIで優待内容と権利確定月を抜き出す"""
+    """各銘柄のYahoo!ファイナンス優待ページを取ってきて、AIで優待内容と権利確定月を抜き出す"""
     page_blocks = []
     for p in picks:
         for template in YUTAI_STOCK_PAGES:
@@ -555,22 +581,67 @@ def add_yutai_info(client, picks):
 # ---------------------------------------------------------------
 # 7. 株価・前日比・利回り
 # ---------------------------------------------------------------
-def add_price_info(picks):
+_history_cache = {}
+
+
+def get_history(code):
+    """1年分の日足（キャッシュ付き）"""
+    if code not in _history_cache:
+        _history_cache[code] = yf.Ticker(f"{code}.T").history(period="1y").dropna(subset=["Close"])
+    return _history_cache[code]
+
+
+def technical_signals(hist, today):
+    """出来高急増・年初来高値/安値更新・25日線乖離のマーク"""
+    signals = []
+    closes = hist["Close"].dropna()
+    volumes = hist["Volume"].dropna()
+
+    if len(volumes) >= 21:
+        avg20 = float(volumes.iloc[-21:-1].mean())
+        if avg20 > 0 and volumes.iloc[-1] >= avg20 * 2:
+            signals.append(f"🔥 出来高急増（20日平均の{volumes.iloc[-1] / avg20:.1f}倍）")
+
+    this_year = hist[hist.index.year == hist.index[-1].year]
+    if len(this_year) >= 2:
+        if float(this_year["High"].iloc[-1]) >= float(this_year["High"].iloc[:-1].max()):
+            signals.append("📈 年初来高値更新")
+        elif float(this_year["Low"].iloc[-1]) <= float(this_year["Low"].iloc[:-1].min()):
+            signals.append("📉 年初来安値更新")
+
+    if len(closes) >= 25:
+        ma25 = float(closes.iloc[-25:].mean())
+        gap = (float(closes.iloc[-1]) - ma25) / ma25 * 100
+        note = "（過熱気味）" if gap >= 10 else "（売られすぎ）" if gap <= -10 else ""
+        signals.append(f"25日線から{gap:+.1f}%{note}")
+    return signals
+
+
+def add_price_info(picks, today=None):
     valid = []
     for p in picks:
         p["price_fmt"] = "取得できず"
         p["change_fmt"] = ""
         p["change"] = None
         p["yield_fmt"] = "取得できず"
+        p["signals"] = []
         try:
             ticker = yf.Ticker(f"{p['code']}.T")
-            price, change = fetch_close_change(f"{p['code']}.T")
-            if price is None:
-                price = ticker.fast_info.last_price
+            hist = get_history(p["code"])
+            price, change = None, None
+            if len(hist) >= 2:
+                price = float(hist["Close"].iloc[-1])
+                prev = float(hist["Close"].iloc[-2])
+                change = (price - prev) / prev * 100
             if not price:
                 print(f"株価なしのため除外 ({p['code']} {p['name']})")
                 continue
             valid.append(p)
+            p["price"] = price
+            try:
+                p["signals"] = technical_signals(hist, today)
+            except Exception as e:
+                print(f"テクニカル計算失敗 ({p['code']}):", e)
             p["price_fmt"] = f"約{price * 100 / 10000:.1f}万円 ({price:,.0f}円)"
             if change is not None:
                 p["change"] = change
@@ -641,6 +712,8 @@ def build_market_bubble(market_rows, comment, today):
 def build_bubble(stock, today, market_closed):
     style = CATEGORY_STYLE.get(stock["category"], CATEGORY_STYLE["優待"])
     label = style["label"] + ("　🔁 継続" if stock.get("continued") else "")
+    if stock.get("buy_reasons") and stock["category"] != "買い場候補":
+        label += "　買い場候補👀"
 
     footer_buttons = [
         {
@@ -676,6 +749,14 @@ def build_bubble(stock, today, market_closed):
         {"type": "text", "text": f"優待: {stock['yutai'] or '不明'}", "size": "xs", "color": "#666666", "wrap": True},
         {"type": "text", "text": f"権利確定月: {stock['kenri_month'] or '不明'}", "size": "xs", "color": "#666666"},
     ]
+    if stock.get("buy_reasons"):
+        details.append({"type": "text", "text": "買い場候補の理由👀", "size": "xs", "color": "#16A085", "weight": "bold", "margin": "md"})
+        for r in stock["buy_reasons"]:
+            details.append({"type": "text", "text": f"・{r}", "size": "xs", "color": "#16A085", "wrap": True})
+        if stock.get("buy_comment"):
+            details.append({"type": "text", "text": stock["buy_comment"], "size": "xs", "color": "#333333", "wrap": True})
+    for signal in stock.get("signals", []):
+        details.append({"type": "text", "text": signal, "size": "xs", "color": "#8E44AD", "wrap": True})
     countdown = kenri_countdown(today, stock.get("kenri_months", []), stock.get("kenri_day", 0))
     if countdown:
         details.append({"type": "text", "text": countdown, "size": "xs", "color": "#F5A623", "weight": "bold", "wrap": True})
@@ -728,7 +809,7 @@ def push_line(messages):
         raise RuntimeError(f"LINE送信失敗: {res.status_code}")
 
 
-def send_line_flex_message(stocks, market_bubble, today, market_closed):
+def send_line_flex_message(stocks, market_bubble, today, market_closed, x_post="", x_post_buy=""):
     weekday_str = "月火水木金土日"[today.weekday()]
 
     bubbles = ([market_bubble] if market_bubble else []) + [build_bubble(s, today, market_closed) for s in stocks]
@@ -744,6 +825,10 @@ def send_line_flex_message(stocks, market_bubble, today, market_closed):
                 "contents": {"type": "carousel", "contents": chunk},
             }
         )
+    if x_post:
+        messages.append({"type": "text", "text": f"📝 X投稿用の下書き（{len(x_post)}字）\n\n{x_post}"})
+    if x_post_buy:
+        messages.append({"type": "text", "text": f"📝 X投稿用の下書き・買い場候補版（{len(x_post_buy)}字）\n\n{x_post_buy}"})
     push_line(messages)
 
 
@@ -774,10 +859,12 @@ def run():
 
     picks = []
     market_comment = ""
+    x_post = ""
+    topic_text = ""
     client = None
     try:
         client = anthropic.Anthropic()
-        market_comment, raw_picks = pick_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows)
+        market_comment, raw_picks, x_post, topic_text = pick_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows)
         picks = clean_picks(raw_picks, blocked_codes)
     except Exception as e:
         print("AIでの選定に失敗。キーワード判定に切り替えます:", e)
@@ -792,23 +879,344 @@ def run():
         print_cost(usd_jpy)
         raise RuntimeError("注目株を1件も選べませんでした")
 
+    buy_cards = []
+    try:
+        buy_cards = find_buy_candidates(picks, disclosures, topic_text, blocked_codes)
+    except Exception as e:
+        print("買い場候補の探索に失敗:", e)
+
+    picks = picks + buy_cards
     if client is not None:
         picks = add_yutai_info(client, picks)
-    picks = add_price_info(picks)
+    picks = add_price_info(picks, today)
     if not picks:
         raise RuntimeError("株価を取得できた銘柄が1件もありませんでした")
+
+    # 優待の先回り（権利確定月の1〜2ヶ月前）も買い場の理由に加える
+    for p in picks:
+        reason = yutai_advance_reason(p, today)
+        if reason:
+            p["buy_reasons"] = p.get("buy_reasons", []) + [reason]
+    # 買い場候補は当てはまった条件が多い順に最大5件。外れたものは印を消し、候補だけのカードは出さない
+    ranked = sorted([p for p in picks if p.get("buy_reasons")], key=lambda p: len(p["buy_reasons"]), reverse=True)
+    buy_list = ranked[:MAX_BUY_CANDIDATES]
+    for p in ranked[MAX_BUY_CANDIDATES:]:
+        p.pop("buy_reasons")
+    picks = [p for p in picks if p["category"] != "買い場候補" or p.get("buy_reasons")]
+    print(f"買い場候補: {[(p['code'], p['buy_reasons']) for p in buy_list]}")
+    x_post_buy = ""
+    if buy_list and client is not None:
+        x_post_buy = add_buy_reasons(client, buy_list, disclosures, topic_text)
     for p in picks:
         p["continued"] = p["code"] in prev_codes
 
     market_bubble = build_market_bubble(market_rows, market_comment, today) if (market_rows or market_comment) else None
-    send_line_flex_message(picks, market_bubble, today, market_closed)
-    save_history(history, today, [p["code"] for p in picks])
+    send_line_flex_message(picks, market_bubble, today, market_closed, x_post, x_post_buy)
+    save_history(history, today, picks)
     print_cost(usd_jpy)
 
 
-def main():
+# ---------------------------------------------------------------
+# 買い場候補（ルールで候補を絞り、AIが注目理由を添える）
+# ---------------------------------------------------------------
+def build_universe(picks, disclosures, topic_text):
+    """候補を探す銘柄：朝の選定銘柄＋好材料の開示＋ランキング等に載っていた銘柄"""
+    universe = {}
+    for p in picks:
+        universe.setdefault(p["code"], p["name"])
+    for d in disclosures:
+        if d["category"] == "好材料":
+            universe.setdefault(d["code"], d["name"])
+    for name, code in re.findall(r"([^\n<>]{1,40}?) <https://finance\.yahoo\.co\.jp/quote/(\d{3}[0-9A-Z])\.T>", topic_text):
+        universe.setdefault(code, name.strip())
+    return dict(list(universe.items())[:BUY_UNIVERSE_LIMIT])
+
+
+def buy_rule_reasons(hist, has_good_news):
+    """買い場候補のルール。当てはまった理由のリストを返す"""
+    reasons = []
+    closes = hist["Close"]
+    if len(closes) < 76:
+        return reasons
+    last, prev = float(closes.iloc[-1]), float(closes.iloc[-2])
+    change = (last - prev) / prev * 100
+
+    ma25 = float(closes.iloc[-25:].mean())
+    ma75 = float(closes.iloc[-75:].mean())
+    ma75_before = float(closes.iloc[-80:-5].mean())
+    gap25 = (last - ma25) / ma25 * 100
+
+    # 材料の織り込み前：適時開示で好材料が出たのに、株価はまだ大きく反応しておらず、過熱もしていない
+    if has_good_news and change < 3 and gap25 < 5:
+        reasons.append(f"好材料の開示が出たが株価の反応はまだ小さい（前日比{change:+.1f}%）")
+
+    # 押し目：75日線が上向きの上昇トレンド中に、25日線から-5〜-15%まで下げている（年初来安値は除く）
+    this_year = hist[hist.index.year == hist.index[-1].year]
+    at_low = len(this_year) >= 2 and float(this_year["Low"].iloc[-1]) <= float(this_year["Low"].iloc[:-1].min())
+    if ma75 > ma75_before and last > ma75 * 0.9 and -15 <= gap25 <= -5 and not at_low:
+        reasons.append(f"上昇トレンド中の押し目（25日線から{gap25:+.1f}%）")
+
+    # 出来高先行：株価はほぼ動いていないのに、出来高だけ急に増えている
+    volumes = hist["Volume"]
+    avg20 = float(volumes.iloc[-21:-1].mean())
+    if avg20 > 0 and float(volumes.iloc[-1]) >= avg20 * 2 and abs(change) < 2:
+        reasons.append(f"株価は横ばいで出来高が急増（20日平均の{float(volumes.iloc[-1]) / avg20:.1f}倍）")
+    return reasons
+
+
+def yutai_advance_reason(stock, today):
+    """優待の先回り：権利確定月が1〜2ヶ月先"""
+    for ahead in (1, 2):
+        month = (today.month + ahead - 1) % 12 + 1
+        if month in stock.get("kenri_months", []) and stock.get("yutai") not in ("なし", "不明", "", None):
+            return f"優待の権利確定月（{month}月）の{ahead}ヶ月前で、先回りの時期"
+    return ""
+
+
+def find_buy_candidates(picks, disclosures, topic_text, blocked_codes):
+    """ルールで買い場候補を探す。朝の選定銘柄は印を付け、それ以外は新しいカードにする"""
+    # 「材料の織り込み前」は、AIの判断ではなく適時開示（公式の発表）で好材料が出た銘柄だけを対象にする
+    good_codes = {d["code"] for d in disclosures if d["category"] == "好材料"}
+    pick_by_code = {p["code"]: p for p in picks}
+    universe = build_universe(picks, disclosures, topic_text)
+    print(f"買い場候補の探索対象: {len(universe)}銘柄")
+
+    found = []
+    for code, name in universe.items():
+        if code in blocked_codes and code not in pick_by_code:
+            continue
+        try:
+            reasons = buy_rule_reasons(get_history(code), code in good_codes)
+        except Exception as e:
+            print(f"買い場判定の株価取得失敗 ({code}):", e)
+            continue
+        if reasons:
+            found.append((code, name, reasons))
+    found.sort(key=lambda x: len(x[2]), reverse=True)
+
+    new_cards = []
+    for code, name, reasons in found:
+        if code in pick_by_code:
+            pick_by_code[code]["buy_reasons"] = reasons
+        elif len(new_cards) < MAX_BUY_CANDIDATES:
+            new_cards.append(
+                {"code": code, "name": name, "category": "買い場候補", "headline": "", "source_url": "", "buy_reasons": reasons}
+            )
+    return new_cards
+
+
+BUY_REASON_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "code": {"type": "string"},
+                    "reason": {"type": "string", "description": "注目理由（60字以内）"},
+                },
+                "required": ["code", "reason"],
+                "additionalProperties": False,
+            },
+        },
+        "x_post": {"type": "string", "description": "買い場候補を紹介するX投稿の下書き（130字以内）"},
+    },
+    "required": ["items", "x_post"],
+    "additionalProperties": False,
+}
+
+
+def add_buy_reasons(client, candidates, disclosures, topic_text):
+    """買い場候補ごとに、関連ニュースからAIが注目理由を1文で書く"""
+    blocks = []
+    for c in candidates:
+        lines = [l for l in topic_text.splitlines() if c["code"] in l or (c["name"] and c["name"] in l)][:5]
+        lines += [f"適時開示: {d['title']}" for d in disclosures if d["code"] == c["code"]][:3]
+        if c.get("headline"):
+            lines.append(f"朝の選定理由: {c['headline']}")
+        blocks.append(
+            f"<stock code=\"{c['code']}\" name=\"{c['name']}\">\n"
+            f"ルールで当てはまった条件: {' / '.join(c['buy_reasons'])}\n"
+            f"関連情報:\n" + ("\n".join(lines) or "（なし）") + "\n</stock>"
+        )
+    prompt = f"""次の銘柄は、株価の動きなどのルールで機械的に選んだ「買い場候補」です。
+銘柄ごとに、下の情報だけを使って「注目理由」を60字以内で書いてください。
+- ルールの条件と関連情報を組み合わせて、なぜ今注目なのかを書く
+- 関連情報がない銘柄は、ルールの条件だけで書く。書いていない材料やニュースを作らない
+- 「必ず上がる」「買うべき」などの断定はしない
+
+あわせて、x_post にX（旧Twitter）投稿用の下書きを130字以内で書いてください。
+- 書き出しは「今日の買い場候補👀」
+- 2〜3銘柄を、銘柄名とコード、注目理由を短く
+- 絵文字を使うときは言葉の後に付ける（行頭に置かない）
+- 最後に「※投資判断はご自身で」と #日本株 を付ける
+
+{chr(10).join(blocks)}"""
     try:
-        run()
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=4000,
+            output_config={"format": {"type": "json_schema", "schema": BUY_REASON_SCHEMA}},
+            messages=[{"role": "user", "content": prompt}],
+        )
+        track_usage(response)
+        if response.stop_reason == "refusal":
+            raise RuntimeError("拒否されました")
+        data = json.loads(next(b.text for b in response.content if b.type == "text"))
+    except Exception as e:
+        print("買い場候補の理由づけに失敗:", e)
+        return ""
+    reasons = {item["code"].upper(): item["reason"] for item in data["items"]}
+    for c in candidates:
+        c["buy_comment"] = reasons.get(c["code"], "")
+    return data["x_post"]
+
+
+# ---------------------------------------------------------------
+# 夕方の振り返り・週間成績（AIは使わない）
+# ---------------------------------------------------------------
+_close_cache = {}
+
+
+def recent_closes(code):
+    if code not in _close_cache:
+        try:
+            _close_cache[code] = yf.Ticker(f"{code}.T").history(period="3mo")["Close"].dropna()
+        except Exception as e:
+            print(f"株価取得失敗 ({code}):", e)
+            _close_cache[code] = None
+    return _close_cache[code]
+
+
+def performance(entries):
+    """配信時の株価（前営業日終値）から、直近終値までの騰落率を計算"""
+    rows = []
+    for e in entries:
+        if not isinstance(e, dict) or not e.get("price"):
+            continue
+        closes = recent_closes(e["code"])
+        if closes is None or closes.empty:
+            continue
+        last = float(closes.iloc[-1])
+        rows.append({**e, "last": last, "last_date": closes.index[-1].date(), "change": (last - e["price"]) / e["price"] * 100})
+    return sorted(rows, key=lambda r: r["change"], reverse=True)
+
+
+def format_row(r):
+    mark = "📈" if r["change"] >= 0 else "📉"
+    buy = " 買い場候補👀" if r.get("buy") and r["category"] != "買い場候補" else ""
+    return f"{mark} {r['change']:+.1f}%  {r['name']}({r['code']}) [{r['category']}]{buy}"
+
+
+def summary_line(rows):
+    avg = sum(r["change"] for r in rows) / len(rows)
+    ups = sum(1 for r in rows if r["change"] >= 0)
+    return f"平均 {avg:+.1f}%（上昇 {ups} / 下落 {len(rows) - ups}）"
+
+
+def daily_review_text(history, today):
+    rows = performance(history.get(today.isoformat(), []))
+    if not rows:
+        return ""
+    lines = [f"🌇 {today:%m/%d} 朝の注目株の結果", summary_line(rows)]
+    if any(r["last_date"] != today for r in rows):
+        lines.append("※一部、今日の終値がまだ反映されていません")
+    lines.append("")
+    lines += [format_row(r) for r in rows]
+    return "\n".join(lines)
+
+
+def weekly_review_text(history, today):
+    entries = []
+    for date_str, day_entries in history.items():
+        d = datetime.date.fromisoformat(date_str)
+        if 0 <= (today - d).days < 7:
+            entries += [{**e, "date": d} for e in day_entries if isinstance(e, dict)]
+    rows = performance(entries)
+    if not rows:
+        return ""
+    lines = [f"📊 今週の成績（{today - datetime.timedelta(days=6):%m/%d}〜{today:%m/%d}、配信日から今日まで）", summary_line(rows), ""]
+    for category in CATEGORY_STYLE:
+        cat_rows = [r for r in rows if r["category"] == category]
+        if cat_rows:
+            lines.append(f"・{category}: {summary_line(cat_rows)}")
+    lines += ["", "🏆 ベスト3"] + [format_row(r) for r in rows[:3]]
+    lines += ["", "💧 ワースト3"] + [format_row(r) for r in rows[-3:][::-1]]
+    return "\n".join(lines)
+
+
+def change_after(entry, delivered, trading_days):
+    """配信日を1日目として、N営業日目の終値までの騰落率。まだその日が来ていなければ None"""
+    closes = recent_closes(entry["code"])
+    if closes is None or not entry.get("price"):
+        return None
+    after = closes[closes.index.date >= delivered]
+    if len(after) < trading_days:
+        return None
+    return (float(after.iloc[trading_days - 1]) - entry["price"]) / entry["price"] * 100
+
+
+def buy_performance_text(history, today):
+    """買い場候補の成績：1週間後（5営業日）・1ヶ月後（20営業日）"""
+    lines = ["👀 買い場候補の成績（配信時の株価から）"]
+    has_data = False
+    for label, days in (("1週間後", 5), ("1ヶ月後", 20)):
+        results = []
+        for date_str, entries in history.items():
+            delivered = datetime.date.fromisoformat(date_str)
+            for e in entries:
+                if isinstance(e, dict) and e.get("buy"):
+                    c = change_after(e, delivered, days)
+                    if c is not None:
+                        results.append(c)
+        if results:
+            has_data = True
+            wins = sum(1 for c in results if c > 0)
+            lines.append(
+                f"・{label}: 平均 {sum(results) / len(results):+.1f}%（{len(results)}件、上昇 {wins}件＝{wins / len(results) * 100:.0f}%）"
+            )
+        else:
+            lines.append(f"・{label}: まだデータなし")
+    return "\n".join(lines) if has_data or any(
+        isinstance(e, dict) and e.get("buy") for entries in history.values() for e in entries
+    ) else ""
+
+
+def is_last_business_day_of_week(today):
+    d = today + datetime.timedelta(days=1)
+    while is_market_holiday(d):
+        d += datetime.timedelta(days=1)
+    return d.isocalendar()[1] != today.isocalendar()[1]
+
+
+def run_evening():
+    today = now_jst().date()
+    if is_market_holiday(today):
+        print("今日は休場日のため振り返りなし")
+        return
+    history = load_history()
+    messages = []
+    daily = daily_review_text(history, today)
+    if daily:
+        messages.append({"type": "text", "text": daily})
+    if is_last_business_day_of_week(today):
+        weekly = weekly_review_text(history, today)
+        buy_text = buy_performance_text(history, today)
+        if buy_text:
+            weekly = (weekly + "\n\n" + buy_text) if weekly else buy_text
+        if weekly:
+            messages.append({"type": "text", "text": weekly})
+    if not messages:
+        print("振り返る配信履歴がありません")
+        return
+    push_line(messages)
+
+
+def main():
+    mode = sys.argv[1] if len(sys.argv) > 1 else "morning"
+    try:
+        run_evening() if mode == "evening" else run()
     except Exception as e:
         traceback.print_exc()
         try:
