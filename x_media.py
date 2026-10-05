@@ -33,7 +33,7 @@ COLORS = {
     "accent": "#00A8E8",   # チャート・メインアクセント
     "gold": "#E6A100",     # 還元・利回り
     "green": "#2E7D32",    # 成長・上昇
-    "red": "#D64545",      # 下落
+    "red": "#D32F2F",      # 下落
 }
 CATEGORY_COLORS = {
     "好材料": COLORS["green"],
@@ -152,98 +152,125 @@ def _pill(ax, x, y, text, size, fg, bg, pad_x=14, h=None, align="left", bold=Tru
 
 
 def _header(fig, ax, title, subtitle, date_text, accent):
-    """上部：小ラベル・大見出し・日付・クジラアイコン"""
-    _box(ax, 0, 0, W, 10, accent, r=0)  # 一番上の細い帯
-    ax.text(60, 92, title, fontsize=50, color=COLORS["ink"], weight="bold", va="center")
-    ax.add_patch(plt.Rectangle((60, 135), 120, 8, color=accent, zorder=2))
-    ax.text(60, 180, subtitle, fontsize=22, color=COLORS["sub"], va="center")
-    right = W - 60
+    """上部：ネイビーの帯に白抜きの大見出し・日付・クジラアイコン"""
+    _box(ax, 0, 0, W, 200, COLORS["ink"], r=0)
+    ax.add_patch(plt.Rectangle((0, 200), W, 10, color=accent, zorder=2))  # 帯の下のアクセントライン
+    ax.text(50, 82, title, fontsize=52, color="white", weight="bold", va="center")
+    ax.text(52, 152, subtitle, fontsize=22, color="#C9D6E2", weight="bold", va="center")
+    right = W - 40
     if os.path.exists(WHALE_ICON):
         try:
             icon = plt.imread(WHALE_ICON)
-            fig.add_axes([(W - 60 - 110) / W, 1 - (40 + 110) / H, 110 / W, 110 / H]).imshow(icon)
-            fig.axes[-1].set_axis_off()
-            right = W - 60 - 125
+            iax = fig.add_axes([(W - 40 - 150) / W, 1 - (25 + 150) / H, 150 / W, 150 / H])
+            iax.imshow(icon)
+            iax.set_axis_off()
+            right = W - 40 - 160
         except Exception as e:
             print("クジラアイコンの読み込みに失敗:", e)
-    _pill(ax, right, 160, date_text, 16, COLORS["ink"], COLORS["panel"], align="right", bold=False)
+    if date_text:
+        _pill(ax, right, 136, date_text, 16, "white", accent, align="right")
 
 
-def _sparkline(fig, closes, x, y, w, h):
+def _footer(ax, note):
+    _box(ax, 0, H - 52, W, 52, COLORS["ink"], r=0)
+    ax.text(W - 40, H - 26, note, fontsize=14, color="#C9D6E2", ha="right", va="center")
+
+
+def _sparkline(fig, closes, x, y, w, h, color):
     ax = fig.add_axes([x / W, 1 - (y + h) / H, w / W, h / H])
     vals = closes.values
-    ax.plot(range(len(vals)), vals, color=COLORS["accent"], linewidth=2.6, solid_capstyle="round")
-    ax.fill_between(range(len(vals)), vals, float(vals.min()), color=COLORS["accent"], alpha=0.10)
-    ax.scatter([len(vals) - 1], [vals[-1]], s=40, color=COLORS["accent"], zorder=3)
+    ax.plot(range(len(vals)), vals, color=color, linewidth=3.2, solid_capstyle="round")
+    ax.fill_between(range(len(vals)), vals, float(vals.min()), color=color, alpha=0.15)
+    ax.scatter([len(vals) - 1], [vals[-1]], s=70, color=color, edgecolor="white", linewidth=2, zorder=3)
     ax.set_xlim(0, len(vals) - 1)
     ax.set_axis_off()
+
+
+def _tint(hex_color, ratio):
+    """色を白に寄せた薄い色（カードの地色用）"""
+    c = hex_color.lstrip("#")
+    r, g, b = (int(c[i : i + 2], 16) for i in (0, 2, 4))
+    return "#{:02X}{:02X}{:02X}".format(*(int(v + (255 - v) * ratio) for v in (r, g, b)))
 
 
 # ---------------------------------------------------------------
 # 銘柄紹介カード
 # ---------------------------------------------------------------
 def render_stock_card(path, title, subtitle, stocks, accent, get_history, date_text=""):
-    """3銘柄までの紹介画像（銘柄名・カテゴリ・前日比・理由・指標・3ヶ月チャート）"""
+    """3銘柄までの紹介画像。銘柄ごとに色付きのタイトルバー＋株価・利回り・理由・3ヶ月チャート"""
     fig, ax = _canvas()
     _header(fig, ax, title, subtitle, date_text, accent)
 
-    top, gap, panel_h = 230, 26, 340
+    top, gap, panel_h = 236, 18, 340
+    x, w, bar_h = 36, W - 72, 66
     for i, s in enumerate(stocks[:3]):
         y = top + i * (panel_h + gap)
-        x, w = 50, W - 100
         color = CATEGORY_COLORS.get(s.get("category"), accent)
-        _box(ax, x, y, w, panel_h, COLORS["bg"], COLORS["line"], r=22, lw=2)
-        ax.add_patch(plt.Rectangle((x, y + 24), 8, panel_h - 48, color=color, zorder=2))
 
-        # 1行目：番号・銘柄名・コード／右に前日比
-        ax.add_patch(plt.Circle((x + 52, y + 50), 22, color=color, zorder=3))
-        ax.text(x + 52, y + 50, str(i + 1), fontsize=20, color="white", ha="center", va="center", weight="bold", zorder=4)
+        # カード本体と、色ベタのタイトルバー
+        _box(ax, x, y, w, panel_h, "white", color, r=16, lw=2.5)
+        _box(ax, x, y, w, bar_h + 16, color, r=16, z=2)
+        ax.add_patch(plt.Rectangle((x + 2, y + bar_h), w - 4, 16, color="white", zorder=2))
+
+        # タイトルバー：番号・銘柄名（コード）／右にカテゴリと前日比
+        ax.add_patch(plt.Circle((x + 40, y + bar_h / 2), 21, color="white", zorder=3))
+        ax.text(x + 40, y + bar_h / 2, str(i + 1), fontsize=20, color=color, ha="center", va="center", weight="bold", zorder=4)
         change = s.get("change")
-        change_text = f"前日比 {change:+.1f}%" if change is not None else ""
-        change_w = text_px(change_text, 18) + 28 if change_text else 0
-        name_w = w - 100 - change_w - 40
-        name = s.get("name", "")
-        name_size = fit_size(name, name_w - text_px(f"（{s['code']}）", 18), 30, 20)
-        ax.text(x + 90, y + 50, name, fontsize=name_size, color=COLORS["ink"], weight="bold", va="center")
-        ax.text(x + 90 + text_px(name, name_size) + 6, y + 52, f"（{s['code']}）", fontsize=18, color=COLORS["sub"], va="center")
-        if change_text:
-            bg = "#E8F5E9" if change >= 0 else "#FDECEC"
-            _pill(ax, x + w - 24, y + 30, change_text, 18, _change_color(change), bg, align="right")
-
-        # 2行目：カテゴリのラベル
+        change_text = f"{change:+.1f}%" if change is not None else ""
         cat = s.get("category", "")
+        right_w = (text_px(change_text, 22) + 32 if change_text else 0) + (text_px(cat, 15) + 38 if cat else 0)
+        name, code_text = s.get("name", ""), f"（{s['code']}）"
+        name_size = fit_size(name, w - 90 - right_w - text_px(code_text, 17) - 30, 28, 18)
+        ax.text(x + 76, y + bar_h / 2, name, fontsize=name_size, color="white", weight="bold", va="center", zorder=4)
+        ax.text(x + 76 + text_px(name, name_size) + 4, y + bar_h / 2 + 2, code_text, fontsize=17, color="white", va="center", zorder=4)
+        rx = x + w - 18
+        if change_text:
+            rx -= _pill(ax, rx, y + 13, change_text, 22, _change_color(change), "white", align="right") + 10
         if cat:
-            _pill(ax, x + 90, y + 88, cat, 14, "white", color)
+            _pill(ax, rx, y + 18, cat, 15, "white", COLORS["ink"], align="right")
 
-        # 理由（左側）とチャート（右側）
+        body_y = y + bar_h + 16
+        # 左：株価と利回りの数字ボックス
+        bx, bw = x + 20, 230
+        _box(ax, bx, body_y, bw, 108, _tint(color, 0.88), r=12)
+        ax.text(bx + 16, body_y + 26, "株価（前営業日終値）", fontsize=13, color=COLORS["sub"], weight="bold", va="center")
+        if s.get("price"):
+            ax.text(bx + 16, body_y + 72, f"{s['price']:,.0f}", fontsize=36, color=COLORS["ink"], weight="bold", va="center")
+            ax.text(bx + 20 + text_px(f"{s['price']:,.0f}", 36), body_y + 80, "円", fontsize=18, color=COLORS["ink"], weight="bold", va="center")
+
+        yield_fmt = s.get("yield_fmt") or ""
+        show_yield = yield_fmt and not any(k in yield_fmt for k in ("取得できず", "なし", "不明"))
+        _box(ax, bx, body_y + 120, bw, 108, "#FFF4D6" if show_yield else _tint(COLORS["green"], 0.88), r=12)
+        if show_yield:
+            total = yield_fmt.split("＝")[-1]
+            ax.text(bx + 16, body_y + 146, "利回り" + ("（配当＋優待）" if "＝" in yield_fmt else "（配当）"), fontsize=13, color=COLORS["sub"], weight="bold", va="center")
+            ax.text(bx + 16, body_y + 192, total.replace("配当", ""), fontsize=34, color=COLORS["gold"], weight="bold", va="center")
+        else:
+            sig = (s.get("signals") or ["注目材料あり"])[0]
+            sig = re.sub(r"^[^\w（]+", "", sig)
+            ax.text(bx + 16, body_y + 146, "テクニカル", fontsize=13, color=COLORS["sub"], weight="bold", va="center")
+            for j, line in enumerate(wrap_ja(sig, bw - 30, 17, 2)):
+                ax.text(bx + 16, body_y + 180 + j * 28, line, fontsize=17, color=COLORS["green"], weight="bold", va="center")
+
+        # 中央：理由（太字）とテクニカルの一言
+        tx, tw = x + 272, 360
         reason = s.get("buy_comment") or s.get("headline") or ""
-        text_w = 520
-        for j, line in enumerate(wrap_ja(reason, text_w, 21, 3)):
-            ax.text(x + 40, y + 160 + j * 40, line, fontsize=21, color=COLORS["ink"], va="center")
+        lines = wrap_ja(reason, tw, 20, 4)
+        for j, line in enumerate(lines):
+            ax.text(tx, body_y + 24 + j * 36, line, fontsize=20, color=COLORS["ink"], weight="bold", va="center")
+        signals = [re.sub(r"^[^\w（]+", "", g).split("（")[0] for g in s.get("signals", [])]
+        if show_yield and signals:
+            _pill(ax, tx, body_y + 188, f"● {signals[0]}", 15, COLORS["green"], _tint(COLORS["green"], 0.85))
 
+        # 右：3ヶ月チャート
         try:
             closes = get_history(s["code"])["Close"].iloc[-60:]
-            _sparkline(fig, closes, x + w - 360, y + 120, 330, 150)
-            ax.text(x + w - 30, y + 288, "3ヶ月チャート", fontsize=13, color=COLORS["sub"], ha="right", va="center")
+            _sparkline(fig, closes, x + w - 330, body_y + 10, 305, 180, accent)
+            ax.text(x + w - 24, body_y + 214, "3ヶ月チャート", fontsize=13, color=COLORS["sub"], weight="bold", ha="right", va="center")
         except Exception as e:
             print(f"チャート描画失敗 ({s['code']}):", e)
 
-        # 下の段：指標のチップ（株価・利回り・テクニカル）
-        chips = []
-        if s.get("price"):
-            chips.append((f"株価 {s['price']:,.0f}円", COLORS["ink"], COLORS["panel"]))
-        if s.get("yield_fmt") and not any(w in s["yield_fmt"] for w in ("取得できず", "なし", "不明")):
-            chips.append((s["yield_fmt"].replace("＝", " = "), COLORS["gold"], "#FFF6E0"))
-        for sig in s.get("signals", [])[:1]:
-            sig = re.sub(r"^[^\w（]+", "", sig).split("（")[0]
-            chips.append((sig, COLORS["green"], "#E8F5E9"))
-        cx = x + 40
-        for text, fg, bg in chips:
-            size = 15
-            if cx + text_px(text, size) + 28 > x + w - 380:
-                break
-            cx += _pill(ax, cx, y + panel_h - 62, text, size, fg, bg, bold=False) + 10
-
+    _footer(ax, "※株価は前営業日終値ベース")
     fig.savefig(path, facecolor=COLORS["bg"])
     plt.close(fig)
     return path
@@ -261,34 +288,40 @@ def render_performance_chart(path, rows, title, date_text=""):
     fig, ax = _canvas()
     _header(fig, ax, title, "配信時の株価から5営業日後までの騰落率", date_text, COLORS["accent"])
 
-    # サマリー（平均・上昇した数）
+    # サマリー（色ベタの見出し＋大きな数字）
     for k, (label, value, color) in enumerate(
-        [("平均", f"{avg:+.1f}%", _change_color(avg)), ("上昇した銘柄", f"{ups} / {len(rows)}", COLORS["ink"])]
+        [("平均騰落率", f"{avg:+.1f}%", _change_color(avg)), ("上昇した銘柄", f"{ups} / {len(rows)}", COLORS["accent"])]
     ):
-        bx = 50 + k * 500
-        _box(ax, bx, 230, 480, 130, COLORS["panel"], COLORS["line"], r=20)
-        ax.text(bx + 30, 268, label, fontsize=18, color=COLORS["sub"], va="center")
-        ax.text(bx + 30, 320, value, fontsize=40, color=color, weight="bold", va="center")
+        bx, bw = 36 + k * 512, 496
+        _box(ax, bx, 240, bw, 160, "white", color, r=16, lw=2.5)
+        _box(ax, bx, 240, bw, 60, color, r=16, z=2)
+        ax.add_patch(plt.Rectangle((bx + 2, 300), bw - 4, 16, color="white", zorder=2))
+        ax.text(bx + 24, 268, label, fontsize=20, color="white", weight="bold", va="center", zorder=3)
+        ax.text(bx + 24, 350, value, fontsize=46, color=color, weight="bold", va="center")
 
-    # 横棒グラフ
-    chart = fig.add_axes([0.36, 0.06, 0.58, 0.62])
+    # 横棒グラフのセクション見出し
+    _box(ax, 36, 428, W - 72, 56, COLORS["ink"], r=12)
+    ax.text(60, 456, "銘柄別の成績", fontsize=20, color="white", weight="bold", va="center")
+
+    chart = fig.add_axes([0.37, 0.07, 0.55, 0.53])
     labels = [f"{r['name'][:10]}（{r['code']}）" for r in rows]
     values = [r["change"] for r in rows]
-    chart.barh(range(len(rows)), values, color=[_change_color(v) for v in values], height=0.55)
-    chart.axvline(0, color=COLORS["ink"], linewidth=1.2)
+    chart.barh(range(len(rows)), values, color=[_change_color(v) for v in values], height=0.6)
+    chart.axvline(0, color=COLORS["ink"], linewidth=1.5)
     chart.set_yticks(range(len(rows)))
-    chart.set_yticklabels(labels, fontsize=17, color=COLORS["ink"])
+    chart.set_yticklabels(labels, fontsize=17, color=COLORS["ink"], fontweight="bold")
     chart.tick_params(axis="y", length=0)
     chart.tick_params(axis="x", labelsize=13, colors=COLORS["sub"])
     for side in ("top", "right", "left"):
         chart.spines[side].set_visible(False)
     chart.spines["bottom"].set_color(COLORS["line"])
-    span = max(abs(v) for v in values) * 1.45 or 1
+    span = max(abs(v) for v in values) * 1.5 or 1
     chart.set_xlim(-span if min(values) < 0 else 0, span)
     for yv, v in enumerate(values):
-        chart.text(v, yv, f" {v:+.1f}% ", va="center", ha="left" if v >= 0 else "right", fontsize=16,
+        chart.text(v, yv, f" {v:+.1f}% ", va="center", ha="left" if v >= 0 else "right", fontsize=18,
                    color=_change_color(v), weight="bold")
 
+    _footer(ax, "※配信時の株価は前営業日終値ベース")
     fig.savefig(path, facecolor=COLORS["bg"])
     plt.close(fig)
     return path
