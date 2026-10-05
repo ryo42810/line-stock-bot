@@ -1,0 +1,40 @@
+name: Evening Review
+
+on:
+  workflow_dispatch: # 手動実行用ボタン
+  schedule:
+    # UTC 07:00 ＝ 日本時間(JST) 16:00（月〜金。祝日はスクリプト側でスキップ）
+    - cron: '0 7 * * 1-5'
+
+jobs:
+  run-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install requests yfinance anthropic beautifulsoup4 jpholiday
+
+      - name: Run review
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+        run: python app.py evening
+
+      - name: Notify failure
+        if: failure() && hashFiles('notified.flag') == ''
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+        run: |
+          curl -sS -X POST https://api.line.me/v2/bot/message/push \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${LINE_ACCESS_TOKEN}" \
+            -d "{\"to\":\"${USER_ID}\",\"messages\":[{\"type\":\"text\",\"text\":\"⚠️ 注目株botの夕方の振り返りが失敗しました。ログを確認してください。\"}]}"

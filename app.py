@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import re
+import sys
 import traceback
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
@@ -24,6 +25,7 @@ MAX_PICKS = 15
 BUBBLES_PER_CAROUSEL = 12  # LINEのカルーセルは1つにつき最大12枚
 
 HISTORY_FILE = "history.json"
+HISTORY_KEEP_DAYS = 60  # 成績集計用に60日分残す
 WEEKLY_LIMIT = 2  # 同じ銘柄は直近7日間で2回まで
 NOTIFIED_FLAG = "notified.flag"  # エラー通知済みの目印（ワークフロー側の二重通知防止）
 
@@ -133,7 +135,8 @@ def history_status(history, today):
     counts = {}
     prev_codes = []
     prev_date = ""
-    for date_str, codes in history.items():
+    for date_str, entries in history.items():
+        codes = [e["code"] if isinstance(e, dict) else e for e in entries]
         d = datetime.date.fromisoformat(date_str)
         if d >= today:
             continue  # 当日分（手動実行のやり直し）は数えない
@@ -146,9 +149,11 @@ def history_status(history, today):
     return blocked, set(prev_codes)
 
 
-def save_history(history, today, codes):
-    history[today.isoformat()] = codes
-    cutoff = (today - datetime.timedelta(days=14)).isoformat()
+def save_history(history, today, picks):
+    history[today.isoformat()] = [
+        {"code": p["code"], "name": p["name"], "category": p["category"], "price": p.get("price")} for p in picks
+    ]
+    cutoff = (today - datetime.timedelta(days=HISTORY_KEEP_DAYS)).isoformat()
     history = {k: v for k, v in sorted(history.items()) if k >= cutoff}
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=1)
@@ -344,6 +349,7 @@ PICKS_SCHEMA = {
     "type": "object",
     "properties": {
         "market_comment": {"type": "string", "description": "今日の地合いのまとめ（80字程度）"},
+        "x_post": {"type": "string", "description": "X（旧Twitter）投稿用の下書き。130字以内"},
         "picks": {
             "type": "array",
             "items": {
@@ -360,7 +366,7 @@ PICKS_SCHEMA = {
             },
         },
     },
-    "required": ["market_comment", "picks"],
+    "required": ["market_comment", "x_post", "picks"],
     "additionalProperties": False,
 }
 
@@ -417,6 +423,10 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
 6. 合計{MIN_PICKS}〜{MAX_PICKS}件。10件以上を目標にする。根拠の弱い銘柄は入れない
 7. 証券コードはページに書いてあるものだけを使う。わからない銘柄は入れない
 8. market_comment には、地合いデータとニュースから今日の日本株の見通しを80字程度で書く
+9. x_post には、X（旧Twitter）にそのまま投稿できる文章を130字以内で書く
+   - 地合いを一言＋注目銘柄2〜3件（銘柄名とコード、理由を短く）
+   - 最後に「※投資判断はご自身で」と、ハッシュタグ #日本株 を付ける
+   - 「必ず上がる」などの断定や煽る表現は使わない
 
 ## 今日の地合いデータ（前営業日終値ベース）
 {market_text}
@@ -445,7 +455,15 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
     text = next(b.text for b in response.content if b.type == "text")
     data = json.loads(text)
     print("地合いコメント:", data["market_comment"])
-    return data["market_comment"], data["picks"]
+
+    # 4. AIが返したURLが、実際に読んだページ・開示の中にあるかを確認（なければリンクを出さない）
+    allowed_urls = set(re.findall(r"<(https?://[^>\s]+)>", "\n".join(topic_blocks + earnings_blocks + yutai_blocks)))
+    allowed_urls |= {d["url"] for d in disclosures if d.get("url")}
+    for pick in data["picks"]:
+        if pick.get("source_url") and pick["source_url"] not in allowed_urls:
+            print(f"根拠URLが取得ページに無いため除外 ({pick.get('code')}): {pick['source_url']}")
+            pick["source_url"] = ""
+    return data["market_comment"], data["picks"], data["x_post"]
 
 
 def clean_picks(picks, blocked_codes):
@@ -555,22 +573,57 @@ def add_yutai_info(client, picks):
 # ---------------------------------------------------------------
 # 7. 株価・前日比・利回り
 # ---------------------------------------------------------------
-def add_price_info(picks):
+def technical_signals(hist, today):
+    """出来高急増・年初来高値/安値更新・25日線乖離のマーク"""
+    signals = []
+    closes = hist["Close"].dropna()
+    volumes = hist["Volume"].dropna()
+
+    if len(volumes) >= 21:
+        avg20 = float(volumes.iloc[-21:-1].mean())
+        if avg20 > 0 and volumes.iloc[-1] >= avg20 * 2:
+            signals.append(f"🔥 出来高急増（20日平均の{volumes.iloc[-1] / avg20:.1f}倍）")
+
+    this_year = hist[hist.index.year == hist.index[-1].year]
+    if len(this_year) >= 2:
+        if float(this_year["High"].iloc[-1]) >= float(this_year["High"].iloc[:-1].max()):
+            signals.append("📈 年初来高値更新")
+        elif float(this_year["Low"].iloc[-1]) <= float(this_year["Low"].iloc[:-1].min()):
+            signals.append("📉 年初来安値更新")
+
+    if len(closes) >= 25:
+        ma25 = float(closes.iloc[-25:].mean())
+        gap = (float(closes.iloc[-1]) - ma25) / ma25 * 100
+        note = "（過熱気味）" if gap >= 10 else "（売られすぎ）" if gap <= -10 else ""
+        signals.append(f"25日線から{gap:+.1f}%{note}")
+    return signals
+
+
+def add_price_info(picks, today=None):
     valid = []
     for p in picks:
         p["price_fmt"] = "取得できず"
         p["change_fmt"] = ""
         p["change"] = None
         p["yield_fmt"] = "取得できず"
+        p["signals"] = []
         try:
             ticker = yf.Ticker(f"{p['code']}.T")
-            price, change = fetch_close_change(f"{p['code']}.T")
-            if price is None:
-                price = ticker.fast_info.last_price
+            hist = ticker.history(period="1y").dropna(subset=["Close"])
+            price, change = None, None
+            if len(hist) >= 2:
+                price = float(hist["Close"].iloc[-1])
+                prev = float(hist["Close"].iloc[-2])
+                change = (price - prev) / prev * 100
             if not price:
                 print(f"株価なしのため除外 ({p['code']} {p['name']})")
                 continue
             valid.append(p)
+            p["price"] = price
+            try:
+                p["signals"] = technical_signals(hist, today)
+            except Exception as e:
+                print(f"テクニカル計算失敗 ({p['code']}):", e)
             p["price_fmt"] = f"約{price * 100 / 10000:.1f}万円 ({price:,.0f}円)"
             if change is not None:
                 p["change"] = change
@@ -676,6 +729,8 @@ def build_bubble(stock, today, market_closed):
         {"type": "text", "text": f"優待: {stock['yutai'] or '不明'}", "size": "xs", "color": "#666666", "wrap": True},
         {"type": "text", "text": f"権利確定月: {stock['kenri_month'] or '不明'}", "size": "xs", "color": "#666666"},
     ]
+    for signal in stock.get("signals", []):
+        details.append({"type": "text", "text": signal, "size": "xs", "color": "#8E44AD", "wrap": True})
     countdown = kenri_countdown(today, stock.get("kenri_months", []), stock.get("kenri_day", 0))
     if countdown:
         details.append({"type": "text", "text": countdown, "size": "xs", "color": "#F5A623", "weight": "bold", "wrap": True})
@@ -728,7 +783,7 @@ def push_line(messages):
         raise RuntimeError(f"LINE送信失敗: {res.status_code}")
 
 
-def send_line_flex_message(stocks, market_bubble, today, market_closed):
+def send_line_flex_message(stocks, market_bubble, today, market_closed, x_post=""):
     weekday_str = "月火水木金土日"[today.weekday()]
 
     bubbles = ([market_bubble] if market_bubble else []) + [build_bubble(s, today, market_closed) for s in stocks]
@@ -744,6 +799,8 @@ def send_line_flex_message(stocks, market_bubble, today, market_closed):
                 "contents": {"type": "carousel", "contents": chunk},
             }
         )
+    if x_post:
+        messages.append({"type": "text", "text": f"📝 X投稿用の下書き（{len(x_post)}字）\n\n{x_post}"})
     push_line(messages)
 
 
@@ -774,10 +831,11 @@ def run():
 
     picks = []
     market_comment = ""
+    x_post = ""
     client = None
     try:
         client = anthropic.Anthropic()
-        market_comment, raw_picks = pick_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows)
+        market_comment, raw_picks, x_post = pick_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows)
         picks = clean_picks(raw_picks, blocked_codes)
     except Exception as e:
         print("AIでの選定に失敗。キーワード判定に切り替えます:", e)
@@ -794,21 +852,121 @@ def run():
 
     if client is not None:
         picks = add_yutai_info(client, picks)
-    picks = add_price_info(picks)
+    picks = add_price_info(picks, today)
     if not picks:
         raise RuntimeError("株価を取得できた銘柄が1件もありませんでした")
     for p in picks:
         p["continued"] = p["code"] in prev_codes
 
     market_bubble = build_market_bubble(market_rows, market_comment, today) if (market_rows or market_comment) else None
-    send_line_flex_message(picks, market_bubble, today, market_closed)
-    save_history(history, today, [p["code"] for p in picks])
+    send_line_flex_message(picks, market_bubble, today, market_closed, x_post)
+    save_history(history, today, picks)
     print_cost(usd_jpy)
 
 
+# ---------------------------------------------------------------
+# 夕方の振り返り・週間成績（AIは使わない）
+# ---------------------------------------------------------------
+_close_cache = {}
+
+
+def recent_closes(code):
+    if code not in _close_cache:
+        try:
+            _close_cache[code] = yf.Ticker(f"{code}.T").history(period="1mo")["Close"].dropna()
+        except Exception as e:
+            print(f"株価取得失敗 ({code}):", e)
+            _close_cache[code] = None
+    return _close_cache[code]
+
+
+def performance(entries):
+    """配信時の株価（前営業日終値）から、直近終値までの騰落率を計算"""
+    rows = []
+    for e in entries:
+        if not isinstance(e, dict) or not e.get("price"):
+            continue
+        closes = recent_closes(e["code"])
+        if closes is None or closes.empty:
+            continue
+        last = float(closes.iloc[-1])
+        rows.append({**e, "last": last, "last_date": closes.index[-1].date(), "change": (last - e["price"]) / e["price"] * 100})
+    return sorted(rows, key=lambda r: r["change"], reverse=True)
+
+
+def format_row(r):
+    mark = "📈" if r["change"] >= 0 else "📉"
+    return f"{mark} {r['change']:+.1f}%  {r['name']}({r['code']}) [{r['category']}]"
+
+
+def summary_line(rows):
+    avg = sum(r["change"] for r in rows) / len(rows)
+    ups = sum(1 for r in rows if r["change"] >= 0)
+    return f"平均 {avg:+.1f}%（上昇 {ups} / 下落 {len(rows) - ups}）"
+
+
+def daily_review_text(history, today):
+    rows = performance(history.get(today.isoformat(), []))
+    if not rows:
+        return ""
+    lines = [f"🌇 {today:%m/%d} 朝の注目株の結果", summary_line(rows)]
+    if any(r["last_date"] != today for r in rows):
+        lines.append("※一部、今日の終値がまだ反映されていません")
+    lines.append("")
+    lines += [format_row(r) for r in rows]
+    return "\n".join(lines)
+
+
+def weekly_review_text(history, today):
+    entries = []
+    for date_str, day_entries in history.items():
+        d = datetime.date.fromisoformat(date_str)
+        if 0 <= (today - d).days < 7:
+            entries += [{**e, "date": d} for e in day_entries if isinstance(e, dict)]
+    rows = performance(entries)
+    if not rows:
+        return ""
+    lines = [f"📊 今週の成績（{today - datetime.timedelta(days=6):%m/%d}〜{today:%m/%d}、配信日から今日まで）", summary_line(rows), ""]
+    for category in CATEGORY_STYLE:
+        cat_rows = [r for r in rows if r["category"] == category]
+        if cat_rows:
+            lines.append(f"・{category}: {summary_line(cat_rows)}")
+    lines += ["", "🏆 ベスト3"] + [format_row(r) for r in rows[:3]]
+    lines += ["", "💧 ワースト3"] + [format_row(r) for r in rows[-3:][::-1]]
+    return "\n".join(lines)
+
+
+def is_last_business_day_of_week(today):
+    d = today + datetime.timedelta(days=1)
+    while is_market_holiday(d):
+        d += datetime.timedelta(days=1)
+    return d.isocalendar()[1] != today.isocalendar()[1]
+
+
+def run_evening():
+    today = now_jst().date()
+    if is_market_holiday(today):
+        print("今日は休場日のため振り返りなし")
+        return
+    history = load_history()
+    messages = []
+    daily = daily_review_text(history, today)
+    if daily:
+        messages.append({"type": "text", "text": daily})
+    if is_last_business_day_of_week(today):
+        weekly = weekly_review_text(history, today)
+        if weekly:
+            messages.append({"type": "text", "text": weekly})
+    if not messages:
+        print("振り返る配信履歴がありません")
+        return
+    push_line(messages)
+
+
 def main():
+    mode = sys.argv[1] if len(sys.argv) > 1 else "morning"
     try:
-        run()
+        run_evening() if mode == "evening" else run()
     except Exception as e:
         traceback.print_exc()
         try:
