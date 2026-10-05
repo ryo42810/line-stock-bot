@@ -239,7 +239,16 @@ def history_status(history, today):
 
 def save_history(history, today, picks):
     history[today.isoformat()] = [
-        {"code": p["code"], "name": p["name"], "category": p["category"], "price": p.get("price"), "buy": bool(p.get("buy_reasons"))}
+        {
+            "code": p["code"],
+            "name": p["name"],
+            "category": p["category"],
+            "price": p.get("price"),
+            "buy": bool(p.get("buy_reasons")),
+            "yutai": p.get("yutai", ""),
+            "kenri_months": p.get("kenri_months", []),
+            "kenri_day": p.get("kenri_day", 0),
+        }
         for p in picks
     ]
     cutoff = (today - datetime.timedelta(days=HISTORY_KEEP_DAYS)).isoformat()
@@ -1135,6 +1144,7 @@ EMOJI_CHARS = "\U0001F300-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF"
 def format_x_post(text):
     """「。」や絵文字で文が終わったら改行する（すでに改行があれば何もしない）"""
     text = re.sub(rf"(。|[{EMOJI_CHARS}]\uFE0F?)(?=[^\s{EMOJI_CHARS}\uFE0F\u2193])", r"\1\n", text.strip())
+    text = re.sub(r"↓↓(?=[^\s↓])", "↓↓\n", text)
     return re.sub(r"[ \t]+\n", "\n", text)
 
 
@@ -1360,27 +1370,204 @@ def is_last_business_day_of_week(today):
     return d.isocalendar()[1] != today.isocalendar()[1]
 
 
+def next_business_day(d):
+    d += datetime.timedelta(days=1)
+    while is_market_holiday(d):
+        d += datetime.timedelta(days=1)
+    return d
+
+
+def kenri_reminder_text(history, today):
+    """明日が権利付き最終日の優待銘柄（直近60日に配信した銘柄から）"""
+    tomorrow = next_business_day(today)
+    found = {}
+    for entries in history.values():
+        for e in entries:
+            if not isinstance(e, dict) or not e.get("kenri_months") or e.get("yutai") in ("なし", "不明", "", None):
+                continue
+            for y, m in ((tomorrow.year, tomorrow.month), (tomorrow.year + (tomorrow.month == 12), tomorrow.month % 12 + 1)):
+                if m in e["kenri_months"] and kenri_last_day(y, m, e.get("kenri_day", 0)) == tomorrow:
+                    found[e["code"]] = (e, m)
+    if not found:
+        return ""
+    lines = [f"🎁 明日（{tomorrow:%m/%d}）が権利付き最終日"]
+    for e, m in found.values():
+        lines.append(f"・{e['name']}({e['code']}) {m}月権利：{e['yutai']}")
+    lines.append("※明日の大引けまでに買えば、優待の権利がもらえます")
+    return "\n".join(lines)
+
+
+def x_performance_post(history, today):
+    """買い場候補の1週間後の成績を、X用の実績報告にする（AIは使わない）"""
+    rows = []
+    for date_str, entries in history.items():
+        delivered = datetime.date.fromisoformat(date_str)
+        if (today - delivered).days > 14:
+            continue
+        for e in entries:
+            if not (isinstance(e, dict) and e.get("buy")):
+                continue
+            # 1週間後（5営業日目）が今週に来た銘柄だけ数える（同じ銘柄を2週続けて出さない）
+            closes = recent_closes(e["code"])
+            if closes is None:
+                continue
+            after = closes[closes.index.date >= delivered]
+            if len(after) >= 5 and (today - after.index[4].date()).days < 7:
+                c = change_after(e, delivered, 5)
+                if c is not None:
+                    rows.append({**e, "change": c})
+    if not rows:
+        return ""
+    avg = sum(r["change"] for r in rows) / len(rows)
+    ups = sum(1 for r in rows if r["change"] > 0)
+    best = max(rows, key=lambda r: r["change"])
+    lines = [
+        "買い場候補の1週間後の成績、公開します📊↓↓",
+        "",
+        f"平均{avg:+.1f}%{'📈' if avg >= 0 else '📉'}",
+        f"上がったのは{len(rows)}銘柄中{ups}銘柄{'✨' if ups * 2 >= len(rows) else '💦'}",
+    ]
+    if best["change"] > 0:
+        lines += ["", "いちばん伸びたのは", f"{best['name']}({best['code']}) {best['change']:+.1f}%🚀"]
+    lines += ["", "#株クラ"]
+    return "\n".join(lines)
+
+
+# 夕方に読むページ（今日動いた銘柄・決算予定）
+EVENING_MOVER_PAGES = [
+    "https://finance.yahoo.co.jp/stocks/ranking/up",
+    "https://finance.yahoo.co.jp/stocks/ranking/down",
+]
+
+EVENING_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "movers_post": {"type": "string", "description": "今日大きく動いた銘柄の「なぜ動いたか」X下書き。理由がわかる銘柄がなければ空文字"},
+        "earnings": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "code": {"type": "string"},
+                    "name": {"type": "string"},
+                    "note": {"type": "string", "description": "注目ポイント（30字以内）。ページに書いてあることだけ"},
+                },
+                "required": ["code", "name", "note"],
+                "additionalProperties": False,
+            },
+        },
+        "earnings_post": {"type": "string", "description": "明日の決算予告のX下書き。明日の予定が見つからなければ空文字"},
+    },
+    "required": ["movers_post", "earnings", "earnings_post"],
+    "additionalProperties": False,
+}
+
+
+def evening_with_claude(client, today):
+    """今日動いた銘柄の理由解説と、明日の決算予告（X下書き付き）"""
+    tomorrow = next_business_day(today)
+    mover_blocks = fetch_pages(EVENING_MOVER_PAGES, max_chars=8000)
+    earnings_blocks = fetch_pages(EARNINGS_PAGES, max_chars=6000, require_word="決算")
+    disclosures = fetch_tdnet([today])
+    print(f"夕方ページ取得: 値動き{len(mover_blocks)}件 / 決算予定{len(earnings_blocks)}件 / 開示{len(disclosures)}件")
+    disclosure_text = "\n".join(f"- {d['code']} {d['name']}: {d['title']}" for d in disclosures[:100]) or "（なし）"
+
+    prompt = f"""今日は{today:%Y年%m月%d日}、明日（次の営業日）は{tomorrow:%m月%d日}です。夕方のLINE配信とX投稿の文章を作ります。
+下の情報だけを使い、書いていない材料やニュースは作らないでください。
+
+## 1. movers_post（なぜ動いたか・X下書き）
+- 「値上がり・値下がりランキング」から今日大きく動いた銘柄を選び、「なぜ動いたのか」を解説する
+- 理由は、今日の適時開示やページ内のニュースで確認できるものだけ。理由がわからない銘柄は入れない
+- 「今日+15%🚀」のように騰落率を入れ、次の行に理由
+- 理由がわかる銘柄が1つもなければ空文字
+
+## 2. earnings（明日の決算予告・LINE用）
+- 「決算発表予定のページ」に、明日（{tomorrow:%m月%d日}）発表予定として書かれている銘柄から、注目度の高いものを最大5件
+- 日付が明日だと確認できないものは入れない。見つからなければ空の配列
+
+## 3. earnings_post（明日の決算予告・X下書き）
+- earnings の中から3銘柄。「明日決算」であることが1行目でわかるフックにする
+- earnings が空なら空文字
+
+{X_POST_STYLE}
+
+### 今日のフックの型
+- movers_post: {X_HOOK_TYPES[(today.toordinal() + 1) % len(X_HOOK_TYPES)]}
+- earnings_post: {X_HOOK_TYPES[(today.toordinal() + 4) % len(X_HOOK_TYPES)]}
+
+### お手本（形・雰囲気の参考。内容は使わない）
+{X_EXAMPLE_NEWS}
+
+## 値上がり・値下がりランキング（今日）
+{chr(10).join(mover_blocks) or "（取得できず）"}
+
+## 決算発表予定のページ
+{chr(10).join(earnings_blocks) or "（取得できず）"}
+
+## 今日の適時開示
+{disclosure_text}"""
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=4000,
+        output_config={"format": {"type": "json_schema", "schema": EVENING_SCHEMA}},
+        messages=[{"role": "user", "content": prompt}],
+    )
+    track_usage(response)
+    if response.stop_reason == "refusal":
+        raise RuntimeError("拒否されました")
+    data = json.loads(next(b.text for b in response.content if b.type == "text"))
+
+    earnings_text = ""
+    if data["earnings"]:
+        lines = [f"📊 明日（{tomorrow:%m/%d}）決算の注目銘柄"]
+        lines += [f"・{e['name']}({e['code']}) {e['note']}" for e in data["earnings"]]
+        earnings_text = "\n".join(lines)
+    movers = format_x_post(data["movers_post"]) if data["movers_post"] else ""
+    earnings_post = format_x_post(data["earnings_post"]) if data["earnings_post"] else ""
+    return earnings_text, movers, earnings_post
+
+
 def run_evening():
     today = now_jst().date()
     if is_market_holiday(today):
         print("今日は休場日のため振り返りなし")
         return
     history = load_history()
-    messages = []
+    is_week_end = is_last_business_day_of_week(today)
+
+    # LINEで読む情報は1つのメッセージにまとめる
+    sections = []
     daily = daily_review_text(history, today)
     if daily:
-        messages.append({"type": "text", "text": daily})
-    if is_last_business_day_of_week(today):
+        sections.append(daily)
+    if is_week_end:
         weekly = weekly_review_text(history, today)
         buy_text = buy_performance_text(history, today)
-        if buy_text:
-            weekly = (weekly + "\n\n" + buy_text) if weekly else buy_text
-        if weekly:
-            messages.append({"type": "text", "text": weekly})
+        sections += [t for t in (weekly, buy_text) if t]
+    reminder = kenri_reminder_text(history, today)
+    if reminder:
+        sections.append(reminder)
+
+    earnings_text, movers_post, earnings_post = "", "", ""
+    try:
+        earnings_text, movers_post, earnings_post = evening_with_claude(anthropic.Anthropic(), today)
+    except Exception as e:
+        print("夕方のAI処理に失敗:", e)
+    if earnings_text:
+        sections.append(earnings_text)
+
+    messages = []
+    if sections:
+        messages.append({"type": "text", "text": "\n\n".join(sections)[:4900]})
+    # X下書きは本文だけ（そのままコピペできるように）。順番は なぜ動いたか→明日の決算→実績報告（週末のみ）
+    for post in (movers_post, earnings_post, x_performance_post(history, today) if is_week_end else ""):
+        if post:
+            messages.append({"type": "text", "text": post})
     if not messages:
-        print("振り返る配信履歴がありません")
+        print("送る内容がありません")
         return
-    push_line(messages)
+    push_line(messages[:5])
+    print_cost()
 
 
 def main():
