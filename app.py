@@ -1,14 +1,17 @@
+import calendar
 import datetime
 import json
 import os
 import re
+import traceback
+from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
 import anthropic
+import jpholiday
 import requests
 import yfinance as yf
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
 
 # GitHubのSecretsから取得し、先頭・末尾の余計な空白や改行を除去（strip）
 LINE_ACCESS_TOKEN = (os.environ.get("LINE_ACCESS_TOKEN") or "").strip()
@@ -20,9 +23,14 @@ MIN_PICKS = 5
 MAX_PICKS = 15
 BUBBLES_PER_CAROUSEL = 12  # LINEのカルーセルは1つにつき最大12枚
 
+HISTORY_FILE = "history.json"
+WEEKLY_LIMIT = 2  # 同じ銘柄は直近7日間で2回まで
+NOTIFIED_FLAG = "notified.flag"  # エラー通知済みの目印（ワークフロー側の二重通知防止）
+
 CATEGORY_STYLE = {
     "好材料": {"color": "#1DB446", "label": "📈 好材料"},
     "懸念材料": {"color": "#E0352B", "label": "📉 懸念材料"},
+    "決算": {"color": "#2D7FF9", "label": "📊 今日決算"},
     "優待": {"color": "#F5A623", "label": "🎁 今月の優待"},
 }
 
@@ -30,13 +38,142 @@ CATEGORY_STYLE = {
 GOOD_WORDS = ["上方修正", "増配", "自社株買い", "自己株式の取得", "株式分割", "優待新設", "優待拡充", "復配", "最高益", "黒字転換"]
 BAD_WORDS = ["下方修正", "減配", "無配", "赤字", "優待廃止", "特別損失", "減損", "業務停止", "不適切", "上場廃止"]
 
+# 料金の目安（Claude Opus 5.5、USD）
+PRICE_INPUT = 4.00 / 1_000_000
+PRICE_OUTPUT = 20.00 / 1_000_000
+PRICE_CACHE_READ = 0.20 / 1_000_000
+PRICE_CACHE_WRITE = 5.00 / 1_000_000
+PRICE_WEB_SEARCH = 10.00 / 1000
+
+usage_total = {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0, "web_search": 0, "web_fetch": 0}
+
 
 def now_jst():
     return datetime.datetime.now(JST)
 
 
+def track_usage(response):
+    u = response.usage
+    usage_total["input"] += u.input_tokens or 0
+    usage_total["output"] += u.output_tokens or 0
+    usage_total["cache_read"] += getattr(u, "cache_read_input_tokens", 0) or 0
+    usage_total["cache_write"] += getattr(u, "cache_creation_input_tokens", 0) or 0
+    stu = getattr(u, "server_tool_use", None)
+    if stu:
+        usage_total["web_search"] += getattr(stu, "web_search_requests", 0) or 0
+        usage_total["web_fetch"] += getattr(stu, "web_fetch_requests", 0) or 0
+
+
+def print_cost(usd_jpy=None):
+    t = usage_total
+    usd = (
+        t["input"] * PRICE_INPUT
+        + t["output"] * PRICE_OUTPUT
+        + t["cache_read"] * PRICE_CACHE_READ
+        + t["cache_write"] * PRICE_CACHE_WRITE
+        + t["web_search"] * PRICE_WEB_SEARCH
+    )
+    rate = usd_jpy or 150
+    print("===== API料金（推定） =====")
+    print(f"入力 {t['input']:,} / 出力 {t['output']:,} / キャッシュ読込 {t['cache_read']:,} / キャッシュ書込 {t['cache_write']:,} トークン")
+    print(f"Web検索 {t['web_search']}回 / Web取得 {t['web_fetch']}回")
+    print(f"今回: 約${usd:.3f}（約{usd * rate:.0f}円） / 30日換算: 約${usd * 30:.2f}（約{usd * rate * 30:,.0f}円）")
+
+
 # ---------------------------------------------------------------
-# 1. 適時開示（TDnet）の取得
+# 0. 営業日カレンダー（土日・祝日・年末年始は休場）
+# ---------------------------------------------------------------
+def is_market_holiday(d):
+    if d.weekday() >= 5 or jpholiday.is_holiday(d):
+        return True
+    return (d.month, d.day) in [(12, 31), (1, 1), (1, 2), (1, 3)]
+
+
+def prev_business_day(d):
+    d -= datetime.timedelta(days=1)
+    while is_market_holiday(d):
+        d -= datetime.timedelta(days=1)
+    return d
+
+
+def business_days_between(start, end):
+    """start の翌日から end まで（end含む）の営業日数"""
+    count = 0
+    d = start
+    while d < end:
+        d += datetime.timedelta(days=1)
+        if not is_market_holiday(d):
+            count += 1
+    return count
+
+
+def kenri_last_day(year, month, day=0):
+    """権利付き最終日（権利確定日の2営業日前）。day=0 は月末"""
+    last = calendar.monthrange(year, month)[1]
+    d = datetime.date(year, month, min(day, last) if day else last)
+    while is_market_holiday(d):
+        d -= datetime.timedelta(days=1)
+    for _ in range(2):
+        d = prev_business_day(d)
+    return d
+
+
+def kenri_countdown(today, months, day):
+    """今月か来月の権利付き最終日までのカウントダウン文言。対象外なら空文字"""
+    if not months:
+        return ""
+    for offset in range(2):
+        y, m = (today.year, today.month + offset) if today.month + offset <= 12 else (today.year + 1, 1)
+        if m not in months:
+            continue
+        last_day = kenri_last_day(y, m, day)
+        if last_day < today:
+            continue
+        if last_day == today:
+            return f"⏰ 今日が権利付き最終日（{m}月権利）"
+        return f"⏰ 権利付き最終日 {last_day:%m/%d}（あと{business_days_between(today, last_day)}営業日）"
+    return ""
+
+
+# ---------------------------------------------------------------
+# 1. 配信履歴（同じ銘柄は1週間で2回まで）
+# ---------------------------------------------------------------
+def load_history():
+    try:
+        with open(HISTORY_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def history_status(history, today):
+    """直近7日で上限に達した銘柄と、前回配信した銘柄を返す"""
+    counts = {}
+    prev_codes = []
+    prev_date = ""
+    for date_str, codes in history.items():
+        d = datetime.date.fromisoformat(date_str)
+        if d >= today:
+            continue  # 当日分（手動実行のやり直し）は数えない
+        if (today - d).days < 7:
+            for c in codes:
+                counts[c] = counts.get(c, 0) + 1
+        if date_str > prev_date:
+            prev_date, prev_codes = date_str, codes
+    blocked = {c for c, n in counts.items() if n >= WEEKLY_LIMIT}
+    return blocked, set(prev_codes)
+
+
+def save_history(history, today, codes):
+    history[today.isoformat()] = codes
+    cutoff = (today - datetime.timedelta(days=14)).isoformat()
+    history = {k: v for k, v in sorted(history.items()) if k >= cutoff}
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(history, f, ensure_ascii=False, indent=1)
+
+
+# ---------------------------------------------------------------
+# 2. 適時開示（TDnet）の取得
 # ---------------------------------------------------------------
 def fetch_tdnet(days):
     """当日・前日などの適時開示を取得。取れなくても処理は続ける"""
@@ -69,6 +206,8 @@ def pick_material_disclosures(tdnet_items):
     picked = []
     for item in tdnet_items:
         title = item["title"]
+        if "取得状況" in title:
+            continue  # 自己株式の取得状況などの定期報告は除外
         if any(w in title for w in GOOD_WORDS):
             picked.append({**item, "category": "好材料"})
         elif any(w in title for w in BAD_WORDS):
@@ -77,7 +216,7 @@ def pick_material_disclosures(tdnet_items):
 
 
 # ---------------------------------------------------------------
-# 2. みんかぶ・株探のページ取得（スクレイピング）
+# 3. みんかぶ・株探のページ取得（スクレイピング）
 # ---------------------------------------------------------------
 HTTP_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36",
@@ -118,9 +257,42 @@ def fetch_page_text(url, max_chars=15000, start_word=None):
 
 
 # ---------------------------------------------------------------
-# 3. Claudeで調査（ニュース・話題の銘柄）→ 銘柄の選定
+# 4. 地合い（日経平均・ドル円・米国株）
 # ---------------------------------------------------------------
-def research_with_claude(client, today, is_weekend, disclosures):
+MARKET_TICKERS = [
+    ("^N225", "日経平均", "{:,.0f}"),
+    ("JPY=X", "ドル円", "{:,.2f}"),
+    ("^DJI", "NYダウ", "{:,.0f}"),
+    ("^IXIC", "ナスダック", "{:,.0f}"),
+    ("^GSPC", "S&P500", "{:,.0f}"),
+]
+
+
+def fetch_close_change(symbol):
+    """直近の終値と前日比(%)。取れなければ (None, None)"""
+    closes = yf.Ticker(symbol).history(period="10d")["Close"].dropna()
+    if len(closes) < 2:
+        return None, None
+    last, prev = float(closes.iloc[-1]), float(closes.iloc[-2])
+    return last, (last - prev) / prev * 100
+
+
+def fetch_market_data():
+    rows = []
+    for symbol, name, fmt in MARKET_TICKERS:
+        try:
+            last, change = fetch_close_change(symbol)
+            if last is not None:
+                rows.append({"symbol": symbol, "name": name, "value": fmt.format(last), "raw": last, "change": change})
+        except Exception as e:
+            print(f"地合いデータ取得失敗 ({symbol}):", e)
+    return rows
+
+
+# ---------------------------------------------------------------
+# 5. Claudeで調査（ニュース・話題の銘柄・決算）→ 銘柄の選定
+# ---------------------------------------------------------------
+def research_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows):
     weekday_str = "月火水木金土日"[today.weekday()]
     disclosure_text = "\n".join(
         f"- [{d['category']}] {d['code']} {d['name']}: {d['title']} ({d['pubdate']})"
@@ -135,11 +307,15 @@ def research_with_claude(client, today, is_weekend, disclosures):
     print(f"話題ページ取得: {len(page_blocks)}/{len(TOPIC_PAGES)}件")
     pages_text = "\n\n".join(page_blocks) or "（取得できず。Web検索で探してください）"
 
-    market_note = (
-        "今日は土日で市場が休み。株価は動かないので、金曜〜今日までに出たニュースと、今月が権利確定月の優待株を中心に選ぶ。"
-        if is_weekend
-        else "今日は平日。前日〜今朝までに出たニュース・開示で、今日の株価に影響しそうな銘柄を優先する。"
-    )
+    market_text = "\n".join(f"- {r['name']}: {r['value']}（前日比 {r['change']:+.2f}%）" for r in market_rows) or "（取得できず）"
+    blocked_text = "、".join(sorted(blocked_codes)) or "なし"
+
+    if market_closed:
+        market_note = "今日は休場日（土日祝）。株価は動かないので、前営業日〜今日までに出たニュースと、権利確定が近い優待株を中心に選ぶ。決算銘柄は選ばない。"
+        earnings_rule = ""
+    else:
+        market_note = "今日は営業日。前営業日の引け後〜今朝までに出たニュース・開示で、今日の株価に影響しそうな銘柄を優先する。"
+        earnings_rule = f"4. 今日（{today:%m月%d日}）決算発表予定の銘柄から、注目度の高いものを2〜4件選ぶ（株探・みんかぶの決算発表予定をWeb検索で確認）。分類は「決算」\n"
 
     prompt = f"""今日は{today:%Y年%m月%d日}（{weekday_str}曜）です。毎朝自動でLINEに送る「今日の注目株」リストの銘柄を選んでください。
 これは自動処理で、人が途中で確認・指示することはありません。質問や「配信前に必要な作業」は書かず、手元の情報で最善のリストを完成させてください。
@@ -152,9 +328,13 @@ def research_with_claude(client, today, is_weekend, disclosures):
    - 懸念材料（下方修正、減配、不祥事、優待廃止など）
    - 見出しだけで中身がわからないものは、記事をweb_fetchで開いて確認してよい
 2. TDnetの適時開示も参考にする。ただし「自己株式の取得状況」のような定期報告は材料にしない
-3. ニュース銘柄で枠が埋まらないときは、{today.month}月が権利確定月で優待が魅力的な銘柄を加える（みんかぶの優待情報をWeb検索で探す）
-4. 合計{MIN_PICKS}〜{MAX_PICKS}件。10件以上を目標にする。根拠の弱い銘柄は入れない
-5. 優待内容と権利確定月は後の処理でみんかぶから取得するので、ここでは調べなくてよい
+3. ニュース銘柄で枠が埋まらないときは、{today.month}月か翌月が権利確定月で優待が魅力的な銘柄を加える（みんかぶの優待情報をWeb検索で探す）。分類は「優待」
+{earnings_rule}5. 次の銘柄は直近1週間で配信済みなので選ばない: {blocked_text}
+6. 合計{MIN_PICKS}〜{MAX_PICKS}件。10件以上を目標にする。根拠の弱い銘柄は入れない
+7. 優待内容と権利確定月は後の処理でみんかぶから取得するので、ここでは調べなくてよい
+
+## 今日の地合いデータ（前営業日終値ベース）
+{market_text}
 
 ## みんかぶ・株探のページ（今朝取得したもの）
 {pages_text}
@@ -163,7 +343,8 @@ def research_with_claude(client, today, is_weekend, disclosures):
 {disclosure_text}
 
 ## 出力
-銘柄ごとに、証券コード（4桁）、銘柄名、分類（好材料／懸念材料／優待）、選んだ理由の要約（40字程度）、根拠となった記事のURLを書いてください。
+最初に「今日の地合い」として、前日の米国市場の動きと今日の日本株の見通しを80字程度でまとめてください。
+続けて銘柄ごとに、証券コード（4桁）、銘柄名、分類（好材料／懸念材料／決算／優待）、選んだ理由の要約（40字程度）、根拠となった記事のURLを書いてください。
 確認できなかった情報は推測で埋めないでください。"""
 
     tools = [
@@ -184,6 +365,7 @@ def research_with_claude(client, today, is_weekend, disclosures):
             messages=messages,
         ) as stream:
             response = stream.get_final_message()
+        track_usage(response)
         if response.stop_reason != "pause_turn":
             break
         messages = [messages[0], {"role": "assistant", "content": response.content}]
@@ -200,6 +382,7 @@ def research_with_claude(client, today, is_weekend, disclosures):
 PICKS_SCHEMA = {
     "type": "object",
     "properties": {
+        "market_comment": {"type": "string", "description": "今日の地合いのまとめ（80字程度）。メモになければ空文字"},
         "picks": {
             "type": "array",
             "items": {
@@ -207,16 +390,16 @@ PICKS_SCHEMA = {
                 "properties": {
                     "code": {"type": "string", "description": "4桁の証券コード（例: 7203, 130A）"},
                     "name": {"type": "string"},
-                    "category": {"type": "string", "enum": ["好材料", "懸念材料", "優待"]},
+                    "category": {"type": "string", "enum": ["好材料", "懸念材料", "決算", "優待"]},
                     "headline": {"type": "string", "description": "選んだ理由の要約（40字程度）"},
                     "source_url": {"type": "string", "description": "根拠記事のURL。なければ空文字"},
                 },
                 "required": ["code", "name", "category", "headline", "source_url"],
                 "additionalProperties": False,
             },
-        }
+        },
     },
-    "required": ["picks"],
+    "required": ["market_comment", "picks"],
     "additionalProperties": False,
 }
 
@@ -230,23 +413,25 @@ def structure_picks(client, notes):
         messages=[
             {
                 "role": "user",
-                "content": f"次の調査メモに出てくる銘柄を、重要度の高い順に最大{MAX_PICKS}件、指定の形式で抜き出してください。メモにない情報は足さないでください。\n\n{notes}",
+                "content": f"次の調査メモから、今日の地合いのまとめと、銘柄を重要度の高い順に最大{MAX_PICKS}件、指定の形式で抜き出してください。メモにない情報は足さないでください。\n\n{notes}",
             }
         ],
     )
+    track_usage(response)
     if response.stop_reason == "refusal":
         raise RuntimeError("Claudeの整形が拒否されました")
     text = next(b.text for b in response.content if b.type == "text")
-    return json.loads(text)["picks"]
+    data = json.loads(text)
+    return data["market_comment"], data["picks"]
 
 
-def clean_picks(picks):
-    """コードの形式チェック・重複除去・件数上限"""
+def clean_picks(picks, blocked_codes):
+    """コードの形式チェック・重複除去・配信上限の除外・件数上限"""
     seen = set()
     result = []
     for p in picks:
         code = p.get("code", "").strip().upper()
-        if not re.fullmatch(r"\d{3}[0-9A-Z]", code) or code in seen:
+        if not re.fullmatch(r"\d{3}[0-9A-Z]", code) or code in seen or code in blocked_codes:
             continue
         seen.add(code)
         result.append({"yutai": "不明", "kenri_month": "不明", **p, "code": code})
@@ -255,28 +440,20 @@ def clean_picks(picks):
 
 def fallback_picks(disclosures):
     """AIが使えないとき：TDnetのキーワード判定だけで選ぶ（案A方式）"""
-    seen = set()
-    result = []
-    for d in disclosures:
-        if d["code"] in seen:
-            continue
-        seen.add(d["code"])
-        result.append(
-            {
-                "code": d["code"],
-                "name": d["name"],
-                "category": d["category"],
-                "headline": d["title"][:60],
-                "yutai": "不明",
-                "kenri_month": "不明",
-                "source_url": d["url"],
-            }
-        )
-    return result[:MAX_PICKS]
+    return [
+        {
+            "code": d["code"],
+            "name": d["name"],
+            "category": d["category"],
+            "headline": d["title"][:60],
+            "source_url": d["url"],
+        }
+        for d in disclosures
+    ]
 
 
 # ---------------------------------------------------------------
-# 4. 優待内容・権利確定月（みんかぶの優待ページから）
+# 6. 優待内容・権利確定月（みんかぶの優待ページから）
 # ---------------------------------------------------------------
 YUTAI_SCHEMA = {
     "type": "object",
@@ -289,8 +466,12 @@ YUTAI_SCHEMA = {
                     "code": {"type": "string"},
                     "yutai": {"type": "string", "description": "優待内容を60字以内で要約（例: 自社店舗で使える買物券3,000円分）。優待がない銘柄は「なし」、ページから読み取れなければ「不明」"},
                     "kenri_month": {"type": "string", "description": "権利確定月（例: 3月・9月）。優待がない場合は「-」、読み取れなければ「不明」"},
+                    "kenri_months": {"type": "array", "items": {"type": "integer"}, "description": "権利確定月を数字で（例: [3, 9]）。不明なら空配列"},
+                    "kenri_day": {"type": "integer", "description": "権利確定日の日付。月末なら0。20日なら20。不明なら0"},
+                    "min_shares": {"type": "integer", "description": "優待を受け取れる最低株数（例: 100）。不明なら100"},
+                    "yutai_value_yen": {"type": "integer", "description": "最低株数で1年間にもらえる優待の金額換算（円）。権利が年2回なら2回分の合計。金額換算できない・不明なら0"},
                 },
-                "required": ["code", "yutai", "kenri_month"],
+                "required": ["code", "yutai", "kenri_month", "kenri_months", "kenri_day", "min_shares", "yutai_value_yen"],
                 "additionalProperties": False,
             },
         }
@@ -320,11 +501,12 @@ def add_yutai_info(client, picks):
             messages=[
                 {
                     "role": "user",
-                    "content": "次はみんかぶの株主優待ページです。銘柄ごとに、現在の優待内容と権利確定月を抜き出してください。"
-                    "ページに書いていないことは推測せず「不明」にしてください。\n\n" + "\n\n".join(page_blocks),
+                    "content": "次はみんかぶの株主優待ページです。銘柄ごとに、現在の優待内容・権利確定月・最低株数・優待の金額換算を抜き出してください。"
+                    "ページに書いていないことは推測せず「不明」や0にしてください。\n\n" + "\n\n".join(page_blocks),
                 }
             ],
         )
+        track_usage(response)
         if response.stop_reason == "refusal":
             raise RuntimeError("拒否されました")
         text = next(b.text for b in response.content if b.type == "text")
@@ -338,38 +520,96 @@ def add_yutai_info(client, picks):
         if item:
             p["yutai"] = item["yutai"] or "不明"
             p["kenri_month"] = item["kenri_month"] or "不明"
+            p["kenri_months"] = [m for m in item["kenri_months"] if 1 <= m <= 12]
+            p["kenri_day"] = item["kenri_day"] if 0 <= item["kenri_day"] <= 31 else 0
+            p["min_shares"] = item["min_shares"] if item["min_shares"] > 0 else 100
+            p["yutai_value_yen"] = max(item["yutai_value_yen"], 0)
     return picks
 
 
 # ---------------------------------------------------------------
-# 5. 株価の取得
+# 7. 株価・前日比・利回り
 # ---------------------------------------------------------------
 def add_price_info(picks):
     for p in picks:
         p["price_fmt"] = "取得できず"
+        p["change_fmt"] = ""
+        p["change"] = None
         p["yield_fmt"] = "取得できず"
         try:
             ticker = yf.Ticker(f"{p['code']}.T")
-            price = ticker.fast_info.last_price
+            price, change = fetch_close_change(f"{p['code']}.T")
+            if price is None:
+                price = ticker.fast_info.last_price
             if not price:
                 continue
-            min_cost = price * 100
-            p["price_fmt"] = f"約{min_cost / 10000:.1f}万円 ({price:,.0f}円)"
+            p["price_fmt"] = f"約{price * 100 / 10000:.1f}万円 ({price:,.0f}円)"
+            if change is not None:
+                p["change"] = change
+                p["change_fmt"] = f"{change:+.1f}%"
 
             # 配当利回りは「年間配当÷株価」で自前計算（yfinanceのdividendYieldは版によって単位が違うため）
-            rate = ticker.info.get("dividendRate") or ticker.info.get("trailingAnnualDividendRate")
-            p["yield_fmt"] = f"{rate / price * 100:.1f}%" if rate else "なし／不明"
+            info = ticker.info
+            rate = info.get("dividendRate") or info.get("trailingAnnualDividendRate")
+            div_yield = rate / price * 100 if rate else 0.0
+
+            value = p.get("yutai_value_yen", 0)
+            if value:
+                yutai_yield = value / (price * p.get("min_shares", 100)) * 100
+                p["yield_fmt"] = f"配当{div_yield:.1f}%＋優待{yutai_yield:.1f}%＝{div_yield + yutai_yield:.1f}%"
+            elif rate:
+                p["yield_fmt"] = f"配当{div_yield:.1f}%"
+            else:
+                p["yield_fmt"] = "配当なし／不明"
         except Exception as e:
             print(f"株価取得失敗 ({p['code']}):", e)
     return picks
 
 
 # ---------------------------------------------------------------
-# 6. LINE送信
+# 8. LINE送信
 # ---------------------------------------------------------------
-def build_bubble(stock, is_weekend):
+def change_color(change):
+    if change is None:
+        return "#555555"
+    return "#1DB446" if change >= 0 else "#E0352B"
+
+
+def build_market_bubble(market_rows, comment, today):
+    rows = [
+        {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+                {"type": "text", "text": r["name"], "size": "sm", "color": "#555555", "flex": 3},
+                {"type": "text", "text": r["value"], "size": "sm", "align": "end", "flex": 3},
+                {"type": "text", "text": f"{r['change']:+.2f}%", "size": "sm", "align": "end", "flex": 2, "color": change_color(r["change"])},
+            ],
+        }
+        for r in market_rows
+    ]
+    contents = [{"type": "text", "text": f"{today:%m/%d} 今日の地合い", "weight": "bold", "size": "lg"}]
+    if rows:
+        contents.append({"type": "box", "layout": "vertical", "margin": "lg", "spacing": "sm", "contents": rows})
+    if comment:
+        contents.append({"type": "text", "text": comment, "size": "sm", "wrap": True, "margin": "lg", "color": "#333333"})
+    contents.append({"type": "text", "text": "※前営業日終値ベース", "size": "xxs", "color": "#999999", "margin": "md"})
+    return {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#333333",
+            "paddingAll": "md",
+            "contents": [{"type": "text", "text": "🌏 今日の地合い", "color": "#FFFFFF", "weight": "bold", "size": "sm"}],
+        },
+        "body": {"type": "box", "layout": "vertical", "contents": contents},
+    }
+
+
+def build_bubble(stock, today, market_closed):
     style = CATEGORY_STYLE.get(stock["category"], CATEGORY_STYLE["優待"])
-    price_label = "前営業日終値ベース" if is_weekend else "最低買付額"
+    label = style["label"] + ("　🔁 継続" if stock.get("continued") else "")
 
     footer_buttons = [
         {
@@ -393,6 +633,22 @@ def build_bubble(stock, is_weekend):
             }
         )
 
+    details = [
+        {"type": "text", "text": f"最低買付額: {stock['price_fmt']}", "size": "xs", "color": "#555555", "wrap": True},
+    ]
+    if stock.get("change_fmt"):
+        details.append(
+            {"type": "text", "text": f"前日比: {stock['change_fmt']}", "size": "sm", "weight": "bold", "color": change_color(stock.get("change"))}
+        )
+    details += [
+        {"type": "text", "text": f"利回り: {stock['yield_fmt']}", "size": "xs", "color": "#555555", "wrap": True},
+        {"type": "text", "text": f"優待: {stock['yutai'] or '不明'}", "size": "xs", "color": "#666666", "wrap": True},
+        {"type": "text", "text": f"権利確定月: {stock['kenri_month'] or '不明'}", "size": "xs", "color": "#666666"},
+    ]
+    countdown = kenri_countdown(today, stock.get("kenri_months", []), stock.get("kenri_day", 0))
+    if countdown:
+        details.append({"type": "text", "text": countdown, "size": "xs", "color": "#F5A623", "weight": "bold", "wrap": True})
+
     return {
         "type": "bubble",
         "header": {
@@ -400,9 +656,7 @@ def build_bubble(stock, is_weekend):
             "layout": "vertical",
             "backgroundColor": style["color"],
             "paddingAll": "md",
-            "contents": [
-                {"type": "text", "text": style["label"], "color": "#FFFFFF", "weight": "bold", "size": "sm"}
-            ],
+            "contents": [{"type": "text", "text": label, "color": "#FFFFFF", "weight": "bold", "size": "sm"}],
         },
         "body": {
             "type": "box",
@@ -423,33 +677,30 @@ def build_bubble(stock, is_weekend):
                     "wrap": True,
                     "margin": "md",
                 },
-                {
-                    "type": "box",
-                    "layout": "vertical",
-                    "margin": "lg",
-                    "spacing": "sm",
-                    "contents": [
-                        {"type": "text", "text": f"{price_label}: {stock['price_fmt']}", "size": "xs", "color": "#555555", "wrap": True},
-                        {"type": "text", "text": f"配当利回り: {stock['yield_fmt']}", "size": "xs", "color": "#555555"},
-                        {"type": "text", "text": f"優待: {stock['yutai'] or '不明'}", "size": "xs", "color": "#666666", "wrap": True},
-                        {"type": "text", "text": f"権利確定月: {stock['kenri_month'] or '不明'}", "size": "xs", "color": "#666666"},
-                    ],
-                },
+                {"type": "box", "layout": "vertical", "margin": "lg", "spacing": "sm", "contents": details},
             ],
         },
         "footer": {"type": "box", "layout": "vertical", "contents": footer_buttons},
     }
 
 
-def send_line_flex_message(stocks, today, is_weekend):
+def push_line(messages):
     url = "https://api.line.me/v2/bot/message/push"
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {LINE_ACCESS_TOKEN}",
     }
+    res = requests.post(url, headers=headers, data=json.dumps({"to": USER_ID, "messages": messages}))
+    print("送信ステータス:", res.status_code)
+    if res.status_code != 200:
+        print("レスポンス:", res.text)
+        raise RuntimeError(f"LINE送信失敗: {res.status_code}")
+
+
+def send_line_flex_message(stocks, market_bubble, today, market_closed):
     weekday_str = "月火水木金土日"[today.weekday()]
 
-    bubbles = [build_bubble(s, is_weekend) for s in stocks]
+    bubbles = ([market_bubble] if market_bubble else []) + [build_bubble(s, today, market_closed) for s in stocks]
     chunks = [bubbles[i : i + BUBBLES_PER_CAROUSEL] for i in range(0, len(bubbles), BUBBLES_PER_CAROUSEL)]
 
     messages = []
@@ -462,66 +713,79 @@ def send_line_flex_message(stocks, today, is_weekend):
                 "contents": {"type": "carousel", "contents": chunk},
             }
         )
-
-    payload = {"to": USER_ID, "messages": messages}
-    res = requests.post(url, headers=headers, data=json.dumps(payload))
-    print("送信ステータス:", res.status_code)
-    if res.status_code != 200:
-        print("レスポンス:", res.text)
+    push_line(messages)
 
 
 def send_line_text(text):
-    url = "https://api.line.me/v2/bot/message/push"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {LINE_ACCESS_TOKEN}",
-    }
-    payload = {"to": USER_ID, "messages": [{"type": "text", "text": text}]}
-    res = requests.post(url, headers=headers, data=json.dumps(payload))
-    print("送信ステータス:", res.status_code)
+    push_line([{"type": "text", "text": text}])
 
 
 # ---------------------------------------------------------------
 # メイン
 # ---------------------------------------------------------------
-def main():
-    today = now_jst()
-    is_weekend = today.weekday() >= 5
+def run():
+    now = now_jst()
+    today = now.date()
+    market_closed = is_market_holiday(today)
 
-    # 土日・月曜は金曜からのニュースも拾う
-    if is_weekend:
-        days_back = today.weekday() - 4
-    elif today.weekday() == 0:
-        days_back = 3
-    else:
-        days_back = 1
-    days = [today - datetime.timedelta(days=i) for i in range(days_back + 1)]
+    # 前営業日から今日までのニュースを拾う（土日・祝日明けも漏れないように）
+    start = prev_business_day(today)
+    days = [start + datetime.timedelta(days=i) for i in range((today - start).days + 1)]
     disclosures = pick_material_disclosures(fetch_tdnet(days))
     print(f"材料になりそうな開示: {len(disclosures)}件")
 
+    history = load_history()
+    blocked_codes, prev_codes = history_status(history, today)
+    print(f"配信上限で除外: {sorted(blocked_codes)}")
+
+    market_rows = fetch_market_data()
+    usd_jpy = next((r["raw"] for r in market_rows if r["symbol"] == "JPY=X"), None)
+
     picks = []
+    market_comment = ""
     client = None
     try:
         client = anthropic.Anthropic()
-        notes = research_with_claude(client, today, is_weekend, disclosures)
+        notes = research_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows)
         print("調査メモ:\n", notes)
-        picks = clean_picks(structure_picks(client, notes))
+        market_comment, raw_picks = structure_picks(client, notes)
+        picks = clean_picks(raw_picks, blocked_codes)
     except Exception as e:
         print("AIでの選定に失敗。キーワード判定に切り替えます:", e)
 
     if len(picks) < MIN_PICKS:
         # 足りない分をキーワード判定の結果で補う
         known = {p["code"] for p in picks}
-        picks += [p for p in fallback_picks(disclosures) if p["code"] not in known]
-        picks = picks[:MAX_PICKS]
+        extra = clean_picks(fallback_picks(disclosures), blocked_codes | known)
+        picks = (picks + extra)[:MAX_PICKS]
 
     if not picks:
-        send_line_text("今日の注目株は取得できませんでした。GitHub Actionsのログを確認してください。")
-        return
+        print_cost(usd_jpy)
+        raise RuntimeError("注目株を1件も選べませんでした")
 
     if client is not None:
         picks = add_yutai_info(client, picks)
-    send_line_flex_message(add_price_info(picks), today, is_weekend)
+    picks = add_price_info(picks)
+    for p in picks:
+        p["continued"] = p["code"] in prev_codes
+
+    market_bubble = build_market_bubble(market_rows, market_comment, today) if (market_rows or market_comment) else None
+    send_line_flex_message(picks, market_bubble, today, market_closed)
+    save_history(history, today, [p["code"] for p in picks])
+    print_cost(usd_jpy)
+
+
+def main():
+    try:
+        run()
+    except Exception as e:
+        traceback.print_exc()
+        try:
+            send_line_text(f"⚠️ 注目株botでエラーが起きました\n{type(e).__name__}: {str(e)[:300]}\n\nGitHub Actionsのログを確認してください。")
+            open(NOTIFIED_FLAG, "w").close()
+        except Exception as notify_error:
+            print("エラー通知も失敗:", notify_error)
+        raise
 
 
 if __name__ == "__main__":
