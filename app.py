@@ -205,23 +205,28 @@ HTTP_HEADERS = {
     "Accept-Language": "ja,en;q=0.8",
 }
 
-# 話題の銘柄を探すときに読むページ
+# 話題の銘柄を探すときに読むページ（みんかぶはGitHub Actionsから403になるため外した）
 TOPIC_PAGES = [
-    "https://minkabu.jp/",
-    "https://minkabu.jp/news",
     "https://kabutan.jp/news/marketnews/",
+    "https://kabutan.jp/",
+    "https://finance.yahoo.co.jp/stocks/ranking/up",
+    "https://finance.yahoo.co.jp/stocks/ranking/down",
 ]
 
-# 今日の決算発表予定を探すページ（取れたものだけ使う）
+# 今日の決算発表予定を探すページの候補（取れたものだけ使う）
 EARNINGS_PAGES = [
-    "https://finance.yahoo.co.jp/stocks/settlement/",
-    "https://kabutan.jp/warning/?mode=4_1",
+    "https://www.nikkei.com/markets/kigyo/money-schedule/kessan/",
 ]
 
-# 権利確定月別の優待一覧ページ（{month}に月が入る。取れたものだけ使う）
-YUTAI_MONTH_PAGES = [
-    "https://finance.yahoo.co.jp/stocks/incentive/?month={month}",
-    "https://kabutan.jp/yutai/?mode=1&month={month}",
+# 優待一覧ページの候補（取れたものだけ使う）
+YUTAI_LIST_PAGES = [
+    "https://finance.yahoo.co.jp/stocks/incentive",
+]
+
+# サイト内のリンクから、決算予定・優待一覧のページを自動で探すための入口
+INDEX_PAGES = [
+    "https://finance.yahoo.co.jp/",
+    "https://kabutan.jp/",
 ]
 
 # 各銘柄の優待ページ（上から順に試す）
@@ -260,13 +265,43 @@ def fetch_page_text(url, max_chars=10000, start_word=None, keep_links=True, requ
     return text[:max_chars]
 
 
-def fetch_pages(urls, **kwargs):
+def fetch_pages(urls, limit=None, **kwargs):
     blocks = []
-    for url in urls:
+    for url in dict.fromkeys(urls):
+        if limit and len(blocks) >= limit:
+            break
         text = fetch_page_text(url, **kwargs)
         if text:
             blocks.append(f"<page url=\"{url}\">\n{text}\n</page>")
     return blocks
+
+
+def discover_links(index_urls):
+    """入口ページのリンク一覧（文字, URL）を返す。ログにも出す"""
+    links = []
+    for url in index_urls:
+        try:
+            res = requests.get(url, headers=HTTP_HEADERS, timeout=20)
+            res.raise_for_status()
+            res.encoding = res.apparent_encoding or res.encoding
+        except Exception as e:
+            print(f"入口ページ取得失敗 ({url}):", e)
+            continue
+        soup = BeautifulSoup(res.text, "html.parser")
+        for a in soup.find_all("a", href=True):
+            text = a.get_text(" ", strip=True)
+            href = urljoin(url, a["href"])
+            if text and href.startswith("http"):
+                links.append((text, href))
+    found = [(t, h) for t, h in links if any(w in t for w in ["優待", "決算", "ランキング"])]
+    print("見つかったリンク（優待・決算・ランキング）:")
+    for t, h in dict.fromkeys(found):
+        print(f"  {t[:30]} -> {h}")
+    return links
+
+
+def links_matching(links, must, any_of=()):
+    return [h for t, h in links if must in t and (not any_of or any(w in t for w in any_of))]
 
 
 # ---------------------------------------------------------------
@@ -340,16 +375,19 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
     topic_blocks = fetch_pages(TOPIC_PAGES)
     print(f"話題ページ取得: {len(topic_blocks)}/{len(TOPIC_PAGES)}件")
 
-    # 今月と来月の優待一覧
+    links = discover_links(INDEX_PAGES)
     months = [today.month, today.month % 12 + 1]
-    yutai_urls = [u.format(month=m) for m in months for u in YUTAI_MONTH_PAGES]
-    yutai_blocks = fetch_pages(yutai_urls, max_chars=6000, require_word="優待")
-    print(f"優待一覧ページ取得: {len(yutai_blocks)}/{len(yutai_urls)}件")
+
+    # 優待一覧（固定の候補＋サイト内で見つけた「優待」リンク）
+    yutai_urls = YUTAI_LIST_PAGES + links_matching(links, "優待")
+    yutai_blocks = fetch_pages(yutai_urls, limit=2, max_chars=6000, require_word="優待")
+    print(f"優待一覧ページ取得: {len(yutai_blocks)}件（候補{len(set(yutai_urls))}件）")
 
     earnings_blocks = []
     if not market_closed:
-        earnings_blocks = fetch_pages(EARNINGS_PAGES, max_chars=6000, require_word="決算")
-        print(f"決算予定ページ取得: {len(earnings_blocks)}/{len(EARNINGS_PAGES)}件")
+        earnings_urls = EARNINGS_PAGES + links_matching(links, "決算", ["予定", "スケジュール", "カレンダー", "発表日"])
+        earnings_blocks = fetch_pages(earnings_urls, limit=2, max_chars=6000, require_word="決算")
+        print(f"決算予定ページ取得: {len(earnings_blocks)}件（候補{len(set(earnings_urls))}件）")
 
     market_text = "\n".join(f"- {r['name']}: {r['value']}（前日比 {r['change']:+.2f}%）" for r in market_rows) or "（取得できず）"
     blocked_text = "、".join(sorted(blocked_codes)) or "なし"
@@ -518,6 +556,7 @@ def add_yutai_info(client, picks):
 # 7. 株価・前日比・利回り
 # ---------------------------------------------------------------
 def add_price_info(picks):
+    valid = []
     for p in picks:
         p["price_fmt"] = "取得できず"
         p["change_fmt"] = ""
@@ -529,7 +568,9 @@ def add_price_info(picks):
             if price is None:
                 price = ticker.fast_info.last_price
             if not price:
+                print(f"株価なしのため除外 ({p['code']} {p['name']})")
                 continue
+            valid.append(p)
             p["price_fmt"] = f"約{price * 100 / 10000:.1f}万円 ({price:,.0f}円)"
             if change is not None:
                 p["change"] = change
@@ -549,8 +590,11 @@ def add_price_info(picks):
             else:
                 p["yield_fmt"] = "配当なし／不明"
         except Exception as e:
-            print(f"株価取得失敗 ({p['code']}):", e)
-    return picks
+            if p not in valid:
+                print(f"株価取得失敗のため除外 ({p['code']} {p['name']}):", e)
+            else:
+                print(f"配当情報の取得失敗 ({p['code']}):", e)
+    return valid
 
 
 # ---------------------------------------------------------------
@@ -751,6 +795,8 @@ def run():
     if client is not None:
         picks = add_yutai_info(client, picks)
     picks = add_price_info(picks)
+    if not picks:
+        raise RuntimeError("株価を取得できた銘柄が1件もありませんでした")
     for p in picks:
         p["continued"] = p["code"] in prev_codes
 
