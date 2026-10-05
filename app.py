@@ -37,27 +37,44 @@ CATEGORY_STYLE = {
     "買い場候補": {"color": "#16A085", "label": "買い場候補👀"},
 }
 # X投稿の書き方（朝の通常版・買い場候補版で共通）
-X_POST_STYLE = """## X投稿の書き方
-- 1行目で「誰向けか・なぜ読むべきか」を言い切るフックにする（地合いの説明から始めない）
-- 銘柄は3つ。①②③で番号を付け、銘柄名(コード)の次の行に「材料＋まだ上がりきっていない根拠」を1行で書く
+X_POST_STYLE = """## X投稿の書き方（共通）
+- 1行目は、その投稿の中身と合ったフックにする（地合いの説明から始めない）。好材料と懸念材料が混ざるなら、混ざる前提のフックにする
+- 銘柄は3つ（足りなければあるだけ）。①②③で番号を付け、銘柄名(コード)の次の行から説明を書く
 - 1銘柄ごとに空行を入れ、スマホで読みやすくする
+- 「。」で終わる文や、絵文字で終わる文のあとは必ず改行する（1行に1文）
 - 絵文字は多めに使う（1行に1つ程度）。必ず言葉の後に付け、行頭には置かない（例: 「好材料📈」「出来高急増🔥」）
 - 「自社株買い」など、略さずに伝わる言葉を使う。「アナリスト好評価」のようなあいまいな表現は避け、何が起きたかを書く
 - 「必ず上がる」「買うべき」などの断定や煽りはしない
 - 最後の行はハッシュタグ #株クラ だけ（免責文は書かない）
-- 長さは200字程度まで
+- 長さは200字程度まで"""
 
-## お手本（雰囲気・形の参考。内容はそのまま使わない）
-上がる前にチェックしたい銘柄👀
+# 買い場候補版のお手本（雰囲気・形の参考。内容はそのまま使わない）
+X_EXAMPLE_BUY = """上がる前にチェックしたい銘柄👀
 
 ①ハイデイ日高(7611)
-自社株買い＋増配を発表✨株価の反応はまだ小さめ
+自社株買い＋増配を発表✨
+株価の反応はまだ小さめ
 
 ②カネコ種苗(1376)
-1Qが大幅増益📈株価は横ばいなのに出来高2.4倍🔥
+1Qが大幅増益📈
+株価は横ばいなのに出来高2.4倍🔥
 
 ③きょくとう(2300)
-株価は動かず出来高だけ4.4倍💡値動きの前ぶれになることも
+株価は動かず出来高だけ4.4倍💡
+値動きの前ぶれになることも
+
+#株クラ"""
+
+# ニュース版のお手本（雰囲気・形の参考。内容はそのまま使わない）
+X_EXAMPLE_NEWS = """今朝のニュース、明暗くっきり📰
+
+①カネコ種苗(1376)
+1Qの最終利益が77.5%増📈
+株式の売却益も上乗せ
+
+②あみやき亭(2753)
+売上は10.1%増✨
+ただ減損2億円で減益に⚠️
 
 #株クラ"""
 
@@ -381,7 +398,6 @@ PICKS_SCHEMA = {
     "type": "object",
     "properties": {
         "market_comment": {"type": "string", "description": "今日の地合いのまとめ（80字程度）"},
-        "x_post": {"type": "string", "description": "X（旧Twitter）投稿用の下書き。200字程度まで"},
         "picks": {
             "type": "array",
             "items": {
@@ -398,7 +414,7 @@ PICKS_SCHEMA = {
             },
         },
     },
-    "required": ["market_comment", "x_post", "picks"],
+    "required": ["market_comment", "picks"],
     "additionalProperties": False,
 }
 
@@ -457,12 +473,6 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
 6. 合計{MIN_PICKS}〜{MAX_PICKS}件。10件以上を目標にする。根拠の弱い銘柄は入れない
 7. 証券コードはページに書いてあるものだけを使う。わからない銘柄は入れない
 8. market_comment には、地合いデータとニュースから今日の日本株の見通しを80字程度で書く
-9. x_post には、X（旧Twitter）にそのまま投稿できる文章を、下の「X投稿の書き方」に沿って書く
-   - 今日選んだ銘柄から3銘柄。基本は、材料が出たばかりで読み手が今から注目する意味がある銘柄を優先する
-   - ただし、前日にすでに大きく上がった銘柄があり、上がった理由がページに書いてあれば、3銘柄のうち1銘柄までは「なぜ跳ねたのか」の解説にしてよい（例: 「前日+15%🚀理由は〇〇」）
-
-{X_POST_STYLE}
-
 ## 今日の地合いデータ（前営業日終値ベース）
 {market_text}
 
@@ -498,7 +508,7 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
         if pick.get("source_url") and pick["source_url"] not in allowed_urls:
             print(f"根拠URLが取得ページに無いため除外 ({pick.get('code')}): {pick['source_url']}")
             pick["source_url"] = ""
-    return data["market_comment"], data["picks"], data["x_post"], "\n".join(topic_blocks)
+    return data["market_comment"], data["picks"], "\n".join(topic_blocks)
 
 
 def clean_picks(picks, blocked_codes):
@@ -853,7 +863,7 @@ def send_line_flex_message(stocks, market_bubble, today, market_closed, x_post="
             }
         )
     if x_post:
-        messages.append({"type": "text", "text": f"📝 X投稿用の下書き（{len(x_post)}字）\n\n{x_post}"})
+        messages.append({"type": "text", "text": f"📝 X投稿用の下書き・ニュース版（{len(x_post)}字）\n\n{x_post}"})
     if x_post_buy:
         messages.append({"type": "text", "text": f"📝 X投稿用の下書き・買い場候補版（{len(x_post_buy)}字）\n\n{x_post_buy}"})
     push_line(messages)
@@ -886,12 +896,11 @@ def run():
 
     picks = []
     market_comment = ""
-    x_post = ""
     topic_text = ""
     client = None
     try:
         client = anthropic.Anthropic()
-        market_comment, raw_picks, x_post, topic_text = pick_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows)
+        market_comment, raw_picks, topic_text = pick_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows)
         picks = clean_picks(raw_picks, blocked_codes)
     except Exception as e:
         print("AIでの選定に失敗。キーワード判定に切り替えます:", e)
@@ -931,14 +940,14 @@ def run():
         p.pop("buy_reasons")
     picks = [p for p in picks if p["category"] != "買い場候補" or p.get("buy_reasons")]
     print(f"買い場候補: {[(p['code'], p['buy_reasons']) for p in buy_list]}")
-    x_post_buy = ""
-    if buy_list and client is not None:
-        x_post_buy = add_buy_reasons(client, buy_list, disclosures, topic_text)
+    x_post_buy, x_post_news = "", ""
+    if client is not None:
+        x_post_buy, x_post_news = write_x_posts(client, picks, buy_list, disclosures, topic_text)
     for p in picks:
         p["continued"] = p["code"] in prev_codes
 
     market_bubble = build_market_bubble(market_rows, market_comment, today) if (market_rows or market_comment) else None
-    send_line_flex_message(picks, market_bubble, today, market_closed, x_post, x_post_buy)
+    send_line_flex_message(picks, market_bubble, today, market_closed, x_post_news, x_post_buy)
     save_history(history, today, picks)
     print_cost(usd_jpy)
 
@@ -1001,11 +1010,11 @@ def yutai_advance_reason(stock, today):
 
 
 def is_after_last_close(pubdate, today):
-    """開示時刻が、今日より前の最後の営業日の15:30以降か。時刻が読めなければ True"""
+    """開示時刻が、今日より前の最後の営業日の15:30以降か。時刻が読めなければ False（厳しい側に倒す）"""
     try:
-        published = datetime.datetime.fromisoformat(pubdate.strip()[:19])
+        published = datetime.datetime.fromisoformat(pubdate.strip()[:19].replace("/", "-"))
     except Exception:
-        return True
+        return False
     last_close = datetime.datetime.combine(prev_business_day(today), datetime.time(15, 30))
     return published >= last_close
 
@@ -1014,7 +1023,13 @@ def find_buy_candidates(picks, disclosures, topic_text, blocked_codes, today):
     """ルールで買い場候補を探す。朝の選定銘柄は印を付け、それ以外は新しいカードにする"""
     # 「材料の織り込み前」は、AIの判断ではなく適時開示（公式の発表）で好材料が出た銘柄だけを対象にする。
     # さらに、前営業日の引け（15:30）以降に出た開示に限る（それより前の開示は、すでに株価が反応している）
-    good_codes = {d["code"] for d in disclosures if d["category"] == "好材料" and is_after_last_close(d["pubdate"], today)}
+    good_codes = set()
+    for d in disclosures:
+        if d["category"] == "好材料":
+            after = is_after_last_close(d["pubdate"], today)
+            print(f"好材料の開示: {d['code']} {d['title'][:30]} / 開示時刻 {d['pubdate']!r} → {'引け後（対象）' if after else '対象外'}")
+            if after:
+                good_codes.add(d["code"])
     pick_by_code = {p["code"]: p for p in picks}
     universe = build_universe(picks, disclosures, topic_text)
     print(f"買い場候補の探索対象: {len(universe)}銘柄")
@@ -1058,40 +1073,81 @@ BUY_REASON_SCHEMA = {
                 "additionalProperties": False,
             },
         },
-        "x_post": {"type": "string", "description": "買い場候補を紹介するX投稿の下書き（200字程度まで）"},
+        "x_post_buy": {"type": "string", "description": "買い場候補版のX投稿の下書き。買い場候補がなければ空文字"},
+        "x_post_news": {"type": "string", "description": "ニュース版のX投稿の下書き。買い場候補の銘柄は使わない"},
     },
-    "required": ["items", "x_post"],
+    "required": ["items", "x_post_buy", "x_post_news"],
     "additionalProperties": False,
 }
 
 
-def add_buy_reasons(client, candidates, disclosures, topic_text):
-    """買い場候補ごとに、関連ニュースからAIが注目理由を1文で書く"""
-    blocks = []
-    for c in candidates:
-        lines = [l for l in topic_text.splitlines() if c["code"] in l or (c["name"] and c["name"] in l)][:5]
-        lines += [f"適時開示: {d['title']}" for d in disclosures if d["code"] == c["code"]][:3]
-        if c.get("headline"):
-            lines.append(f"朝の選定理由: {c['headline']}")
-        blocks.append(
-            f"<stock code=\"{c['code']}\" name=\"{c['name']}\">\n"
-            f"ルールで当てはまった条件: {' / '.join(c['buy_reasons'])}\n"
-            f"関連情報:\n" + ("\n".join(lines) or "（なし）") + "\n</stock>"
-        )
-    prompt = f"""次の銘柄は、株価の動きなどのルールで機械的に選んだ「買い場候補」です。
-銘柄ごとに、下の情報だけを使って「注目理由」を60字以内で書いてください。
-- ルールの条件と関連情報を組み合わせて、なぜ今注目なのかを書く
-- 関連情報がない銘柄は、ルールの条件だけで書く。書いていない材料やニュースを作らない
-- 「必ず上がる」「買うべき」などの断定はしない
+EMOJI_CHARS = "\U0001F300-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF"
 
-あわせて、x_post にX（旧Twitter）投稿用の下書きを、下の「X投稿の書き方」に沿って書いてください。
-- 買い場候補から3銘柄（3つ未満ならあるだけ）。それぞれ「なぜまだ上がる前と言えるのか」を伝える
+
+def format_x_post(text):
+    """「。」や絵文字で文が終わったら改行する（すでに改行があれば何もしない）"""
+    text = re.sub(rf"(。|[{EMOJI_CHARS}]\uFE0F?)(?=[^\s{EMOJI_CHARS}\uFE0F])", r"\1\n", text.strip())
+    return re.sub(r"[ \t]+\n", "\n", text)
+
+
+def stock_context(stock, disclosures, topic_text):
+    lines = [l for l in topic_text.splitlines() if stock["code"] in l or (stock["name"] and stock["name"] in l)][:5]
+    lines += [f"適時開示: {d['title']}" for d in disclosures if d["code"] == stock["code"]][:3]
+    if stock.get("headline"):
+        lines.append(f"朝の選定理由: {stock['headline']}")
+    if stock.get("change") is not None:
+        lines.append(f"前日の騰落: {stock['change']:+.1f}%")
+    return "\n".join(lines) or "（なし）"
+
+
+def write_x_posts(client, picks, buy_list, disclosures, topic_text):
+    """買い場候補の注目理由と、X下書き2本（買い場候補版・ニュース版。銘柄は重複させない）を作る"""
+    buy_codes = {c["code"] for c in buy_list}
+    buy_blocks = [
+        f"<stock code=\"{c['code']}\" name=\"{c['name']}\">\n"
+        f"ルールで当てはまった条件: {' / '.join(c['buy_reasons'])}\n"
+        f"関連情報:\n{stock_context(c, disclosures, topic_text)}\n</stock>"
+        for c in buy_list
+    ]
+    news_blocks = [
+        f"<stock code=\"{p['code']}\" name=\"{p['name']}\" category=\"{p['category']}\">\n"
+        f"関連情報:\n{stock_context(p, disclosures, topic_text)}\n</stock>"
+        for p in picks
+        if p["code"] not in buy_codes and p["category"] != "買い場候補"
+    ]
+    prompt = f"""毎朝のLINE配信とX投稿のための文章を作ります。下の情報だけを使い、書いていない材料やニュースは作らないでください。
+
+## 1. 買い場候補の注目理由（items）
+「買い場候補」の銘柄ごとに「注目理由」を60字以内で書く。
+- ルールの条件と関連情報を組み合わせて、なぜ今注目なのかを書く
+- 関連情報がない銘柄は、ルールの条件だけで書く
+
+## 2. X投稿の下書き2本
+2本は役割が違う。**同じ銘柄を両方に入れてはいけない。**
+
+### x_post_buy（買い場候補版）
+- 「買い場候補」の銘柄だけを使う。それぞれ「なぜまだ上がる前と言えるのか」を伝える
 - 材料が出たばかりの銘柄を優先する
-- 下の情報に書いていない材料は作らない
+- 買い場候補がなければ空文字
+
+### x_post_news（ニュース版）
+- 「ニュース銘柄」だけを使う（買い場候補の銘柄は使わない）
+- 好材料・懸念材料・決算の中身など、今朝のニュースで何が起きたかを解説する
+- 基本は材料が出たばかりの銘柄を優先する。前日に大きく上がった（下がった）銘柄で理由がわかるものは、3銘柄のうち1銘柄まで「なぜ動いたのか」の解説にしてよい（例: 「前日+15%🚀」の次の行に理由）
 
 {X_POST_STYLE}
 
-{chr(10).join(blocks)}"""
+### 買い場候補版のお手本（形・雰囲気の参考。内容は使わない）
+{X_EXAMPLE_BUY}
+
+### ニュース版のお手本（形・雰囲気の参考。内容は使わない）
+{X_EXAMPLE_NEWS}
+
+## 買い場候補
+{chr(10).join(buy_blocks) or "（なし）"}
+
+## ニュース銘柄
+{chr(10).join(news_blocks) or "（なし）"}"""
     try:
         response = client.messages.create(
             model=MODEL,
@@ -1104,12 +1160,17 @@ def add_buy_reasons(client, candidates, disclosures, topic_text):
             raise RuntimeError("拒否されました")
         data = json.loads(next(b.text for b in response.content if b.type == "text"))
     except Exception as e:
-        print("買い場候補の理由づけに失敗:", e)
-        return ""
+        print("X下書き・買い場候補の理由づけに失敗:", e)
+        return "", ""
     reasons = {item["code"].upper(): item["reason"] for item in data["items"]}
-    for c in candidates:
+    for c in buy_list:
         c["buy_comment"] = reasons.get(c["code"], "")
-    return data["x_post"]
+    x_buy = format_x_post(data["x_post_buy"]) if data["x_post_buy"] else ""
+    x_news = format_x_post(data["x_post_news"]) if data["x_post_news"] else ""
+    overlap = [code for code in buy_codes if code in x_news]
+    if overlap:
+        print(f"注意: ニュース版に買い場候補の銘柄が入っています: {overlap}")
+    return x_buy, x_news
 
 
 # ---------------------------------------------------------------
