@@ -4,99 +4,156 @@
    "code": "8923",
    "name": "トーセイ",
    "category": "決算",
-   "price": 1688.0,
-   "buy": true
+   "price": 1679.0,
+   "buy": true,
+   "yutai": "自社運営ホテルで使える宿泊割引券3,000円分と継続保有期間に応じてオリジナルQUOカード",
+   "kenri_months": [
+    11
+   ],
+   "kenri_day": 0
   },
   {
    "code": "1376",
    "name": "カネコ種苗",
    "category": "決算",
    "price": 1539.0,
-   "buy": true
+   "buy": true,
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
   },
   {
    "code": "2300",
    "name": "きょくとう",
    "category": "決算",
-   "price": 502.0,
-   "buy": true
+   "price": 500.0,
+   "buy": true,
+   "yutai": "買い物券相当",
+   "kenri_months": [
+    2
+   ],
+   "kenri_day": 0
   },
   {
    "code": "2753",
    "name": "あみやき亭",
    "category": "決算",
-   "price": 1329.0,
-   "buy": false
+   "price": 1330.0,
+   "buy": false,
+   "yutai": "贈呈優待券またはお米引換",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
   },
   {
    "code": "6387",
    "name": "サムコ",
    "category": "好材料",
-   "price": 9760.0,
-   "buy": false
+   "price": 9750.0,
+   "buy": false,
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
   },
   {
    "code": "6146",
    "name": "ディスコ",
    "category": "好材料",
-   "price": 63680.0,
-   "buy": false
+   "price": 63840.0,
+   "buy": false,
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
   },
   {
-   "code": "3905",
-   "name": "データセクション",
+   "code": "8035",
+   "name": "東エレク",
    "category": "好材料",
-   "price": 1923.0,
-   "buy": false
+   "price": 12745.0,
+   "buy": false,
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4884",
+   "name": "クリングルファーマ",
+   "category": "好材料",
+   "price": 564.0,
+   "buy": false,
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
   },
   {
    "code": "4973",
    "name": "日本高純度化学",
    "category": "好材料",
-   "price": 5080.0,
-   "buy": false
-  },
-  {
-   "code": "4099",
-   "name": "四国化成ホールディングス",
-   "category": "好材料",
-   "price": 2511.0,
-   "buy": false
+   "price": 5070.0,
+   "buy": false,
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
   },
   {
    "code": "6407",
    "name": "ＣＫＤ",
    "category": "好材料",
-   "price": 6030.0,
-   "buy": false
+   "price": 6050.0,
+   "buy": false,
+   "yutai": "QUOカード相当",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
   },
   {
-   "code": "5991",
-   "name": "ニッパツ",
+   "code": "4099",
+   "name": "四国化成ホールディングス",
    "category": "好材料",
-   "price": 3662.0,
-   "buy": false
+   "price": 2518.0,
+   "buy": false,
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
   },
   {
-   "code": "2593",
-   "name": "伊藤園",
-   "category": "懸念材料",
-   "price": 3094.0,
-   "buy": false
+   "code": "6723",
+   "name": "ルネサスエレクトロニクス",
+   "category": "好材料",
+   "price": 3818.0,
+   "buy": false,
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
   },
   {
    "code": "7611",
    "name": "ハイデ日高",
    "category": "買い場候補",
-   "price": 2950.0,
-   "buy": true
+   "price": 2953.0,
+   "buy": true,
+   "yutai": "贈呈優待券またはお米引換",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
   },
   {
    "code": "2185",
    "name": "シイエム・シイ",
    "category": "買い場候補",
    "price": 1926.0,
-   "buy": true
+   "buy": true,
+   "yutai": "優待ポイント",
+   "kenri_months": [
+    9
+   ],
+   "kenri_day": 0
   }
  ]
 }
