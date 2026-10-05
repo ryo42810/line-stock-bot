@@ -50,6 +50,11 @@ THEMES = {
     "green": {"head": "#0F3B3A", "title": "white", "sub": "#CFE5DF", "line": "#E6A100", "pill": "#2E7D32", "foot": "#0F3B3A", "foot_text": "#CFE5DF", "bars": "single", "bar": "#2E7D32", "chart": "#00A8E8"},
     "gold": {"head": "#1A2530", "title": "white", "sub": "#C9D6E2", "line": "#E6A100", "pill": "#E6A100", "foot": "#1A2530", "foot_text": "#C9D6E2", "bars": "single", "bar": "#1A2530", "chart": "#00A8E8"},
     # ゴールドのバー（ネイビー文字）：明るく目立つ
+    # ネイビー×ゴールドのトーン違い（構成はgoldと同じ。色の濃さ・鮮やかさを変える）
+    "gold_vivid": {"head": "#0B1F3A", "title": "white", "sub": "#D5DEEA", "line": "#FFB300", "pill": "#FFB300", "foot": "#0B1F3A", "foot_text": "#D5DEEA", "bars": "single", "bar": "#0B1F3A", "chart": "#0096E0", "gold": "#F0A000", "gold_bg": "#FFEBB8", "tint": 0.84, "border_w": 3},
+    "gold_deep": {"head": "#06121F", "title": "white", "sub": "#C7D3E0", "line": "#F2A900", "pill": "#F2A900", "foot": "#06121F", "foot_text": "#F2C75C", "bars": "single", "bar": "#06121F", "chart": "#0091D5", "gold": "#D99500", "gold_bg": "#FFE9AD", "tint": 0.86, "page": "#EEF2F6", "border_w": 0},
+    "gold_contrast": {"head": "#0A2342", "title": "white", "sub": "#DCE6F2", "line": "#FFC107", "pill": "#FFC107", "pill_text": "#0A2342", "foot": "#FFC107", "foot_text": "#0A2342", "bars": "single", "bar": "#0A2342", "chart": "#00A3F0", "gold": "#E89B00", "gold_bg": "#FFF0C2", "tint": 0.82, "text": "#000000", "border_w": 3},
+    "gold_solid": {"head": "#0B1F3A", "title": "white", "sub": "#D5DEEA", "line": "#FFB300", "pill": "#FFB300", "pill_text": "#0B1F3A", "foot": "#0B1F3A", "foot_text": "#FFB300", "bars": "single", "bar": "#0B1F3A", "chart": "#0096E0", "gold": "#FFB300", "solid_boxes": True, "border_w": 3},
     "gold_bar": {"head": "#1A2530", "title": "white", "sub": "#C9D6E2", "line": "#E6A100", "pill": "#E6A100", "foot": "#1A2530", "foot_text": "#C9D6E2", "bars": "single", "bar": "#E6A100", "bar_text": "#1A2530", "circle": "#1A2530", "circle_text": "#E6A100", "chart": "#1A2530"},
     # 白ヘッダー：見出しはネイビー文字＋ゴールドの下線、バーはネイビー
     "gold_light": {"head": "#FFFFFF", "title": "#1A2530", "sub": "#6B7785", "line": "#E6A100", "pill": "#1A2530", "foot": "#1A2530", "foot_text": "#E6C46A", "bars": "single", "bar": "#1A2530", "chart": "#00A8E8", "border": "#E6A100"},
@@ -138,7 +143,7 @@ def fit_size(text, width_px, size, min_size):
 # 描画の部品（左上を原点にしたピクセル座標で描く）
 # ---------------------------------------------------------------
 def _canvas():
-    fig = plt.figure(figsize=(W / 100, H / 100), dpi=100, facecolor=COLORS["bg"])
+    fig = plt.figure(figsize=(W / 100, H / 100), dpi=100, facecolor=THEME.get("page", COLORS["bg"]))
     ax = fig.add_axes([0, 0, 1, 1])
     ax.set_xlim(0, W)
     ax.set_ylim(H, 0)
@@ -183,7 +188,7 @@ def _header(fig, ax, title, subtitle, date_text, accent):
         except Exception as e:
             print("クジラアイコンの読み込みに失敗:", e)
     if date_text:
-        _pill(ax, right, 136, date_text, 16, "white", THEME["pill"], align="right")
+        _pill(ax, right, 136, date_text, 16, THEME.get("pill_text", "white"), THEME["pill"], align="right")
 
 
 def _footer(ax, note):
@@ -224,7 +229,7 @@ def render_stock_card(path, title, subtitle, stocks, accent, get_history, date_t
         color = cat_color if THEME["bars"] == "category" else THEME["bar"]
 
         # カード本体と、色ベタのタイトルバー
-        _box(ax, x, y, w, panel_h, "white", THEME.get("border", color), r=16, lw=2.5)
+        _box(ax, x, y, w, panel_h, "white", THEME.get("border", color), r=16, lw=THEME.get("border_w", 2.5) or 0.01)
         _box(ax, x, y, w, bar_h + 16, color, r=16, z=2)
         ax.add_patch(plt.Rectangle((x + 2, y + bar_h), w - 4, 16, color="white", zorder=2))
 
@@ -251,32 +256,41 @@ def render_stock_card(path, title, subtitle, stocks, accent, get_history, date_t
         body_y = y + bar_h + 16
         # 左：株価と利回りの数字ボックス
         bx, bw = x + 20, 230
-        _box(ax, bx, body_y, bw, 108, _tint(color, 0.88), r=12)
-        ax.text(bx + 16, body_y + 26, "株価（前営業日終値）", fontsize=13, color=COLORS["sub"], weight="bold", va="center")
+        solid = THEME.get("solid_boxes", False)  # 数字ボックスをベタ塗りにする（くっきりトーン）
+        text_color = THEME.get("text", COLORS["ink"])
+        price_bg = color if solid else _tint(color, THEME.get("tint", 0.88))
+        price_fg, price_label = ("white", "#C9D6E2") if solid else (text_color, COLORS["sub"])
+        _box(ax, bx, body_y, bw, 108, price_bg, r=12)
+        ax.text(bx + 16, body_y + 26, "株価（前営業日終値）", fontsize=13, color=price_label, weight="bold", va="center")
         if s.get("price"):
-            ax.text(bx + 16, body_y + 72, f"{s['price']:,.0f}", fontsize=36, color=COLORS["ink"], weight="bold", va="center")
-            ax.text(bx + 20 + text_px(f"{s['price']:,.0f}", 36), body_y + 80, "円", fontsize=18, color=COLORS["ink"], weight="bold", va="center")
+            ax.text(bx + 16, body_y + 72, f"{s['price']:,.0f}", fontsize=36, color=price_fg, weight="bold", va="center")
+            ax.text(bx + 20 + text_px(f"{s['price']:,.0f}", 36), body_y + 80, "円", fontsize=18, color=price_fg, weight="bold", va="center")
 
         yield_fmt = s.get("yield_fmt") or ""
         show_yield = yield_fmt and not any(k in yield_fmt for k in ("取得できず", "なし", "不明"))
-        _box(ax, bx, body_y + 120, bw, 108, "#FFF4D6" if show_yield else _tint(COLORS["green"], 0.88), r=12)
+        gold = THEME.get("gold", COLORS["gold"])
+        if show_yield:
+            bg, fg, label_fg = (gold, COLORS["ink"], COLORS["ink"]) if solid else (THEME.get("gold_bg", "#FFF4D6"), gold, COLORS["sub"])
+        else:
+            bg, fg, label_fg = (COLORS["green"], "white", "#D7EED9") if solid else (_tint(COLORS["green"], THEME.get("tint", 0.88)), COLORS["green"], COLORS["sub"])
+        _box(ax, bx, body_y + 120, bw, 108, bg, r=12)
         if show_yield:
             total = yield_fmt.split("＝")[-1]
-            ax.text(bx + 16, body_y + 146, "利回り" + ("（配当＋優待）" if "＝" in yield_fmt else "（配当）"), fontsize=13, color=COLORS["sub"], weight="bold", va="center")
-            ax.text(bx + 16, body_y + 192, total.replace("配当", ""), fontsize=34, color=COLORS["gold"], weight="bold", va="center")
+            ax.text(bx + 16, body_y + 146, "利回り" + ("（配当＋優待）" if "＝" in yield_fmt else "（配当）"), fontsize=13, color=label_fg, weight="bold", va="center")
+            ax.text(bx + 16, body_y + 192, total.replace("配当", ""), fontsize=34, color=fg, weight="bold", va="center")
         else:
             sig = (s.get("signals") or ["注目材料あり"])[0]
             sig = re.sub(r"^[^\w（]+", "", sig)
-            ax.text(bx + 16, body_y + 146, "テクニカル", fontsize=13, color=COLORS["sub"], weight="bold", va="center")
+            ax.text(bx + 16, body_y + 146, "テクニカル", fontsize=13, color=label_fg, weight="bold", va="center")
             for j, line in enumerate(wrap_ja(sig, bw - 30, 17, 2)):
-                ax.text(bx + 16, body_y + 180 + j * 28, line, fontsize=17, color=COLORS["green"], weight="bold", va="center")
+                ax.text(bx + 16, body_y + 180 + j * 28, line, fontsize=17, color=fg, weight="bold", va="center")
 
         # 中央：理由（太字）とテクニカルの一言
         tx, tw = x + 272, 360
         reason = s.get("buy_comment") or s.get("headline") or ""
         lines = wrap_ja(reason, tw, 20, 4)
         for j, line in enumerate(lines):
-            ax.text(tx, body_y + 24 + j * 36, line, fontsize=20, color=COLORS["ink"], weight="bold", va="center")
+            ax.text(tx, body_y + 24 + j * 36, line, fontsize=20, color=THEME.get("text", COLORS["ink"]), weight="bold", va="center")
         signals = [re.sub(r"^[^\w（]+", "", g).split("（")[0] for g in s.get("signals", [])]
         if show_yield and signals:
             _pill(ax, tx, body_y + 188, f"● {signals[0]}", 15, COLORS["green"], _tint(COLORS["green"], 0.85))
@@ -290,7 +304,7 @@ def render_stock_card(path, title, subtitle, stocks, accent, get_history, date_t
             print(f"チャート描画失敗 ({s['code']}):", e)
 
     _footer(ax, "※株価は前営業日終値ベース")
-    fig.savefig(path, facecolor=COLORS["bg"])
+    fig.savefig(path, facecolor=THEME.get("page", COLORS["bg"]))
     plt.close(fig)
     return path
 
@@ -341,7 +355,7 @@ def render_performance_chart(path, rows, title, date_text=""):
                    color=_change_color(v), weight="bold")
 
     _footer(ax, "※配信時の株価は前営業日終値ベース")
-    fig.savefig(path, facecolor=COLORS["bg"])
+    fig.savefig(path, facecolor=THEME.get("page", COLORS["bg"]))
     plt.close(fig)
     return path
 
