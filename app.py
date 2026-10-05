@@ -14,6 +14,8 @@ import requests
 import yfinance as yf
 from bs4 import BeautifulSoup
 
+import x_media
+
 # GitHubのSecretsから取得し、先頭・末尾の余計な空白や改行を除去（strip）
 LINE_ACCESS_TOKEN = (os.environ.get("LINE_ACCESS_TOKEN") or "").strip()
 USER_ID = (os.environ.get("USER_ID") or "").strip()
@@ -892,14 +894,15 @@ def push_line(messages):
         "Content-Type": "application/json",
         "Authorization": f"Bearer {LINE_ACCESS_TOKEN}",
     }
-    res = requests.post(url, headers=headers, data=json.dumps({"to": USER_ID, "messages": messages}))
-    print("送信ステータス:", res.status_code)
-    if res.status_code != 200:
-        print("レスポンス:", res.text)
-        raise RuntimeError(f"LINE送信失敗: {res.status_code}")
+    for i in range(0, len(messages), 5):  # LINEは1回の送信で5メッセージまで
+        res = requests.post(url, headers=headers, data=json.dumps({"to": USER_ID, "messages": messages[i : i + 5]}))
+        print("送信ステータス:", res.status_code)
+        if res.status_code != 200:
+            print("レスポンス:", res.text)
+            raise RuntimeError(f"LINE送信失敗: {res.status_code}")
 
 
-def send_line_flex_message(stocks, market_bubble, today, market_closed, x_post="", x_post_buy="", x_post_survey=""):
+def send_line_flex_message(stocks, market_bubble, today, market_closed, extra_messages=()):
     weekday_str = "月火水木金土日"[today.weekday()]
 
     bubbles = ([market_bubble] if market_bubble else []) + [build_bubble(s, today, market_closed) for s in stocks]
@@ -915,15 +918,7 @@ def send_line_flex_message(stocks, market_bubble, today, market_closed, x_post="
                 "contents": {"type": "carousel", "contents": chunk},
             }
         )
-    # X下書きは本文だけを送る（そのままコピペできるように）。順番はニュース版→買い場候補版→アンケート版
-    if x_post:
-        messages.append({"type": "text", "text": x_post})
-    if x_post_buy:
-        messages.append({"type": "text", "text": x_post_buy})
-    if x_post_survey:
-        messages.append({"type": "text", "text": x_post_survey})
-    messages = messages[:5]  # LINEは1回の送信で5メッセージまで
-    push_line(messages)
+    push_line(messages + list(extra_messages))
 
 
 def send_line_text(text):
@@ -1004,7 +999,37 @@ def run():
         p["continued"] = p["code"] in prev_codes
 
     market_bubble = build_market_bubble(market_rows, market_comment, today) if (market_rows or market_comment) else None
-    send_line_flex_message(picks, market_bubble, today, market_closed, x_post_news, x_post_buy, x_post_survey)
+    # X下書きと画像（本文だけ送る。順番はニュース版→買い場候補版→アンケート版）
+    by_code = {p["code"]: p for p in picks}
+    images = {}
+    for kind, post, title, accent in (
+        ("news", x_post_news, "今朝のニュース銘柄", "#2D7FF9"),
+        ("buy", x_post_buy, "買い場候補", "#16A085"),
+    ):
+        stocks = [by_code[c] for c in x_media.codes_in_post(post) if c in by_code]
+        if post and stocks:
+            try:
+                images[kind] = x_media.render_stock_card(
+                    x_media.image_path(today, kind), title, f"{today:%Y年%m月%d日}", stocks, accent, get_history
+                )
+            except Exception as e:
+                print(f"画像の作成に失敗 ({kind}):", e)
+    urls = x_media.publish_images(list(images.values()), today)
+
+    extra = []
+    for kind, post in (("news", x_post_news), ("buy", x_post_buy), ("survey", x_post_survey)):
+        if post:
+            extra.append({"type": "text", "text": post})
+            if images.get(kind) in urls:
+                extra.append(x_media.line_image_message(urls[images[kind]]))
+    send_line_flex_message(picks, market_bubble, today, market_closed, extra)
+
+    # Xに自動投稿（オンのときだけ）。失敗やスキップがあったときだけLINEで知らせる
+    x_result = x_media.post_all_to_x(
+        [(x_post_news, images.get("news")), (x_post_buy, images.get("buy")), (x_post_survey, None)]
+    )
+    if "⚠️" in x_result or "⏭" in x_result:
+        send_line_text(x_result)
     save_history(history, today, picks)
     print_cost(usd_jpy)
 
@@ -1398,7 +1423,7 @@ def kenri_reminder_text(history, today):
     return "\n".join(lines)
 
 
-def x_performance_post(history, today):
+def performance_rows(history, today):
     """買い場候補の1週間後の成績を、X用の実績報告にする（AIは使わない）"""
     rows = []
     for date_str, entries in history.items():
@@ -1417,6 +1442,10 @@ def x_performance_post(history, today):
                 c = change_after(e, delivered, 5)
                 if c is not None:
                     rows.append({**e, "change": c})
+    return rows
+
+
+def x_performance_post(rows):
     if not rows:
         return ""
     avg = sum(r["change"] for r in rows) / len(rows)
@@ -1584,18 +1613,35 @@ def run_evening():
     if earnings_text:
         sections.append(earnings_text)
 
+    # 実績報告（週の最終営業日だけ）は、成績のグラフ画像を付ける
+    rows = performance_rows(history, today) if is_week_end else []
+    perf_post = x_performance_post(rows)
+    perf_image = None
+    if rows:
+        try:
+            perf_image = x_media.render_performance_chart(x_media.image_path(today, "performance"), rows, "買い場候補 1週間後の成績")
+        except Exception as e:
+            print("成績グラフの作成に失敗:", e)
+    urls = x_media.publish_images([perf_image] if perf_image else [], today)
+
     messages = []
     if sections:
         messages.append({"type": "text", "text": "\n\n".join(sections)[:4900]})
     # X下書きは本文だけ（そのままコピペできるように）。順番は なぜ動いたか→明日の決算→実績報告（週末のみ）
-    for post in (movers_post, earnings_post, x_performance_post(history, today) if is_week_end else ""):
+    for post, image in ((movers_post, None), (earnings_post, None), (perf_post, perf_image)):
         if post:
             messages.append({"type": "text", "text": post})
+            if image in urls:
+                messages.append(x_media.line_image_message(urls[image]))
     if not messages:
         print("送る内容がありません")
         return
-    push_line(messages[:5])
+    push_line(messages)
     print_cost()
+
+    x_result = x_media.post_all_to_x([(movers_post, None), (earnings_post, None), (perf_post, perf_image)])
+    if "⚠️" in x_result or "⏭" in x_result:
+        send_line_text(x_result)
 
 
 def main():
