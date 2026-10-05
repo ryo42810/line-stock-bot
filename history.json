@@ -6,99 +6,8 @@
    "category": "好材料",
    "price": 5780.0,
    "buy": false,
-   "headline": "第3四半期累計で大幅増益達成、株式分割発表",
-   "yutai": "不明",
-   "kenri_months": [],
-   "kenri_day": 0
-  },
-  {
-   "code": "5076",
-   "name": "インフロニア・ホールディングス",
-   "category": "懸念材料",
-   "price": 2330.0,
-   "buy": false,
-   "headline": "営業利益見通し下方修正で株価大幅下落",
-   "yutai": "不明",
-   "kenri_months": [],
-   "kenri_day": 0
-  },
-  {
-   "code": "6664",
-   "name": "オプトエレクトロニクス",
-   "category": "好材料",
-   "price": 274.0,
-   "buy": false,
-   "headline": "日経平均反発で関連銘柄として買われ16%超上昇",
-   "yutai": "不明",
-   "kenri_months": [],
-   "kenri_day": 0
-  },
-  {
-   "code": "6146",
-   "name": "ディスコ",
-   "category": "好材料",
-   "price": 63730.0,
-   "buy": false,
-   "headline": "産業ソフトM&A加速観測で買われ5.7%上昇",
-   "yutai": "不明",
-   "kenri_months": [],
-   "kenri_day": 0
-  },
-  {
-   "code": "6652",
-   "name": "IDEC",
-   "category": "好材料",
-   "price": 4060.0,
-   "buy": false,
-   "headline": "通期営業利益予想を増額修正、6.3%上昇",
-   "yutai": "不明",
-   "kenri_months": [],
-   "kenri_day": 0
-  },
-  {
-   "code": "4493",
-   "name": "サイバーセキュリティクラウド",
-   "category": "好材料",
-   "price": 2118.0,
-   "buy": false,
-   "headline": "セキュリティ関連需要高まる中で7.4%上昇",
-   "yutai": "不明",
-   "kenri_months": [],
-   "kenri_day": 0
-  },
-  {
-   "code": "6971",
-   "name": "京セラ",
-   "category": "好材料",
-   "price": 3855.0,
-   "buy": false,
-   "headline": "電子機器セクター買われ、5.1%上昇",
-   "yutai": "飲食料品・ファッション・日用品・家電・買い物券・宿泊・その他",
-   "kenri_months": [
-    3,
-    9
-   ],
-   "kenri_day": 31
-  },
-  {
-   "code": "8050",
-   "name": "セイコーグループ",
-   "category": "好材料",
-   "price": 10960.0,
-   "buy": false,
-   "headline": "時計・精密機器関連で買われ、4.8%上昇",
-   "yutai": "不明",
-   "kenri_months": [],
-   "kenri_day": 0
-  },
-  {
-   "code": "7740",
-   "name": "タムロン",
-   "category": "好材料",
-   "price": 1439.0,
-   "buy": false,
-   "headline": "カメラ関連株として買われ5.1%上昇",
-   "yutai": "不明",
+   "headline": "株式分割発表。構造改革の効果で営業利益72.8%増の大幅増益達成",
+   "yutai": "なし",
    "kenri_months": [],
    "kenri_day": 0
   },
@@ -108,12 +17,37 @@
    "category": "好材料",
    "price": 1664.0,
    "buy": true,
-   "headline": "通期業績予想および配当を上方修正",
-   "yutai": "買い物券・プリペイドカード・宿泊・オリジナル・限定",
+   "headline": "通期業績予想を上方修正、配当を増配予定。好調な実績を反映",
+   "yutai": "自社運営ホテル宿泊割引券3,000円分と継続保有期間に応じてオリジナルQUOカード（1,000～3,000円分）",
    "kenri_months": [
     11
    ],
    "kenri_day": 30
+  },
+  {
+   "code": "9793",
+   "name": "ダイセキ",
+   "category": "好材料",
+   "price": 3485.0,
+   "buy": false,
+   "headline": "中間期は売上高3.8%増、営業利益12.0%増で過去最高を達成",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9042",
+   "name": "阪急阪神",
+   "category": "好材料",
+   "price": 4456.0,
+   "buy": true,
+   "headline": "自己株式取得枠を拡大・期間延長。株主還元強化の意思を示す",
+   "yutai": "グループ優待券、阪急・阪神共通回数カード等",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
   },
   {
    "code": "7611",
@@ -121,8 +55,8 @@
    "category": "好材料",
    "price": 2936.0,
    "buy": true,
-   "headline": "増配と自己株式買付継続で買われ好調",
-   "yutai": "飲食料品・食事割引券・買い物券・プリペイドカード",
+   "headline": "中間配当と期末配当予想を増配修正。自己株式買付も継続",
+   "yutai": "国産和牛（①2～24枚分）または精肉（②1～7kg）",
    "kenri_months": [
     2,
     8
@@ -130,55 +64,70 @@
    "kenri_day": 28
   },
   {
-   "code": "4021",
-   "name": "日本産化学",
+   "code": "6146",
+   "name": "ディスコ",
    "category": "好材料",
-   "price": 8734.0,
+   "price": 63730.0,
    "buy": false,
-   "headline": "化学セクター買われ、4.1%上昇",
-   "yutai": "不明",
+   "headline": "ラピダス主導の先端設計強化で半導体製造装置メーカーに追い風",
+   "yutai": "なし",
    "kenri_months": [],
    "kenri_day": 0
   },
   {
-   "code": "2185",
-   "name": "シイエム・シイ",
-   "category": "買い場候補",
-   "price": 1926.0,
-   "buy": true,
-   "headline": "",
-   "yutai": "その他",
-   "kenri_months": [
-    3,
-    9
-   ],
-   "kenri_day": 30
+   "code": "4493",
+   "name": "サイバーセキュリティクラウド",
+   "category": "好材料",
+   "price": 2118.0,
+   "buy": false,
+   "headline": "セキュリティ関連への資金流入が継続。注目度大幅上昇",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
   },
   {
-   "code": "6370",
-   "name": "栗田工",
-   "category": "買い場候補",
-   "price": 7955.0,
-   "buy": true,
-   "headline": "",
-   "yutai": "買い物券・プリペイドカード",
-   "kenri_months": [
-    3
-   ],
-   "kenri_day": 31
+   "code": "8050",
+   "name": "セイコーグループ",
+   "category": "好材料",
+   "price": 10960.0,
+   "buy": false,
+   "headline": "リスク選好強まるなか、優良企業として注目を集める",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
   },
   {
-   "code": "9042",
-   "name": "阪急阪神",
+   "code": "3905",
+   "name": "データセクション",
+   "category": "好材料",
+   "price": 1950.0,
+   "buy": false,
+   "headline": "データセンター・ETFテーマで資金流入。AI関連需要が支援",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2593",
+   "name": "伊藤園",
+   "category": "懸念材料",
+   "price": 3088.0,
+   "buy": false,
+   "headline": "株主優待制度を廃止する方針。配当還元重視へシフト",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4564",
+   "name": "2 オンコセラ",
    "category": "買い場候補",
-   "price": 4456.0,
+   "price": 20.0,
    "buy": true,
    "headline": "",
-   "yutai": "食事割引券・買い物券・プリペイドカード・娯楽・芸術・スポーツ・交通・旅行・宿泊・その他",
-   "kenri_months": [
-    3
-   ],
-   "kenri_day": 31
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
   }
  ]
 }
