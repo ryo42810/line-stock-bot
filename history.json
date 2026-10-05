@@ -1,59 +1,35 @@
 {
  "2026-10-05": [
   {
-   "code": "8923",
-   "name": "トーセイ",
-   "category": "決算",
-   "price": 1679.0,
-   "buy": true,
-   "yutai": "自社運営ホテルで使える宿泊割引券3,000円分と継続保有期間に応じてオリジナルQUOカード",
-   "kenri_months": [
-    11
-   ],
-   "kenri_day": 0
-  },
-  {
-   "code": "1376",
-   "name": "カネコ種苗",
-   "category": "決算",
-   "price": 1539.0,
-   "buy": true,
-   "yutai": "なし",
+   "code": "6474",
+   "name": "不二越",
+   "category": "好材料",
+   "price": 5780.0,
+   "buy": false,
+   "headline": "第3四半期累計で大幅増益達成、株式分割発表",
+   "yutai": "不明",
    "kenri_months": [],
    "kenri_day": 0
   },
   {
-   "code": "2300",
-   "name": "きょくとう",
-   "category": "決算",
-   "price": 500.0,
-   "buy": true,
-   "yutai": "買い物券相当",
-   "kenri_months": [
-    2
-   ],
-   "kenri_day": 0
-  },
-  {
-   "code": "2753",
-   "name": "あみやき亭",
-   "category": "決算",
-   "price": 1330.0,
+   "code": "5076",
+   "name": "インフロニア・ホールディングス",
+   "category": "懸念材料",
+   "price": 2330.0,
    "buy": false,
-   "yutai": "贈呈優待券またはお米引換",
-   "kenri_months": [
-    3,
-    9
-   ],
+   "headline": "営業利益見通し下方修正で株価大幅下落",
+   "yutai": "不明",
+   "kenri_months": [],
    "kenri_day": 0
   },
   {
-   "code": "6387",
-   "name": "サムコ",
+   "code": "6664",
+   "name": "オプトエレクトロニクス",
    "category": "好材料",
-   "price": 9750.0,
+   "price": 274.0,
    "buy": false,
-   "yutai": "なし",
+   "headline": "日経平均反発で関連銘柄として買われ16%超上昇",
+   "yutai": "不明",
    "kenri_months": [],
    "kenri_day": 0
   },
@@ -61,86 +37,107 @@
    "code": "6146",
    "name": "ディスコ",
    "category": "好材料",
-   "price": 63840.0,
+   "price": 63730.0,
    "buy": false,
-   "yutai": "なし",
+   "headline": "産業ソフトM&A加速観測で買われ5.7%上昇",
+   "yutai": "不明",
    "kenri_months": [],
    "kenri_day": 0
   },
   {
-   "code": "8035",
-   "name": "東エレク",
+   "code": "6652",
+   "name": "IDEC",
    "category": "好材料",
-   "price": 12745.0,
+   "price": 4060.0,
    "buy": false,
-   "yutai": "なし",
+   "headline": "通期営業利益予想を増額修正、6.3%上昇",
+   "yutai": "不明",
    "kenri_months": [],
    "kenri_day": 0
   },
   {
-   "code": "4884",
-   "name": "クリングルファーマ",
+   "code": "4493",
+   "name": "サイバーセキュリティクラウド",
    "category": "好材料",
-   "price": 564.0,
+   "price": 2118.0,
    "buy": false,
-   "yutai": "なし",
+   "headline": "セキュリティ関連需要高まる中で7.4%上昇",
+   "yutai": "不明",
    "kenri_months": [],
    "kenri_day": 0
   },
   {
-   "code": "4973",
-   "name": "日本高純度化学",
+   "code": "6971",
+   "name": "京セラ",
    "category": "好材料",
-   "price": 5070.0,
+   "price": 3855.0,
    "buy": false,
-   "yutai": "なし",
-   "kenri_months": [],
-   "kenri_day": 0
-  },
-  {
-   "code": "6407",
-   "name": "ＣＫＤ",
-   "category": "好材料",
-   "price": 6050.0,
-   "buy": false,
-   "yutai": "QUOカード相当",
+   "headline": "電子機器セクター買われ、5.1%上昇",
+   "yutai": "飲食料品・ファッション・日用品・家電・買い物券・宿泊・その他",
    "kenri_months": [
     3,
     9
    ],
-   "kenri_day": 0
+   "kenri_day": 31
   },
   {
-   "code": "4099",
-   "name": "四国化成ホールディングス",
+   "code": "8050",
+   "name": "セイコーグループ",
    "category": "好材料",
-   "price": 2518.0,
+   "price": 10960.0,
    "buy": false,
-   "yutai": "なし",
+   "headline": "時計・精密機器関連で買われ、4.8%上昇",
+   "yutai": "不明",
    "kenri_months": [],
    "kenri_day": 0
   },
   {
-   "code": "6723",
-   "name": "ルネサスエレクトロニクス",
+   "code": "7740",
+   "name": "タムロン",
    "category": "好材料",
-   "price": 3818.0,
+   "price": 1439.0,
    "buy": false,
-   "yutai": "なし",
+   "headline": "カメラ関連株として買われ5.1%上昇",
+   "yutai": "不明",
    "kenri_months": [],
    "kenri_day": 0
+  },
+  {
+   "code": "8923",
+   "name": "トーセイ",
+   "category": "好材料",
+   "price": 1664.0,
+   "buy": true,
+   "headline": "通期業績予想および配当を上方修正",
+   "yutai": "買い物券・プリペイドカード・宿泊・オリジナル・限定",
+   "kenri_months": [
+    11
+   ],
+   "kenri_day": 30
   },
   {
    "code": "7611",
    "name": "ハイデ日高",
-   "category": "買い場候補",
-   "price": 2953.0,
+   "category": "好材料",
+   "price": 2936.0,
    "buy": true,
-   "yutai": "贈呈優待券またはお米引換",
+   "headline": "増配と自己株式買付継続で買われ好調",
+   "yutai": "飲食料品・食事割引券・買い物券・プリペイドカード",
    "kenri_months": [
     2,
     8
    ],
+   "kenri_day": 28
+  },
+  {
+   "code": "4021",
+   "name": "日本産化学",
+   "category": "好材料",
+   "price": 8734.0,
+   "buy": false,
+   "headline": "化学セクター買われ、4.1%上昇",
+   "yutai": "不明",
+   "kenri_months": [],
    "kenri_day": 0
   },
   {
@@ -149,11 +146,39 @@
    "category": "買い場候補",
    "price": 1926.0,
    "buy": true,
-   "yutai": "優待ポイント",
+   "headline": "",
+   "yutai": "その他",
    "kenri_months": [
+    3,
     9
    ],
-   "kenri_day": 0
+   "kenri_day": 30
+  },
+  {
+   "code": "6370",
+   "name": "栗田工",
+   "category": "買い場候補",
+   "price": 7955.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "買い物券・プリペイドカード",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "9042",
+   "name": "阪急阪神",
+   "category": "買い場候補",
+   "price": 4456.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "食事割引券・買い物券・プリペイドカード・娯楽・芸術・スポーツ・交通・旅行・宿泊・その他",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
   }
  ]
 }
