@@ -1,59 +1,101 @@
 {
  "2026-10-05": [
   {
+   "code": "8923",
+   "name": "トーセイ",
+   "category": "決算",
+   "price": 1688.0,
+   "buy": true
+  },
+  {
    "code": "1376",
    "name": "カネコ種苗",
    "category": "決算",
-   "price": 1538.0,
+   "price": 1539.0,
    "buy": true
   },
   {
    "code": "2300",
    "name": "きょくとう",
    "category": "決算",
-   "price": 500.0,
+   "price": 502.0,
    "buy": true
   },
   {
    "code": "2753",
    "name": "あみやき亭",
    "category": "決算",
-   "price": 1327.0,
+   "price": 1329.0,
+   "buy": false
+  },
+  {
+   "code": "6387",
+   "name": "サムコ",
+   "category": "好材料",
+   "price": 9760.0,
+   "buy": false
+  },
+  {
+   "code": "6146",
+   "name": "ディスコ",
+   "category": "好材料",
+   "price": 63680.0,
+   "buy": false
+  },
+  {
+   "code": "3905",
+   "name": "データセクション",
+   "category": "好材料",
+   "price": 1923.0,
+   "buy": false
+  },
+  {
+   "code": "4973",
+   "name": "日本高純度化学",
+   "category": "好材料",
+   "price": 5080.0,
+   "buy": false
+  },
+  {
+   "code": "4099",
+   "name": "四国化成ホールディングス",
+   "category": "好材料",
+   "price": 2511.0,
+   "buy": false
+  },
+  {
+   "code": "6407",
+   "name": "ＣＫＤ",
+   "category": "好材料",
+   "price": 6030.0,
+   "buy": false
+  },
+  {
+   "code": "5991",
+   "name": "ニッパツ",
+   "category": "好材料",
+   "price": 3662.0,
+   "buy": false
+  },
+  {
+   "code": "2593",
+   "name": "伊藤園",
+   "category": "懸念材料",
+   "price": 3094.0,
    "buy": false
   },
   {
    "code": "7611",
    "name": "ハイデ日高",
-   "category": "好材料",
-   "price": 2967.0,
-   "buy": true
-  },
-  {
-   "code": "4475",
-   "name": "HENNGE",
-   "category": "好材料",
-   "price": 1680.0,
-   "buy": false
-  },
-  {
-   "code": "9042",
-   "name": "阪急阪神",
-   "category": "好材料",
-   "price": 4493.0,
-   "buy": false
-  },
-  {
-   "code": "6370",
-   "name": "栗田工業",
-   "category": "好材料",
-   "price": 7971.0,
+   "category": "買い場候補",
+   "price": 2950.0,
    "buy": true
   },
   {
    "code": "2185",
    "name": "シイエム・シイ",
-   "category": "好材料",
-   "price": 1929.0,
+   "category": "買い場候補",
+   "price": 1926.0,
    "buy": true
   }
  ]
