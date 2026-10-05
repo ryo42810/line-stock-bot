@@ -49,6 +49,12 @@ THEMES = {
     "blue": {"head": "#0B4F9C", "title": "white", "sub": "#CFE3F5", "line": "#E6A100", "pill": "#E6A100", "foot": "#0B4F9C", "foot_text": "#CFE3F5", "bars": "single", "bar": "#1E73D8", "chart": "#1E73D8"},
     "green": {"head": "#0F3B3A", "title": "white", "sub": "#CFE5DF", "line": "#E6A100", "pill": "#2E7D32", "foot": "#0F3B3A", "foot_text": "#CFE5DF", "bars": "single", "bar": "#2E7D32", "chart": "#00A8E8"},
     "gold": {"head": "#1A2530", "title": "white", "sub": "#C9D6E2", "line": "#E6A100", "pill": "#E6A100", "foot": "#1A2530", "foot_text": "#C9D6E2", "bars": "single", "bar": "#1A2530", "chart": "#00A8E8"},
+    # ゴールドのバー（ネイビー文字）：明るく目立つ
+    "gold_bar": {"head": "#1A2530", "title": "white", "sub": "#C9D6E2", "line": "#E6A100", "pill": "#E6A100", "foot": "#1A2530", "foot_text": "#C9D6E2", "bars": "single", "bar": "#E6A100", "bar_text": "#1A2530", "circle": "#1A2530", "circle_text": "#E6A100", "chart": "#1A2530"},
+    # 白ヘッダー：見出しはネイビー文字＋ゴールドの下線、バーはネイビー
+    "gold_light": {"head": "#FFFFFF", "title": "#1A2530", "sub": "#6B7785", "line": "#E6A100", "pill": "#1A2530", "foot": "#1A2530", "foot_text": "#E6C46A", "bars": "single", "bar": "#1A2530", "chart": "#00A8E8", "border": "#E6A100"},
+    # プレミアム：ゴールドの見出し文字・ゴールドの枠・ゴールドのチャート
+    "gold_premium": {"head": "#1A2530", "title": "#E6B422", "sub": "#E8DDBF", "line": "#E6A100", "pill": "#E6A100", "foot": "#1A2530", "foot_text": "#E6C46A", "bars": "single", "bar": "#1A2530", "bar_text": "#F3D27A", "circle": "#E6A100", "circle_text": "#1A2530", "chart": "#C98C00", "border": "#E6A100", "num": "#1A2530"},
 }
 THEME = THEMES.get((os.environ.get("IMAGE_THEME") or "navy").strip(), THEMES["navy"])
 WHALE_ICON = os.path.join("assets", "whale.png")  # 右上のクジラアイコン（置いてあれば使う）
@@ -218,26 +224,29 @@ def render_stock_card(path, title, subtitle, stocks, accent, get_history, date_t
         color = cat_color if THEME["bars"] == "category" else THEME["bar"]
 
         # カード本体と、色ベタのタイトルバー
-        _box(ax, x, y, w, panel_h, "white", color, r=16, lw=2.5)
+        _box(ax, x, y, w, panel_h, "white", THEME.get("border", color), r=16, lw=2.5)
         _box(ax, x, y, w, bar_h + 16, color, r=16, z=2)
         ax.add_patch(plt.Rectangle((x + 2, y + bar_h), w - 4, 16, color="white", zorder=2))
 
         # タイトルバー：番号・銘柄名（コード）／右にカテゴリと前日比
-        ax.add_patch(plt.Circle((x + 40, y + bar_h / 2), 21, color="white", zorder=3))
-        ax.text(x + 40, y + bar_h / 2, str(i + 1), fontsize=20, color=color, ha="center", va="center", weight="bold", zorder=4)
+        bar_text = THEME.get("bar_text", "white")
+        ax.add_patch(plt.Circle((x + 40, y + bar_h / 2), 21, color=THEME.get("circle", "white"), zorder=3))
+        ax.text(x + 40, y + bar_h / 2, str(i + 1), fontsize=20, color=THEME.get("circle_text", color), ha="center", va="center", weight="bold", zorder=4)
         change = s.get("change")
         change_text = f"{change:+.1f}%" if change is not None else ""
         cat = s.get("category", "")
         right_w = (text_px(change_text, 22) + 32 if change_text else 0) + (text_px(cat, 15) + 38 if cat else 0)
         name, code_text = s.get("name", ""), f"（{s['code']}）"
         name_size = fit_size(name, w - 90 - right_w - text_px(code_text, 17) - 30, 28, 18)
-        ax.text(x + 76, y + bar_h / 2, name, fontsize=name_size, color="white", weight="bold", va="center", zorder=4)
-        ax.text(x + 76 + text_px(name, name_size) + 4, y + bar_h / 2 + 2, code_text, fontsize=17, color="white", va="center", zorder=4)
+        ax.text(x + 76, y + bar_h / 2, name, fontsize=name_size, color=bar_text, weight="bold", va="center", zorder=4)
+        ax.text(x + 76 + text_px(name, name_size) + 4, y + bar_h / 2 + 2, code_text, fontsize=17, color=bar_text, va="center", zorder=4)
         rx = x + w - 18
         if change_text:
             rx -= _pill(ax, rx, y + 13, change_text, 22, _change_color(change), "white", align="right") + 10
         if cat:
-            _pill(ax, rx, y + 18, cat, 15, "white", COLORS["ink"] if THEME["bars"] == "category" else cat_color, align="right")
+            # バーと同じ色のラベルは見えなくなるので、そのときはネイビーにする
+            pill_bg = COLORS["ink"] if THEME["bars"] == "category" or cat_color.upper() == color.upper() else cat_color
+            _pill(ax, rx, y + 18, cat, 15, "white", pill_bg, align="right")
 
         body_y = y + bar_h + 16
         # 左：株価と利回りの数字ボックス
