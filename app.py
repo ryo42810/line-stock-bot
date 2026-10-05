@@ -226,11 +226,13 @@ TOPIC_PAGES = [
 # 今日の決算発表予定を探すページの候補（取れたものだけ使う）
 EARNINGS_PAGES = [
     "https://www.nikkei.com/markets/kigyo/money-schedule/kessan/",
+    "https://kabuyoho.ifis.co.jp/index.php?id=100",
 ]
 
 # 優待一覧ページの候補（取れたものだけ使う）
 YUTAI_LIST_PAGES = [
-    "https://finance.yahoo.co.jp/stocks/incentive",
+    "https://finance.yahoo.co.jp/stocks/incentive/popular-ranking/all",
+    "https://finance.yahoo.co.jp/stocks/incentive/popular-ranking",
 ]
 
 # サイト内のリンクから、決算予定・優待一覧のページを自動で探すための入口
@@ -881,7 +883,7 @@ def run():
 
     buy_cards = []
     try:
-        buy_cards = find_buy_candidates(picks, disclosures, topic_text, blocked_codes)
+        buy_cards = find_buy_candidates(picks, disclosures, topic_text, blocked_codes, today)
     except Exception as e:
         print("買い場候補の探索に失敗:", e)
 
@@ -947,7 +949,7 @@ def buy_rule_reasons(hist, has_good_news):
     gap25 = (last - ma25) / ma25 * 100
 
     # 材料の織り込み前：適時開示で好材料が出たのに、株価はまだ大きく反応しておらず、過熱もしていない
-    if has_good_news and change < 3 and gap25 < 5:
+    if has_good_news and -2 < change < 3 and gap25 < 5:
         reasons.append(f"好材料の開示が出たが株価の反応はまだ小さい（前日比{change:+.1f}%）")
 
     # 押し目：75日線が上向きの上昇トレンド中に、25日線から-5〜-15%まで下げている（年初来安値は除く）
@@ -973,10 +975,21 @@ def yutai_advance_reason(stock, today):
     return ""
 
 
-def find_buy_candidates(picks, disclosures, topic_text, blocked_codes):
+def is_after_last_close(pubdate, today):
+    """開示時刻が、今日より前の最後の営業日の15:30以降か。時刻が読めなければ True"""
+    try:
+        published = datetime.datetime.fromisoformat(pubdate.strip()[:19])
+    except Exception:
+        return True
+    last_close = datetime.datetime.combine(prev_business_day(today), datetime.time(15, 30))
+    return published >= last_close
+
+
+def find_buy_candidates(picks, disclosures, topic_text, blocked_codes, today):
     """ルールで買い場候補を探す。朝の選定銘柄は印を付け、それ以外は新しいカードにする"""
-    # 「材料の織り込み前」は、AIの判断ではなく適時開示（公式の発表）で好材料が出た銘柄だけを対象にする
-    good_codes = {d["code"] for d in disclosures if d["category"] == "好材料"}
+    # 「材料の織り込み前」は、AIの判断ではなく適時開示（公式の発表）で好材料が出た銘柄だけを対象にする。
+    # さらに、前営業日の引け（15:30）以降に出た開示に限る（それより前の開示は、すでに株価が反応している）
+    good_codes = {d["code"] for d in disclosures if d["category"] == "好材料" and is_after_last_close(d["pubdate"], today)}
     pick_by_code = {p["code"]: p for p in picks}
     universe = build_universe(picks, disclosures, topic_text)
     print(f"買い場候補の探索対象: {len(universe)}銘柄")
