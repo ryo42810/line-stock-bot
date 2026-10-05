@@ -1034,6 +1034,9 @@ def run():
             if images.get(kind) in urls:
                 extra.append(x_media.line_image_message(urls[images[kind]]))
     send_line_flex_message(picks, market_bubble, today, market_closed, extra)
+    # Xの投稿は間隔をあけて時間がかかるので、配信履歴は先に保存しておく
+    save_history(history, today, picks)
+    print_cost(usd_jpy)
 
     # Xに自動投稿（オンのときだけ）。失敗やスキップがあったときだけLINEで知らせる
     x_result = x_media.post_all_to_x(
@@ -1041,8 +1044,6 @@ def run():
     )
     if "⚠️" in x_result or "⏭" in x_result:
         send_line_text(x_result)
-    save_history(history, today, picks)
-    print_cost(usd_jpy)
 
 
 # ---------------------------------------------------------------

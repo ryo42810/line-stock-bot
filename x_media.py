@@ -20,7 +20,7 @@ BRANCH = os.environ.get("GITHUB_REF_NAME", "main")
 # Xの自動投稿（リポジトリの Variables で X_AUTO_POST=on のときだけ投稿する）
 X_AUTO_POST = (os.environ.get("X_AUTO_POST") or "").strip().lower() == "on"
 X_KEYS = {k: (os.environ.get(k) or "").strip() for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_TOKEN_SECRET")}
-X_POST_INTERVAL_MIN = 15  # 同時に何本も出すと伸びにくいので、投稿の間隔をあける
+X_POST_INTERVAL_MIN = 30  # 同時に何本も出すと伸びにくいので、投稿の間隔をあける
 X_NG_WORDS = ["絶対上がる", "必ず上がる", "絶対に上がる", "今すぐ買え", "買うべき", "儲かる"]
 
 # トンマナ（アカウントの画像と統一：白背景・ダークネイビー・スカイブルー・ゴールド・フォレストグリーン）
