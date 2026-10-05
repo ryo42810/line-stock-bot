@@ -42,7 +42,7 @@ CATEGORY_COLORS = {
     "優待": COLORS["gold"],
     "買い場候補": COLORS["accent"],
 }
-# 配色テーマ（環境変数 IMAGE_THEME で切り替え）
+# 配色テーマ（環境変数 IMAGE_THEME で切り替え。初期値はネイビー×ゴールドのベタ塗り）
 THEMES = {
     "navy": {"head": "#1A2530", "title": "white", "sub": "#C9D6E2", "line": "#00A8E8", "pill": "#00A8E8", "foot": "#1A2530", "foot_text": "#C9D6E2", "bars": "category", "bar": "#00A8E8", "chart": "#00A8E8"},
     "white": {"head": "#FFFFFF", "title": "#1A2530", "sub": "#6B7785", "line": "#00A8E8", "pill": "#1A2530", "foot": "#F2F5F8", "foot_text": "#6B7785", "bars": "single", "bar": "#00A8E8", "chart": "#00A8E8"},
@@ -54,14 +54,14 @@ THEMES = {
     "gold_vivid": {"head": "#0B1F3A", "title": "white", "sub": "#D5DEEA", "line": "#FFB300", "pill": "#FFB300", "foot": "#0B1F3A", "foot_text": "#D5DEEA", "bars": "single", "bar": "#0B1F3A", "chart": "#0096E0", "gold": "#F0A000", "gold_bg": "#FFEBB8", "tint": 0.84, "border_w": 3},
     "gold_deep": {"head": "#06121F", "title": "white", "sub": "#C7D3E0", "line": "#F2A900", "pill": "#F2A900", "foot": "#06121F", "foot_text": "#F2C75C", "bars": "single", "bar": "#06121F", "chart": "#0091D5", "gold": "#D99500", "gold_bg": "#FFE9AD", "tint": 0.86, "page": "#EEF2F6", "border_w": 0},
     "gold_contrast": {"head": "#0A2342", "title": "white", "sub": "#DCE6F2", "line": "#FFC107", "pill": "#FFC107", "pill_text": "#0A2342", "foot": "#FFC107", "foot_text": "#0A2342", "bars": "single", "bar": "#0A2342", "chart": "#00A3F0", "gold": "#E89B00", "gold_bg": "#FFF0C2", "tint": 0.82, "text": "#000000", "border_w": 3},
-    "gold_solid": {"head": "#0B1F3A", "title": "white", "sub": "#D5DEEA", "line": "#FFB300", "pill": "#FFB300", "pill_text": "#0B1F3A", "foot": "#0B1F3A", "foot_text": "#FFB300", "bars": "single", "bar": "#0B1F3A", "chart": "#0096E0", "gold": "#FFB300", "solid_boxes": True, "border_w": 3},
+    "gold_solid": {"head": "#0B1F3A", "title": "white", "sub": "#D5DEEA", "line": "#FFB300", "pill": "#FFB300", "pill_text": "#0B1F3A", "foot": "#0B1F3A", "foot_text": "white", "bars": "single", "bar": "#0B1F3A", "chart": "#0096E0", "gold": "#FFB300", "solid_boxes": True, "border_w": 3},
     "gold_bar": {"head": "#1A2530", "title": "white", "sub": "#C9D6E2", "line": "#E6A100", "pill": "#E6A100", "foot": "#1A2530", "foot_text": "#C9D6E2", "bars": "single", "bar": "#E6A100", "bar_text": "#1A2530", "circle": "#1A2530", "circle_text": "#E6A100", "chart": "#1A2530"},
     # 白ヘッダー：見出しはネイビー文字＋ゴールドの下線、バーはネイビー
     "gold_light": {"head": "#FFFFFF", "title": "#1A2530", "sub": "#6B7785", "line": "#E6A100", "pill": "#1A2530", "foot": "#1A2530", "foot_text": "#E6C46A", "bars": "single", "bar": "#1A2530", "chart": "#00A8E8", "border": "#E6A100"},
     # プレミアム：ゴールドの見出し文字・ゴールドの枠・ゴールドのチャート
     "gold_premium": {"head": "#1A2530", "title": "#E6B422", "sub": "#E8DDBF", "line": "#E6A100", "pill": "#E6A100", "foot": "#1A2530", "foot_text": "#E6C46A", "bars": "single", "bar": "#1A2530", "bar_text": "#F3D27A", "circle": "#E6A100", "circle_text": "#1A2530", "chart": "#C98C00", "border": "#E6A100", "num": "#1A2530"},
 }
-THEME = THEMES.get((os.environ.get("IMAGE_THEME") or "navy").strip(), THEMES["navy"])
+THEME = THEMES.get((os.environ.get("IMAGE_THEME") or "gold_solid").strip(), THEMES["gold_solid"])
 WHALE_ICON = os.path.join("assets", "whale.png")  # 右上のクジラアイコン（置いてあれば使う）
 W, H = 1080, 1350  # Xで見やすい4:5
 
@@ -323,7 +323,7 @@ def render_performance_chart(path, rows, title, date_text=""):
 
     # サマリー（色ベタの見出し＋大きな数字）
     for k, (label, value, color) in enumerate(
-        [("平均騰落率", f"{avg:+.1f}%", _change_color(avg)), ("上昇した銘柄", f"{ups} / {len(rows)}", COLORS["accent"])]
+        [("平均騰落率", f"{avg:+.1f}%", _change_color(avg)), ("上昇した銘柄", f"{ups} / {len(rows)}", THEME.get("gold", COLORS["gold"]))]
     ):
         bx, bw = 36 + k * 512, 496
         _box(ax, bx, 240, bw, 160, "white", color, r=16, lw=2.5)
