@@ -23,13 +23,20 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests yfinance anthropic beautifulsoup4 jpholiday
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk > /dev/null
+          pip install requests yfinance anthropic beautifulsoup4 jpholiday matplotlib requests-oauthlib
 
       - name: Run script
         env:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
           USER_ID: ${{ secrets.USER_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Xの自動投稿（Variables の X_AUTO_POST=on と、4つのキーが揃ったときだけ投稿）
+          X_AUTO_POST: ${{ vars.X_AUTO_POST }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
         run: python app.py
 
       - name: Save history
