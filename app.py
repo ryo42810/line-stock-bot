@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 LINE_ACCESS_TOKEN = (os.environ.get("LINE_ACCESS_TOKEN") or "").strip()
 USER_ID = (os.environ.get("USER_ID") or "").strip()
 
-MODEL = "claude-opus-5-5"
+MODEL = "claude-haiku-4-5"
 JST = ZoneInfo("Asia/Tokyo")
 MIN_PICKS = 5
 MAX_PICKS = 15
@@ -38,14 +38,11 @@ CATEGORY_STYLE = {
 GOOD_WORDS = ["上方修正", "増配", "自社株買い", "自己株式の取得", "株式分割", "優待新設", "優待拡充", "復配", "最高益", "黒字転換"]
 BAD_WORDS = ["下方修正", "減配", "無配", "赤字", "優待廃止", "特別損失", "減損", "業務停止", "不適切", "上場廃止"]
 
-# 料金の目安（Claude Opus 5.5、USD）
-PRICE_INPUT = 4.00 / 1_000_000
-PRICE_OUTPUT = 20.00 / 1_000_000
-PRICE_CACHE_READ = 0.20 / 1_000_000
-PRICE_CACHE_WRITE = 5.00 / 1_000_000
-PRICE_WEB_SEARCH = 10.00 / 1000
+# 料金の目安（Claude Haiku 4.5、USD）
+PRICE_INPUT = 1.00 / 1_000_000
+PRICE_OUTPUT = 5.00 / 1_000_000
 
-usage_total = {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0, "web_search": 0, "web_fetch": 0}
+usage_total = {"input": 0, "output": 0}
 
 
 def now_jst():
@@ -53,31 +50,16 @@ def now_jst():
 
 
 def track_usage(response):
-    u = response.usage
-    usage_total["input"] += u.input_tokens or 0
-    usage_total["output"] += u.output_tokens or 0
-    usage_total["cache_read"] += getattr(u, "cache_read_input_tokens", 0) or 0
-    usage_total["cache_write"] += getattr(u, "cache_creation_input_tokens", 0) or 0
-    stu = getattr(u, "server_tool_use", None)
-    if stu:
-        usage_total["web_search"] += getattr(stu, "web_search_requests", 0) or 0
-        usage_total["web_fetch"] += getattr(stu, "web_fetch_requests", 0) or 0
+    usage_total["input"] += response.usage.input_tokens or 0
+    usage_total["output"] += response.usage.output_tokens or 0
 
 
 def print_cost(usd_jpy=None):
-    t = usage_total
-    usd = (
-        t["input"] * PRICE_INPUT
-        + t["output"] * PRICE_OUTPUT
-        + t["cache_read"] * PRICE_CACHE_READ
-        + t["cache_write"] * PRICE_CACHE_WRITE
-        + t["web_search"] * PRICE_WEB_SEARCH
-    )
+    usd = usage_total["input"] * PRICE_INPUT + usage_total["output"] * PRICE_OUTPUT
     rate = usd_jpy or 150
     print("===== API料金（推定） =====")
-    print(f"入力 {t['input']:,} / 出力 {t['output']:,} / キャッシュ読込 {t['cache_read']:,} / キャッシュ書込 {t['cache_write']:,} トークン")
-    print(f"Web検索 {t['web_search']}回 / Web取得 {t['web_fetch']}回")
-    print(f"今回: 約${usd:.3f}（約{usd * rate:.0f}円） / 30日換算: 約${usd * 30:.2f}（約{usd * rate * 30:,.0f}円）")
+    print(f"入力 {usage_total['input']:,} / 出力 {usage_total['output']:,} トークン")
+    print(f"今回: 約${usd:.3f}（約{usd * rate:.1f}円） / 30日換算: 約${usd * 30:.2f}（約{usd * rate * 30:,.0f}円）")
 
 
 # ---------------------------------------------------------------
@@ -216,7 +198,7 @@ def pick_material_disclosures(tdnet_items):
 
 
 # ---------------------------------------------------------------
-# 3. みんかぶ・株探のページ取得（スクレイピング）
+# 3. みんかぶ・株探・Yahoo!ファイナンスのページ取得（スクレイピング）
 # ---------------------------------------------------------------
 HTTP_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36",
@@ -230,9 +212,27 @@ TOPIC_PAGES = [
     "https://kabutan.jp/news/marketnews/",
 ]
 
+# 今日の決算発表予定を探すページ（取れたものだけ使う）
+EARNINGS_PAGES = [
+    "https://finance.yahoo.co.jp/stocks/settlement/",
+    "https://kabutan.jp/warning/?mode=4_1",
+]
 
-def fetch_page_text(url, max_chars=15000, start_word=None):
-    """ページを取ってきて、リンク付きのテキストにする。失敗したら空文字"""
+# 権利確定月別の優待一覧ページ（{month}に月が入る。取れたものだけ使う）
+YUTAI_MONTH_PAGES = [
+    "https://finance.yahoo.co.jp/stocks/incentive/?month={month}",
+    "https://kabutan.jp/yutai/?mode=1&month={month}",
+]
+
+# 各銘柄の優待ページ（上から順に試す）
+YUTAI_STOCK_PAGES = [
+    "https://finance.yahoo.co.jp/quote/{code}.T/incentive",
+    "https://kabutan.jp/stock/yutai?code={code}",
+]
+
+
+def fetch_page_text(url, max_chars=10000, start_word=None, keep_links=True, require_word=None):
+    """ページを取ってきてテキストにする。失敗・中身なしなら空文字"""
     try:
         res = requests.get(url, headers=HTTP_HEADERS, timeout=20)
         res.raise_for_status()
@@ -244,16 +244,29 @@ def fetch_page_text(url, max_chars=15000, start_word=None):
     soup = BeautifulSoup(res.text, "html.parser")
     for tag in soup(["script", "style", "noscript", "svg", "header", "footer", "nav"]):
         tag.decompose()
-    for a in soup.find_all("a", href=True):
-        text = a.get_text(" ", strip=True)
-        if text:
-            a.replace_with(f"{text} <{urljoin(url, a['href'])}>")
+    if keep_links:
+        for a in soup.find_all("a", href=True):
+            text = a.get_text(" ", strip=True)
+            if text:
+                a.replace_with(f"{text} <{urljoin(url, a['href'])}>")
     lines = [line.strip() for line in soup.get_text("\n").splitlines()]
     text = "\n".join(line for line in lines if line)
 
+    if require_word and require_word not in text:
+        print(f"ページに「{require_word}」が見つからず ({url})")
+        return ""
     if start_word and start_word in text:
-        text = text[max(0, text.index(start_word) - 300):]
+        text = text[max(0, text.index(start_word) - 200):]
     return text[:max_chars]
+
+
+def fetch_pages(urls, **kwargs):
+    blocks = []
+    for url in urls:
+        text = fetch_page_text(url, **kwargs)
+        if text:
+            blocks.append(f"<page url=\"{url}\">\n{text}\n</page>")
+    return blocks
 
 
 # ---------------------------------------------------------------
@@ -290,99 +303,12 @@ def fetch_market_data():
 
 
 # ---------------------------------------------------------------
-# 5. Claudeで調査（ニュース・話題の銘柄・決算）→ 銘柄の選定
+# 5. Claudeで銘柄の選定（Web検索なし。取ってきたページだけで判断）
 # ---------------------------------------------------------------
-def research_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows):
-    weekday_str = "月火水木金土日"[today.weekday()]
-    disclosure_text = "\n".join(
-        f"- [{d['category']}] {d['code']} {d['name']}: {d['title']} ({d['pubdate']})"
-        for d in disclosures[:80]
-    ) or "（取得できず）"
-
-    page_blocks = []
-    for url in TOPIC_PAGES:
-        text = fetch_page_text(url)
-        if text:
-            page_blocks.append(f"<page url=\"{url}\">\n{text}\n</page>")
-    print(f"話題ページ取得: {len(page_blocks)}/{len(TOPIC_PAGES)}件")
-    pages_text = "\n\n".join(page_blocks) or "（取得できず。Web検索で探してください）"
-
-    market_text = "\n".join(f"- {r['name']}: {r['value']}（前日比 {r['change']:+.2f}%）" for r in market_rows) or "（取得できず）"
-    blocked_text = "、".join(sorted(blocked_codes)) or "なし"
-
-    if market_closed:
-        market_note = "今日は休場日（土日祝）。株価は動かないので、前営業日〜今日までに出たニュースと、権利確定が近い優待株を中心に選ぶ。決算銘柄は選ばない。"
-        earnings_rule = ""
-    else:
-        market_note = "今日は営業日。前営業日の引け後〜今朝までに出たニュース・開示で、今日の株価に影響しそうな銘柄を優先する。"
-        earnings_rule = f"4. 今日（{today:%m月%d日}）決算発表予定の銘柄から、注目度の高いものを2〜4件選ぶ（株探・みんかぶの決算発表予定をWeb検索で確認）。分類は「決算」\n"
-
-    prompt = f"""今日は{today:%Y年%m月%d日}（{weekday_str}曜）です。毎朝自動でLINEに送る「今日の注目株」リストの銘柄を選んでください。
-これは自動処理で、人が途中で確認・指示することはありません。質問や「配信前に必要な作業」は書かず、手元の情報で最善のリストを完成させてください。
-
-{market_note}
-
-## 選び方
-1. まず下の「みんかぶ・株探のページ」で話題・トピックになっている銘柄を拾う（ニュース見出し、ランキング、注目銘柄など）
-   - 好材料（上方修正、増配、自社株買い、大型受注、提携など）
-   - 懸念材料（下方修正、減配、不祥事、優待廃止など）
-   - 見出しだけで中身がわからないものは、記事をweb_fetchで開いて確認してよい
-2. TDnetの適時開示も参考にする。ただし「自己株式の取得状況」のような定期報告は材料にしない
-3. ニュース銘柄で枠が埋まらないときは、{today.month}月か翌月が権利確定月で優待が魅力的な銘柄を加える（みんかぶの優待情報をWeb検索で探す）。分類は「優待」
-{earnings_rule}5. 次の銘柄は直近1週間で配信済みなので選ばない: {blocked_text}
-6. 合計{MIN_PICKS}〜{MAX_PICKS}件。10件以上を目標にする。根拠の弱い銘柄は入れない
-7. 優待内容と権利確定月は後の処理でみんかぶから取得するので、ここでは調べなくてよい
-
-## 今日の地合いデータ（前営業日終値ベース）
-{market_text}
-
-## みんかぶ・株探のページ（今朝取得したもの）
-{pages_text}
-
-## 参考：TDnetの適時開示（キーワードで抽出したもの）
-{disclosure_text}
-
-## 出力
-最初に「今日の地合い」として、前日の米国市場の動きと今日の日本株の見通しを80字程度でまとめてください。
-続けて銘柄ごとに、証券コード（4桁）、銘柄名、分類（好材料／懸念材料／決算／優待）、選んだ理由の要約（40字程度）、根拠となった記事のURLを書いてください。
-確認できなかった情報は推測で埋めないでください。"""
-
-    tools = [
-        {"type": "web_search_20260209", "name": "web_search", "max_uses": 10, "user_location": {"type": "approximate", "country": "JP", "timezone": "Asia/Tokyo"}},
-        {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": 15},
-    ]
-    messages = [{"role": "user", "content": prompt}]
-
-    response = None
-    for _ in range(5):  # pause_turn の再開は最大5回まで
-        with client.beta.messages.stream(
-            model=MODEL,
-            max_tokens=64000,
-            betas=["server-side-fallback-2026-07-01"],
-            fallbacks="default",
-            output_config={"effort": "high"},
-            tools=tools,
-            messages=messages,
-        ) as stream:
-            response = stream.get_final_message()
-        track_usage(response)
-        if response.stop_reason != "pause_turn":
-            break
-        messages = [messages[0], {"role": "assistant", "content": response.content}]
-
-    if response is None or response.stop_reason == "refusal":
-        raise RuntimeError("Claudeの調査が拒否されました")
-
-    notes = "\n".join(b.text for b in response.content if b.type == "text").strip()
-    if not notes:
-        raise RuntimeError("Claudeの調査結果が空でした")
-    return notes
-
-
 PICKS_SCHEMA = {
     "type": "object",
     "properties": {
-        "market_comment": {"type": "string", "description": "今日の地合いのまとめ（80字程度）。メモになければ空文字"},
+        "market_comment": {"type": "string", "description": "今日の地合いのまとめ（80字程度）"},
         "picks": {
             "type": "array",
             "items": {
@@ -392,7 +318,7 @@ PICKS_SCHEMA = {
                     "name": {"type": "string"},
                     "category": {"type": "string", "enum": ["好材料", "懸念材料", "決算", "優待"]},
                     "headline": {"type": "string", "description": "選んだ理由の要約（40字程度）"},
-                    "source_url": {"type": "string", "description": "根拠記事のURL。なければ空文字"},
+                    "source_url": {"type": "string", "description": "根拠記事のURL（ページ内のリンクから）。なければ空文字"},
                 },
                 "required": ["code", "name", "category", "headline", "source_url"],
                 "additionalProperties": False,
@@ -404,24 +330,83 @@ PICKS_SCHEMA = {
 }
 
 
-def structure_picks(client, notes):
-    """調査メモを決まった形のJSONに変換"""
+def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows):
+    weekday_str = "月火水木金土日"[today.weekday()]
+    disclosure_text = "\n".join(
+        f"- [{d['category']}] {d['code']} {d['name']}: {d['title']} ({d['pubdate']})"
+        for d in disclosures[:60]
+    ) or "（取得できず）"
+
+    topic_blocks = fetch_pages(TOPIC_PAGES)
+    print(f"話題ページ取得: {len(topic_blocks)}/{len(TOPIC_PAGES)}件")
+
+    # 今月と来月の優待一覧
+    months = [today.month, today.month % 12 + 1]
+    yutai_urls = [u.format(month=m) for m in months for u in YUTAI_MONTH_PAGES]
+    yutai_blocks = fetch_pages(yutai_urls, max_chars=6000, require_word="優待")
+    print(f"優待一覧ページ取得: {len(yutai_blocks)}/{len(yutai_urls)}件")
+
+    earnings_blocks = []
+    if not market_closed:
+        earnings_blocks = fetch_pages(EARNINGS_PAGES, max_chars=6000, require_word="決算")
+        print(f"決算予定ページ取得: {len(earnings_blocks)}/{len(EARNINGS_PAGES)}件")
+
+    market_text = "\n".join(f"- {r['name']}: {r['value']}（前日比 {r['change']:+.2f}%）" for r in market_rows) or "（取得できず）"
+    blocked_text = "、".join(sorted(blocked_codes)) or "なし"
+
+    if market_closed:
+        market_note = "今日は休場日（土日祝）。株価は動かないので、前営業日〜今日までに出たニュースと、権利確定が近い優待株を中心に選ぶ。決算銘柄は選ばない。"
+        earnings_rule = ""
+    else:
+        market_note = "今日は営業日。前営業日の引け後〜今朝までに出たニュース・開示で、今日の株価に影響しそうな銘柄を優先する。"
+        earnings_rule = f"4. 「決算発表予定のページ」に今日（{today:%m月%d日}）発表予定の銘柄があれば、注目度の高いものを2〜4件選ぶ。分類は「決算」。ページがなければ選ばない\n"
+
+    def section(blocks):
+        return "\n\n".join(blocks) or "（取得できず）"
+
+    prompt = f"""今日は{today:%Y年%m月%d日}（{weekday_str}曜）です。毎朝自動でLINEに送る「今日の注目株」リストの銘柄を選んでください。
+これは自動処理です。下に渡した情報だけを使い、書いていないことは推測しないでください。
+
+{market_note}
+
+## 選び方
+1. 「話題・ニュースのページ」で話題・トピックになっている銘柄を拾う（ニュース見出し、ランキング、注目銘柄など）
+   - 好材料（上方修正、増配、自社株買い、大型受注、提携など）
+   - 懸念材料（下方修正、減配、不祥事、優待廃止など）
+2. TDnetの適時開示も参考にする
+3. 枠が余るときは「優待一覧のページ」から、{months[0]}月か{months[1]}月が権利確定月で優待が魅力的な銘柄を加える。分類は「優待」
+{earnings_rule}5. 次の銘柄は直近1週間で配信済みなので選ばない: {blocked_text}
+6. 合計{MIN_PICKS}〜{MAX_PICKS}件。10件以上を目標にする。根拠の弱い銘柄は入れない
+7. 証券コードはページに書いてあるものだけを使う。わからない銘柄は入れない
+8. market_comment には、地合いデータとニュースから今日の日本株の見通しを80字程度で書く
+
+## 今日の地合いデータ（前営業日終値ベース）
+{market_text}
+
+## 話題・ニュースのページ
+{section(topic_blocks)}
+
+## 決算発表予定のページ
+{section(earnings_blocks)}
+
+## 優待一覧のページ
+{section(yutai_blocks)}
+
+## TDnetの適時開示（キーワードで抽出したもの）
+{disclosure_text}"""
+
     response = client.messages.create(
         model=MODEL,
-        max_tokens=16000,
-        output_config={"effort": "low", "format": {"type": "json_schema", "schema": PICKS_SCHEMA}},
-        messages=[
-            {
-                "role": "user",
-                "content": f"次の調査メモから、今日の地合いのまとめと、銘柄を重要度の高い順に最大{MAX_PICKS}件、指定の形式で抜き出してください。メモにない情報は足さないでください。\n\n{notes}",
-            }
-        ],
+        max_tokens=8000,
+        output_config={"format": {"type": "json_schema", "schema": PICKS_SCHEMA}},
+        messages=[{"role": "user", "content": prompt}],
     )
     track_usage(response)
     if response.stop_reason == "refusal":
-        raise RuntimeError("Claudeの整形が拒否されました")
+        raise RuntimeError("Claudeの選定が拒否されました")
     text = next(b.text for b in response.content if b.type == "text")
     data = json.loads(text)
+    print("地合いコメント:", data["market_comment"])
     return data["market_comment"], data["picks"]
 
 
@@ -453,7 +438,7 @@ def fallback_picks(disclosures):
 
 
 # ---------------------------------------------------------------
-# 6. 優待内容・権利確定月（みんかぶの優待ページから）
+# 6. 優待内容・権利確定月（Yahoo!ファイナンス→株探の優待ページから）
 # ---------------------------------------------------------------
 YUTAI_SCHEMA = {
     "type": "object",
@@ -482,26 +467,28 @@ YUTAI_SCHEMA = {
 
 
 def add_yutai_info(client, picks):
-    """各銘柄のみんかぶ優待ページを取ってきて、AIで優待内容と権利確定月を抜き出す"""
+    """各銘柄の優待ページ（Yahoo!→株探の順）を取ってきて、AIで優待内容と権利確定月を抜き出す"""
     page_blocks = []
     for p in picks:
-        url = f"https://minkabu.jp/stock/{p['code']}/yutai"
-        text = fetch_page_text(url, max_chars=10000, start_word="優待")
-        if text:
-            page_blocks.append(f"<page code=\"{p['code']}\" name=\"{p['name']}\" url=\"{url}\">\n{text}\n</page>")
-    print(f"みんかぶ優待ページ取得: {len(page_blocks)}/{len(picks)}件")
+        for template in YUTAI_STOCK_PAGES:
+            url = template.format(code=p["code"])
+            text = fetch_page_text(url, max_chars=3000, start_word="優待", keep_links=False, require_word="優待")
+            if text:
+                page_blocks.append(f"<page code=\"{p['code']}\" name=\"{p['name']}\" url=\"{url}\">\n{text}\n</page>")
+                break
+    print(f"優待ページ取得: {len(page_blocks)}/{len(picks)}件")
     if not page_blocks:
         return picks
 
     try:
         response = client.messages.create(
             model=MODEL,
-            max_tokens=16000,
-            output_config={"effort": "low", "format": {"type": "json_schema", "schema": YUTAI_SCHEMA}},
+            max_tokens=8000,
+            output_config={"format": {"type": "json_schema", "schema": YUTAI_SCHEMA}},
             messages=[
                 {
                     "role": "user",
-                    "content": "次はみんかぶの株主優待ページです。銘柄ごとに、現在の優待内容・権利確定月・最低株数・優待の金額換算を抜き出してください。"
+                    "content": "次は各銘柄の株主優待ページです。銘柄ごとに、現在の優待内容・権利確定月・最低株数・優待の金額換算を抜き出してください。"
                     "ページに書いていないことは推測せず「不明」や0にしてください。\n\n" + "\n\n".join(page_blocks),
                 }
             ],
@@ -746,9 +733,7 @@ def run():
     client = None
     try:
         client = anthropic.Anthropic()
-        notes = research_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows)
-        print("調査メモ:\n", notes)
-        market_comment, raw_picks = structure_picks(client, notes)
+        market_comment, raw_picks = pick_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows)
         picks = clean_picks(raw_picks, blocked_codes)
     except Exception as e:
         print("AIでの選定に失敗。キーワード判定に切り替えます:", e)
