@@ -722,6 +722,9 @@ def add_price_info(picks, today=None):
         try:
             ticker = yf.Ticker(f"{p['code']}.T")
             hist = get_history(p["code"])
+            if today is not None:
+                # 日中に手動で動かしても、基準は「今日より前の最後の終値」にする（夕方の振り返りが0%にならないように）
+                hist = hist[hist.index.date < today]
             price, change = None, None
             if len(hist) >= 2:
                 price = float(hist["Close"].iloc[-1])
@@ -1314,15 +1317,17 @@ def performance(entries):
 
 
 def format_row(r):
-    mark = "📈" if r["change"] >= 0 else "📉"
+    mark = "📈" if r["change"] > 0.05 else "📉" if r["change"] < -0.05 else "➖"
     buy = " 買い場候補👀" if r.get("buy") and r["category"] != "買い場候補" else ""
     return f"{mark} {r['change']:+.1f}%  {r['name']}({r['code']}) [{r['category']}]{buy}"
 
 
 def summary_line(rows):
     avg = sum(r["change"] for r in rows) / len(rows)
-    ups = sum(1 for r in rows if r["change"] >= 0)
-    return f"平均 {avg:+.1f}%（上昇 {ups} / 下落 {len(rows) - ups}）"
+    ups = sum(1 for r in rows if r["change"] > 0.05)
+    downs = sum(1 for r in rows if r["change"] < -0.05)
+    flat = len(rows) - ups - downs
+    return f"平均 {avg:+.1f}%（上昇 {ups} / 下落 {downs}" + (f" / 変わらず {flat}" if flat else "") + "）"
 
 
 def daily_review_text(history, today):
