@@ -38,22 +38,64 @@ CATEGORY_STYLE = {
 }
 # X投稿の書き方（朝の通常版・買い場候補版で共通）
 X_POST_STYLE = """## X投稿の書き方（共通）
-- 1行目は、その投稿の中身と合ったフックにする（地合いの説明から始めない）。好材料と懸念材料が混ざるなら、混ざる前提のフックにする
+### フック（1行目）
+- 1行目で指を止めさせる。地合いの説明から始めない
+- 指定された「今日のフックの型」を使う。中身と合わないフックにはしない（好材料と懸念材料が混ざるなら、混ざる前提のフックにする）
+- 1行目の最後に「↓↓」を付けて、続きを読ませてもよい
+
+### 中身
 - 銘柄は3つ（足りなければあるだけ）。①②③で番号を付け、銘柄名(コード)の次の行から説明を書く
+- 具体的な数字を必ず入れる（増益率、出来高○倍、前日比、優待の年間○円分など）
+- 口語でテンポよく。体言止めや「控えめに言って強い」「異次元の増益」のような強めのリアクションもOK（事実に対してだけ）
+- 「自社株買い」など略さずに伝わる言葉を使う。「アナリスト好評価」のようなあいまいな表現は避け、何が起きたかを書く
+
+### 見た目
 - 1銘柄ごとに空行を入れ、スマホで読みやすくする
 - 「。」で終わる文や、絵文字で終わる文のあとは必ず改行する（1行に1文）
 - 絵文字は多めに使う（1行に1つ程度）。必ず言葉の後に付け、行頭には置かない（例: 「好材料📈」「出来高急増🔥」）
-- 「自社株買い」など、略さずに伝わる言葉を使う。「アナリスト好評価」のようなあいまいな表現は避け、何が起きたかを書く
-- 「必ず上がる」「買うべき」などの断定や煽りはしない
 - 最後の行はハッシュタグ #株クラ だけ（免責文は書かない）
-- 長さは200字程度まで"""
+- 長さは200字程度まで
+
+### やってはいけないこと
+- 「使ってみた」「もらった」「買った」などの体験談は書かない（事実ではないため）
+- 実在の人物の発言や口コミを作らない
+- 「絶対上がる」「今すぐ買え」など、株価の断定や売買の指示はしない。強い言い切りは、事実や注目度についてだけ使う"""
+
+# フックの型（日替わりで使い分けて、毎日同じ書き出しにならないようにする）
+X_HOOK_TYPES = [
+    "ぶっちゃけ型（例: 「ぶっちゃけ、今朝いちばん気になったのはこれ」）",
+    "タメ型（例: 1行目「はい。」2行目「これが今朝の激アツ決算です。」）",
+    "言い切り型（例: 「この3銘柄は見逃し厳禁」）※株価の断定はしない",
+    "リアクション型（例: 「控えめに言って、この増益は異次元」）",
+    "問いかけ型（例: 「この3つ、どれが一番伸びると思う？👀」）",
+    "親近感型（例: 「みんな大好き〇〇に好材料」）※実在の銘柄名で",
+]
+
+# アンケート版（日曜の朝だけ）のテーマ。週ごとに順番に使う
+SURVEY_DAY = 6  # 日曜
+X_SURVEY_THEMES = [
+    "株主優待で「これは神！」と思った銘柄",
+    "{next_month}月の権利確定で狙っている優待",
+    "長く持ち続けたい高配当株",
+    "コスパ最強だと思う優待（少ない投資額で満足度が高いもの）",
+    "今年いちばん「買ってよかった」と思う銘柄",
+    "優待で実際によく使っているお店・サービス",
+]
+
+# アンケート版のお手本（雰囲気・形の参考。内容はそのまま使わない）
+X_EXAMPLE_SURVEY = """株主優待で「これは神！」って思った銘柄は？🎁
+
+1位＋理由を教えてください👀
+実際にもらった人の声が聞きたい！
+
+#株クラ"""
 
 # 買い場候補版のお手本（雰囲気・形の参考。内容はそのまま使わない）
-X_EXAMPLE_BUY = """上がる前にチェックしたい銘柄👀
+X_EXAMPLE_BUY = """ぶっちゃけ、上がる前に仕込みたいのはこの3つ👀↓↓
 
 ①ハイデイ日高(7611)
-自社株買い＋増配を発表✨
-株価の反応はまだ小さめ
+自社株買い＋増配のダブル発表✨
+なのに株価の反応はまだ小さめ
 
 ②カネコ種苗(1376)
 1Qが大幅増益📈
@@ -61,15 +103,16 @@ X_EXAMPLE_BUY = """上がる前にチェックしたい銘柄👀
 
 ③きょくとう(2300)
 株価は動かず出来高だけ4.4倍💡
-値動きの前ぶれになることも
+値動きの前ぶれかも
 
 #株クラ"""
 
 # ニュース版のお手本（雰囲気・形の参考。内容はそのまま使わない）
-X_EXAMPLE_NEWS = """今朝のニュース、明暗くっきり📰
+X_EXAMPLE_NEWS = """はい。
+今朝の決算、明暗くっきりです📰↓↓
 
 ①カネコ種苗(1376)
-1Qの最終利益が77.5%増📈
+最終利益77.5%増で控えめに言って強い💪
 株式の売却益も上乗せ
 
 ②あみやき亭(2753)
@@ -846,7 +889,7 @@ def push_line(messages):
         raise RuntimeError(f"LINE送信失敗: {res.status_code}")
 
 
-def send_line_flex_message(stocks, market_bubble, today, market_closed, x_post="", x_post_buy=""):
+def send_line_flex_message(stocks, market_bubble, today, market_closed, x_post="", x_post_buy="", x_post_survey=""):
     weekday_str = "月火水木金土日"[today.weekday()]
 
     bubbles = ([market_bubble] if market_bubble else []) + [build_bubble(s, today, market_closed) for s in stocks]
@@ -866,6 +909,9 @@ def send_line_flex_message(stocks, market_bubble, today, market_closed, x_post="
         messages.append({"type": "text", "text": f"📝 X投稿用の下書き・ニュース版（{len(x_post)}字）\n\n{x_post}"})
     if x_post_buy:
         messages.append({"type": "text", "text": f"📝 X投稿用の下書き・買い場候補版（{len(x_post_buy)}字）\n\n{x_post_buy}"})
+    if x_post_survey:
+        messages.append({"type": "text", "text": f"📝 X投稿用の下書き・アンケート版（{len(x_post_survey)}字）\n\n{x_post_survey}"})
+    messages = messages[:5]  # LINEは1回の送信で5メッセージまで
     push_line(messages)
 
 
@@ -940,14 +986,14 @@ def run():
         p.pop("buy_reasons")
     picks = [p for p in picks if p["category"] != "買い場候補" or p.get("buy_reasons")]
     print(f"買い場候補: {[(p['code'], p['buy_reasons']) for p in buy_list]}")
-    x_post_buy, x_post_news = "", ""
+    x_post_buy, x_post_news, x_post_survey = "", "", ""
     if client is not None:
-        x_post_buy, x_post_news = write_x_posts(client, picks, buy_list, disclosures, topic_text)
+        x_post_buy, x_post_news, x_post_survey = write_x_posts(client, picks, buy_list, disclosures, topic_text, today)
     for p in picks:
         p["continued"] = p["code"] in prev_codes
 
     market_bubble = build_market_bubble(market_rows, market_comment, today) if (market_rows or market_comment) else None
-    send_line_flex_message(picks, market_bubble, today, market_closed, x_post_news, x_post_buy)
+    send_line_flex_message(picks, market_bubble, today, market_closed, x_post_news, x_post_buy, x_post_survey)
     save_history(history, today, picks)
     print_cost(usd_jpy)
 
@@ -1075,8 +1121,9 @@ BUY_REASON_SCHEMA = {
         },
         "x_post_buy": {"type": "string", "description": "買い場候補版のX投稿の下書き。買い場候補がなければ空文字"},
         "x_post_news": {"type": "string", "description": "ニュース版のX投稿の下書き。買い場候補の銘柄は使わない"},
+        "x_post_survey": {"type": "string", "description": "アンケート版のX投稿の下書き。指示がなければ空文字"},
     },
-    "required": ["items", "x_post_buy", "x_post_news"],
+    "required": ["items", "x_post_buy", "x_post_news", "x_post_survey"],
     "additionalProperties": False,
 }
 
@@ -1086,7 +1133,7 @@ EMOJI_CHARS = "\U0001F300-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF"
 
 def format_x_post(text):
     """「。」や絵文字で文が終わったら改行する（すでに改行があれば何もしない）"""
-    text = re.sub(rf"(。|[{EMOJI_CHARS}]\uFE0F?)(?=[^\s{EMOJI_CHARS}\uFE0F])", r"\1\n", text.strip())
+    text = re.sub(rf"(。|[{EMOJI_CHARS}]\uFE0F?)(?=[^\s{EMOJI_CHARS}\uFE0F\u2193])", r"\1\n", text.strip())
     return re.sub(r"[ \t]+\n", "\n", text)
 
 
@@ -1100,7 +1147,7 @@ def stock_context(stock, disclosures, topic_text):
     return "\n".join(lines) or "（なし）"
 
 
-def write_x_posts(client, picks, buy_list, disclosures, topic_text):
+def write_x_posts(client, picks, buy_list, disclosures, topic_text, today):
     """買い場候補の注目理由と、X下書き2本（買い場候補版・ニュース版。銘柄は重複させない）を作る"""
     buy_codes = {c["code"] for c in buy_list}
     buy_blocks = [
@@ -1115,6 +1162,22 @@ def write_x_posts(client, picks, buy_list, disclosures, topic_text):
         for p in picks
         if p["code"] not in buy_codes and p["category"] != "買い場候補"
     ]
+    if today.weekday() == SURVEY_DAY:
+        next_month = today.month % 12 + 1
+        theme = X_SURVEY_THEMES[(today.toordinal() // 7) % len(X_SURVEY_THEMES)].format(next_month=next_month)
+        survey_rule = f"""### x_post_survey（アンケート版・日曜だけ）
+- 今週のテーマ: {theme}
+- フォロワーにリプで答えてもらう問いかけ投稿にする。銘柄の紹介はしない
+- 1行目はテーマを問いかけで（最後に絵文字）。続けて「1位＋理由を教えてください」のように答え方を具体的に書く
+- 「〇〇な人の声が聞きたい！」のように、答えたくなる一言で締める
+- 書き方は共通ルールに従う。短く、100字程度まで
+
+### アンケート版のお手本（形・雰囲気の参考。内容は使わない）
+{X_EXAMPLE_SURVEY}
+"""
+    else:
+        survey_rule = "### x_post_survey\n- 今日は空文字にする\n"
+
     prompt = f"""毎朝のLINE配信とX投稿のための文章を作ります。下の情報だけを使い、書いていない材料やニュースは作らないでください。
 
 ## 1. 買い場候補の注目理由（items）
@@ -1137,12 +1200,17 @@ def write_x_posts(client, picks, buy_list, disclosures, topic_text):
 
 {X_POST_STYLE}
 
+### 今日のフックの型
+- 買い場候補版: {X_HOOK_TYPES[today.toordinal() % len(X_HOOK_TYPES)]}
+- ニュース版: {X_HOOK_TYPES[(today.toordinal() + 3) % len(X_HOOK_TYPES)]}
+
 ### 買い場候補版のお手本（形・雰囲気の参考。内容は使わない）
 {X_EXAMPLE_BUY}
 
 ### ニュース版のお手本（形・雰囲気の参考。内容は使わない）
 {X_EXAMPLE_NEWS}
 
+{survey_rule}
 ## 買い場候補
 {chr(10).join(buy_blocks) or "（なし）"}
 
@@ -1161,16 +1229,17 @@ def write_x_posts(client, picks, buy_list, disclosures, topic_text):
         data = json.loads(next(b.text for b in response.content if b.type == "text"))
     except Exception as e:
         print("X下書き・買い場候補の理由づけに失敗:", e)
-        return "", ""
+        return "", "", ""
     reasons = {item["code"].upper(): item["reason"] for item in data["items"]}
     for c in buy_list:
         c["buy_comment"] = reasons.get(c["code"], "")
     x_buy = format_x_post(data["x_post_buy"]) if data["x_post_buy"] else ""
     x_news = format_x_post(data["x_post_news"]) if data["x_post_news"] else ""
+    x_survey = format_x_post(data["x_post_survey"]) if data["x_post_survey"] and today.weekday() == SURVEY_DAY else ""
     overlap = [code for code in buy_codes if code in x_news]
     if overlap:
         print(f"注意: ニュース版に買い場候補の銘柄が入っています: {overlap}")
-    return x_buy, x_news
+    return x_buy, x_news, x_survey
 
 
 # ---------------------------------------------------------------
