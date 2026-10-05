@@ -905,12 +905,13 @@ def send_line_flex_message(stocks, market_bubble, today, market_closed, x_post="
                 "contents": {"type": "carousel", "contents": chunk},
             }
         )
+    # X下書きは本文だけを送る（そのままコピペできるように）。順番はニュース版→買い場候補版→アンケート版
     if x_post:
-        messages.append({"type": "text", "text": f"📝 X投稿用の下書き・ニュース版（{len(x_post)}字）\n\n{x_post}"})
+        messages.append({"type": "text", "text": x_post})
     if x_post_buy:
-        messages.append({"type": "text", "text": f"📝 X投稿用の下書き・買い場候補版（{len(x_post_buy)}字）\n\n{x_post_buy}"})
+        messages.append({"type": "text", "text": x_post_buy})
     if x_post_survey:
-        messages.append({"type": "text", "text": f"📝 X投稿用の下書き・アンケート版（{len(x_post_survey)}字）\n\n{x_post_survey}"})
+        messages.append({"type": "text", "text": x_post_survey})
     messages = messages[:5]  # LINEは1回の送信で5メッセージまで
     push_line(messages)
 
