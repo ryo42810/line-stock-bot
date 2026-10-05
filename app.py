@@ -1494,6 +1494,20 @@ EVENING_SCHEMA = {
 }
 
 
+def earnings_tomorrow(codes, tomorrow):
+    """yfinanceの決算予定日が明日の銘柄（対象は配信履歴・ランキングに出た銘柄）"""
+    found = []
+    for code, name in codes.items():
+        try:
+            cal = yf.Ticker(f"{code}.T").calendar or {}
+            dates = cal.get("Earnings Date") or []
+            if any(getattr(d, "date", lambda: d)() == tomorrow for d in dates):
+                found.append((code, name))
+        except Exception as e:
+            print(f"決算予定日の取得失敗 ({code}):", e)
+    return found
+
+
 def evening_with_claude(client, today):
     """今日動いた銘柄の理由解説と、明日の決算予告（X下書き付き）"""
     tomorrow = next_business_day(today)
@@ -1528,8 +1542,29 @@ def evening_with_claude(client, today):
             idx = next((i for i, l in enumerate(lines) if f"/quote/{code}.T" in l), None)
             # ページの表は1セルずつ改行されるので、銘柄の行から数行分（株価・騰落率）をまとめて渡す
             row = " ".join(lines[idx:idx + 6]) if idx is not None else ""
-            mover_info.append(f"<stock code=\"{code}\" name=\"{name}\">\nランキングの行: {row[:200]}\n" + "\n".join(related) + "\n</stock>")
+            change_text = ""
+            try:
+                closes = yf.Ticker(f"{code}.T").history(period="5d")["Close"].dropna()
+                if len(closes) >= 2 and closes.index[-1].date() == today:
+                    change_text = f"今日の騰落率: {(float(closes.iloc[-1]) / float(closes.iloc[-2]) - 1) * 100:+.1f}%\n"
+            except Exception as e:
+                print(f"騰落率の取得失敗 ({code}):", e)
+            mover_info.append(
+                f"<stock code=\"{code}\" name=\"{name}\">\n{change_text}ランキングの行: {row[:200]}\n" + "\n".join(related) + "\n</stock>"
+            )
     print(f"値動きランキングの銘柄: {len(movers)}件 / うち理由の手がかりあり: {len(mover_info)}件")
+
+    # 決算予定日を調べる銘柄：直近60日に配信した銘柄＋今日のランキング銘柄
+    watch = {}
+    for entries in history.values():
+        for e in entries:
+            if isinstance(e, dict):
+                watch.setdefault(e["code"], e["name"])
+    for code, name in movers.items():
+        watch.setdefault(code, name)
+    tomorrow_earnings = earnings_tomorrow(dict(list(watch.items())[:150]), tomorrow)
+    print(f"決算予定日の確認: {len(watch)}銘柄 → 明日決算 {len(tomorrow_earnings)}件")
+    earnings_info = "\n".join(f"- {name}({code})" for code, name in tomorrow_earnings)
 
     prompt = f"""今日は{today:%Y年%m月%d日}、明日（次の営業日）は{tomorrow:%m月%d日}です。夕方のLINE配信とX投稿の文章を作ります。
 下の情報だけを使い、書いていない材料やニュースは作らないでください。
@@ -1541,8 +1576,9 @@ def evening_with_claude(client, today):
 - 理由がわかる銘柄が1つもなければ空文字
 
 ## 2. earnings（明日の決算予告・LINE用）
-- 「決算発表予定のページ」に、明日（{tomorrow:%m月%d日}）発表予定として書かれている銘柄から、注目度の高いものを最大5件
-- 日付が明日だと確認できないものは入れない。見つからなければ空の配列
+- 「明日（{tomorrow:%m月%d日}）決算発表予定の銘柄」から、注目度の高いものを最大5件
+- note には注目ポイントを書く。下の情報に書いていなければ「決算発表予定」とだけ書く
+- 一覧が空なら空の配列
 
 ## 3. earnings_post（明日の決算予告・X下書き）
 - earnings の中から3銘柄。「明日決算」であることが1行目でわかるフックにする
@@ -1557,8 +1593,8 @@ def evening_with_claude(client, today):
 ### お手本（形・雰囲気の参考。内容は使わない）
 {X_EXAMPLE_NEWS}
 
-## 決算発表予定のページ
-{chr(10).join(earnings_blocks) or "（取得できず）"}
+## 明日（{tomorrow:%m月%d日}）決算発表予定の銘柄
+{earnings_info or "（なし）"}
 
 ## 理由の手がかりがある値動き銘柄
 {chr(10).join(mover_info) or "（なし）"}"""
