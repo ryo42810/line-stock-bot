@@ -128,6 +128,8 @@ BUY_UNIVERSE_LIMIT = 40  # 買い場候補を探す銘柄数の上限（株価�
 
 # AIが使えないとき（案A方式）のキーワード判定用
 GOOD_WORDS = ["上方修正", "増配", "自社株買い", "自己株式の取得", "株式分割", "優待新設", "優待拡充", "復配", "最高益", "黒字転換"]
+# 好材料のキーワードを含んでも、材料にしない定期報告・結果報告
+ROUTINE_WORDS = ["取得状況", "取得結果", "取得終了", "取得の終了", "買付結果", "買付けの結果", "買付けに関する結果"]
 BAD_WORDS = ["下方修正", "減配", "無配", "赤字", "優待廃止", "特別損失", "減損", "業務停止", "不適切", "上場廃止"]
 
 # 料金の目安（Claude Haiku 4.5、USD）
@@ -294,8 +296,8 @@ def pick_material_disclosures(tdnet_items):
     picked = []
     for item in tdnet_items:
         title = item["title"]
-        if "取得状況" in title:
-            continue  # 自己株式の取得状況などの定期報告は除外
+        if any(w in title for w in ROUTINE_WORDS):
+            continue  # 自社株買いの進み具合・結果・終了の報告は新しい材料ではないので除外
         if any(w in title for w in GOOD_WORDS):
             picked.append({**item, "category": "好材料"})
         elif any(w in title for w in BAD_WORDS):
@@ -522,7 +524,7 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
 1. 「話題・ニュースのページ」で話題・トピックになっている銘柄を拾う（ニュース見出し、ランキング、注目銘柄など）
    - 好材料（上方修正、増配、自社株買い、大型受注、提携など）
    - 懸念材料（下方修正、減配、不祥事、優待廃止など）
-2. TDnetの適時開示も参考にする
+2. TDnetの適時開示も参考にする。ただし「自己株式の取得状況・取得結果・取得終了」のような、すでに発表済みの自社株買いの進み具合や結果の報告は、新しい材料として扱わない
 3. 枠が余るときは「優待一覧のページ」から、{months[0]}月か{months[1]}月が権利確定月で優待が魅力的な銘柄を加える。分類は「優待」
 {earnings_rule}5. 次の銘柄は直近1週間で配信済みなので選ばない: {blocked_text}
 6. 合計{MIN_PICKS}〜{MAX_PICKS}件。10件以上を目標にする。根拠の弱い銘柄は入れない
@@ -1002,15 +1004,17 @@ def run():
     # X下書きと画像（本文だけ送る。順番はニュース版→買い場候補版→アンケート版）
     by_code = {p["code"]: p for p in picks}
     images = {}
-    for kind, post, title, accent in (
-        ("news", x_post_news, "今朝のニュース銘柄", "#2D7FF9"),
-        ("buy", x_post_buy, "買い場候補", "#16A085"),
+    weekday_str = "月火水木金土日"[today.weekday()]
+    date_text = f"{today:%Y.%m.%d}（{weekday_str}）"
+    for kind, post, title, subtitle, accent in (
+        ("news", x_post_news, "今朝のニュース銘柄", "材料が出た注目の3銘柄", x_media.COLORS["green"]),
+        ("buy", x_post_buy, "買い場候補", "上がる前にチェックしたい3銘柄", x_media.COLORS["accent"]),
     ):
         stocks = [by_code[c] for c in x_media.codes_in_post(post) if c in by_code]
         if post and stocks:
             try:
                 images[kind] = x_media.render_stock_card(
-                    x_media.image_path(today, kind), title, f"{today:%Y年%m月%d日}", stocks, accent, get_history
+                    x_media.image_path(today, kind), title, subtitle, stocks, accent, get_history, date_text
                 )
             except Exception as e:
                 print(f"画像の作成に失敗 ({kind}):", e)
@@ -1655,7 +1659,7 @@ def run_evening():
     perf_image = None
     if rows:
         try:
-            perf_image = x_media.render_performance_chart(x_media.image_path(today, "performance"), rows, "買い場候補 1週間後の成績")
+            perf_image = x_media.render_performance_chart(x_media.image_path(today, "performance"), rows, "買い場候補の成績", f"{today:%Y.%m.%d}")
         except Exception as e:
             print("成績グラフの作成に失敗:", e)
     urls = x_media.publish_images([perf_image] if perf_image else [], today)
