@@ -303,5 +303,190 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-10-07": [
+  {
+   "code": "4398",
+   "name": "ブロードバンドセキュリティ",
+   "category": "好材料",
+   "price": 1922.0,
+   "buy": true,
+   "headline": "不正アクセス報道でサイバー対策需要が急速に高まり買い殺到、20%超上昇。",
+   "yutai": "継続保有半年以上　5,000円分",
+   "kenri_months": [
+    12,
+    6
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3042",
+   "name": "セキュアヴェイル",
+   "category": "好材料",
+   "price": 414.0,
+   "buy": false,
+   "headline": "サイバーセキュリティ関連で物色継続、17%超の上昇で高値更新。",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5599",
+   "name": "Ｓ＆Ｊ",
+   "category": "好材料",
+   "price": 1455.0,
+   "buy": true,
+   "headline": "不正アクセス対策需要増で買い集中、サイバー関連銘柄の中でも注目度上昇。",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6469",
+   "name": "放電精密加工研究所",
+   "category": "好材料",
+   "price": 3105.0,
+   "buy": false,
+   "headline": "27年2月期中間期で営業利益83.7%増、通期増収増益見通し＆増配発表で買い材料。",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6193",
+   "name": "バーチャレクス・ホールディングス",
+   "category": "好材料",
+   "price": 1061.0,
+   "buy": false,
+   "headline": "27年3月期上期営業利益予想を上方修正、IT＆コンサル好調で18%超上昇。",
+   "yutai": "5,000円",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 29
+  },
+  {
+   "code": "2726",
+   "name": "パルグループホールディングス",
+   "category": "好材料",
+   "price": 1397.0,
+   "buy": false,
+   "headline": "27年2月期2Q決算で増益、経常利益1%増で市場期待に応えて買い優勢。",
+   "yutai": "宿泊割引券2枚～10枚（50%割引）",
+   "kenri_months": [
+    2
+   ],
+   "kenri_day": 24
+  },
+  {
+   "code": "6814",
+   "name": "古野電気",
+   "category": "好材料",
+   "price": 8130.0,
+   "buy": false,
+   "headline": "防衛関連需要や航空機関連で受注好調、前場で3.8%上昇し注目集める。",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7721",
+   "name": "東京計器",
+   "category": "好材料",
+   "price": 7330.0,
+   "buy": false,
+   "headline": "航空・防衛関連の需要拡大期待で買い、精密機器セクターで強気展開。",
+   "yutai": "東京計器プレミアム優待倶楽部で商品交換可能（3,000～50,000ポイント）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 29
+  },
+  {
+   "code": "2670",
+   "name": "エービーシー・マート",
+   "category": "決算",
+   "price": 2786.0,
+   "buy": false,
+   "headline": "本日中間決算発表予定。小売セクターの業績動向に注目が集まる。",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3391",
+   "name": "ツルハホールディングス",
+   "category": "決算",
+   "price": 2124.5,
+   "buy": false,
+   "headline": "本日中間決算発表。ドラッグストア大手の好決算期待で注視対象。",
+   "yutai": "自社株主ギフト券5,000円分～15,000円分",
+   "kenri_months": [
+    2
+   ],
+   "kenri_day": 24
+  },
+  {
+   "code": "2918",
+   "name": "わらべや日洋ホールディングス",
+   "category": "決算",
+   "price": 2644.0,
+   "buy": false,
+   "headline": "本日中間決算発表。食品卸売の業績推移が市場の関心事。",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "428A",
+   "name": "サイプレス・ホールディングス",
+   "category": "決算",
+   "price": 1704.0,
+   "buy": false,
+   "headline": "本日本決算発表。通期業績結果が株価を大きく左右する可能性あり。",
+   "yutai": "1,000円相当～200,000円相当（株主パスポート）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 24
+  },
+  {
+   "code": "4572",
+   "name": "4 カルナＢＳ -10.76 %",
+   "category": "買い場候補",
+   "price": 409.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4564",
+   "name": "1 オンコセラ",
+   "category": "買い場候補",
+   "price": 21.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7630",
+   "name": "(株)壱番屋 7630 東証PRM 1,036 -15 ( -1.43 % )",
+   "category": "買い場候補",
+   "price": 1051.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "1,000円相当～12,000円相当（飲食・持ち帰り弁当等）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 24
+  }
  ]
 }
