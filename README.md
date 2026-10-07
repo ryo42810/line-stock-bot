@@ -59,6 +59,7 @@ GitHub Actions で毎日動く。サーバーは不要。
 - AIモデル：`claude-haiku-4-5`（Web検索は使わない）
 - 画像の配色：`IMAGE_THEME`（初期値 `gold_solid`＝ネイビー×ゴールドのベタ塗り）
 - Xの投稿間隔：`X_POST_INTERVAL_MIN = 30`
+- Xのハッシュタグ：`X_HASHTAGS_MORNING`（朝）／`X_HASHTAGS_EVENING`（夕方。#朝活なし）
 
 ## 手動で動かす
 Actions → **Daily Stock Bot**（朝）または **Evening Review**（夕方）→ Run workflow

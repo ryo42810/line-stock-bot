@@ -59,13 +59,17 @@ X_POST_STYLE = """## X投稿の書き方（共通）
 - 1銘柄ごとに空行を入れ、スマホで読みやすくする
 - 「。」で終わる文や、絵文字で終わる文のあとは必ず改行する（1行に1文）
 - 絵文字は多めに使う（1行に1つ程度）。必ず言葉の後に付け、行頭には置かない（例: 「好材料📈」「出来高急増🔥」）
-- 最後の行はハッシュタグ #株クラ だけ（免責文は書かない）
+- ハッシュタグは書かない（プログラムで最後に付ける）。免責文も書かない
 - 長さは200字程度まで
 
 ### やってはいけないこと
 - 「使ってみた」「もらった」「買った」などの体験談は書かない（事実ではないため）
 - 実在の人物の発言や口コミを作らない
 - 「絶対上がる」「今すぐ買え」など、株価の断定や売買の指示はしない。強い言い切りは、事実や注目度についてだけ使う"""
+
+# Xのハッシュタグ（AIには書かせず、プログラムで最後の行に付ける。夕方は #朝活 を外す）
+X_HASHTAGS_MORNING = "#朝活 #株クラ #日本株 #NISA #投資家さんと繋がりたい"
+X_HASHTAGS_EVENING = "#株クラ #日本株 #NISA #投資家さんと繋がりたい"
 
 # フックの型（日替わりで使い分けて、毎日同じ書き出しにならないようにする）
 X_HOOK_TYPES = [
@@ -92,9 +96,7 @@ X_SURVEY_THEMES = [
 X_EXAMPLE_SURVEY = """株主優待で「これは神！」って思った銘柄は？🎁
 
 1位＋理由を教えてください👀
-実際にもらった人の声が聞きたい！
-
-#株クラ"""
+実際にもらった人の声が聞きたい！"""
 
 # 買い場候補版のお手本（雰囲気・形の参考。内容はそのまま使わない）
 X_EXAMPLE_BUY = """ぶっちゃけ、上がる前に仕込みたいのはこの3つ👀↓↓
@@ -109,9 +111,7 @@ X_EXAMPLE_BUY = """ぶっちゃけ、上がる前に仕込みたいのはこの3
 
 ③きょくとう(2300)
 株価は動かず出来高だけ4.4倍💡
-値動きの前ぶれかも
-
-#株クラ"""
+値動きの前ぶれかも"""
 
 # ニュース版のお手本（雰囲気・形の参考。内容はそのまま使わない）
 X_EXAMPLE_NEWS = """はい。
@@ -123,9 +123,7 @@ X_EXAMPLE_NEWS = """はい。
 
 ②あみやき亭(2753)
 売上は10.1%増✨
-ただ減損2億円で減益に⚠️
-
-#株クラ"""
+ただ減損2億円で減益に⚠️"""
 
 MAX_BUY_CANDIDATES = 5
 BUY_UNIVERSE_LIMIT = 40  # 買い場候補を探す銘柄数の上限（株価取得の時間を抑えるため）
@@ -1186,6 +1184,14 @@ def format_x_post(text):
     return re.sub(r"[ \t]+\n", "\n", text)
 
 
+def add_hashtags(text, tags):
+    """AIが書いたハッシュタグだけの行を消して、決まったハッシュタグを最後の行に付ける"""
+    if not text:
+        return ""
+    lines = [l for l in text.strip().splitlines() if not re.fullmatch(r"\s*(#\S+\s*)+", l)]
+    return "\n".join(lines).rstrip() + "\n\n" + tags
+
+
 def stock_context(stock, disclosures, topic_text):
     lines = [l for l in topic_text.splitlines() if stock["code"] in l or (stock["name"] and stock["name"] in l)][:5]
     lines += [f"適時開示: {d['title']}" for d in disclosures if d["code"] == stock["code"]][:3]
@@ -1282,9 +1288,9 @@ def write_x_posts(client, picks, buy_list, disclosures, topic_text, today):
     reasons = {item["code"].upper(): item["reason"] for item in data["items"]}
     for c in buy_list:
         c["buy_comment"] = reasons.get(c["code"], "")
-    x_buy = format_x_post(data["x_post_buy"]) if data["x_post_buy"] else ""
-    x_news = format_x_post(data["x_post_news"]) if data["x_post_news"] else ""
-    x_survey = format_x_post(data["x_post_survey"]) if data["x_post_survey"] and today.weekday() == SURVEY_DAY else ""
+    x_buy = add_hashtags(format_x_post(data["x_post_buy"]), X_HASHTAGS_MORNING) if data["x_post_buy"] else ""
+    x_news = add_hashtags(format_x_post(data["x_post_news"]), X_HASHTAGS_MORNING) if data["x_post_news"] else ""
+    x_survey = add_hashtags(format_x_post(data["x_post_survey"]), X_HASHTAGS_MORNING) if data["x_post_survey"] and today.weekday() == SURVEY_DAY else ""
     overlap = [code for code in buy_codes if code in x_news]
     if overlap:
         print(f"注意: ニュース版に買い場候補の銘柄が入っています: {overlap}")
@@ -1473,7 +1479,7 @@ def x_performance_post(rows):
     ]
     if best["change"] > 0:
         lines += ["", "いちばん伸びたのは", f"{best['name']}({best['code']}) {best['change']:+.1f}%🚀"]
-    lines += ["", "#株クラ"]
+    lines += ["", X_HASHTAGS_EVENING]
     return "\n".join(lines)
 
 
@@ -1533,16 +1539,13 @@ def quarterly_growth_text(code):
 
 
 def ensure_x_format(post, default_hook):
-    """X下書きの最低限の形をそろえる：1行目がフックでなければ補い、最後に #株クラ を付ける"""
+    """X下書きの最低限の形をそろえる：1行目がフックでなければ補い、最後に夕方のハッシュタグを付ける"""
     if not post:
         return ""
     lines = post.strip().splitlines()
     if re.search(r"\(\d{3}[0-9A-Z]\)", lines[0]):  # 1行目からいきなり銘柄が始まっている
         lines = [default_hook, ""] + lines
-    text = "\n".join(lines).rstrip()
-    if "#株クラ" not in text:
-        text += "\n\n#株クラ"
-    return text
+    return "\n".join(lines)
 
 
 def earnings_tomorrow(codes, tomorrow):
@@ -1625,7 +1628,6 @@ def evening_with_claude(client, today):
 - 「今日+15%🚀」のように騰落率を入れ、次の行に理由
 - 「業績データ」がある銘柄は、「営業利益+30%」のように具体的な数字で理由を書く。ただし業績データの四半期が今回の決算と違いそうなら使わない
 - 1行目は必ずフック（例: 「今日爆上げした銘柄、理由はこれ🚀↓↓」）。銘柄名から書き始めない
-- 最後の行は必ず #株クラ
 - 理由がわかる銘柄が1つもなければ空文字
 
 ## 2. earnings（明日の決算予告・LINE用）
@@ -1668,8 +1670,8 @@ def evening_with_claude(client, today):
         lines = [f"📊 明日（{tomorrow:%m/%d}）決算の注目銘柄"]
         lines += [f"・{e['name']}({e['code']}) {e['note']}" for e in data["earnings"]]
         earnings_text = "\n".join(lines)
-    movers = format_x_post(ensure_x_format(data["movers_post"], "今日大きく動いた銘柄、理由はこれ🚀↓↓")) if data["movers_post"] else ""
-    earnings_post = format_x_post(ensure_x_format(data["earnings_post"], "明日決算の注目銘柄📊↓↓")) if data["earnings_post"] else ""
+    movers = add_hashtags(format_x_post(ensure_x_format(data["movers_post"], "今日大きく動いた銘柄、理由はこれ🚀↓↓")), X_HASHTAGS_EVENING) if data["movers_post"] else ""
+    earnings_post = add_hashtags(format_x_post(ensure_x_format(data["earnings_post"], "明日決算の注目銘柄📊↓↓")), X_HASHTAGS_EVENING) if data["earnings_post"] else ""
     return earnings_text, movers, earnings_post
 
 
