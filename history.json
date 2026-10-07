@@ -129,5 +129,179 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-10-06": [
+  {
+   "code": "6474",
+   "name": "不二越",
+   "category": "好材料",
+   "price": 5780.0,
+   "buy": false,
+   "headline": "第3四半期累計で大幅増益達成、建設機械向け需要回復が寄与",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8923",
+   "name": "トーセイ",
+   "category": "好材料",
+   "price": 1664.0,
+   "buy": true,
+   "headline": "2026年11月期通期業績予想を修正、配当を増配予定",
+   "yutai": "自社運営ホテルで使える宿泊割引券3,000円分と、継続保有期間に応じて自社オリジナルQUOカード（1年以上1,000円分、2年以上2,000円分、5年以上3,000円分）",
+   "kenri_months": [
+    11
+   ],
+   "kenri_day": 30
+  },
+  {
+   "code": "4894",
+   "name": "クオリプス",
+   "category": "好材料",
+   "price": 6580.0,
+   "buy": false,
+   "headline": "ストップ高気配、注目度が急上昇している成長銘柄",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7552",
+   "name": "ハピネット",
+   "category": "好材料",
+   "price": 4870.0,
+   "buy": false,
+   "headline": "上期経常を51％増益に上方修正、最高益更新へ",
+   "yutai": "優待カタログの中から自社オリジナル・独占販売商品を選択。500株以上はこども商品券も贈呈。",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4493",
+   "name": "サイバーセキュリティクラウド",
+   "category": "好材料",
+   "price": 2118.0,
+   "buy": false,
+   "headline": "サイバーセキュリティ需要高まり、テック選別買いの対象",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "153A",
+   "name": "カウリス",
+   "category": "好材料",
+   "price": 1713.0,
+   "buy": false,
+   "headline": "3日続伸、セキュリティサービス導入増加で注目",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4398",
+   "name": "BBセキュリティ",
+   "category": "好材料",
+   "price": 1522.0,
+   "buy": true,
+   "headline": "セキュリティ関連で大幅値上がり、テーマ資金流入",
+   "yutai": "デジタルギフト（ビットコイン、Amazonギフトカード、QUOカードPay等）",
+   "kenri_months": [
+    12,
+    6
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3967",
+   "name": "エルテス",
+   "category": "好材料",
+   "price": 800.0,
+   "buy": false,
+   "headline": "X社とのパートナー契約締結、ストップ高気配",
+   "yutai": "デジタルギフト（Amazonギフトカード、PayPayマネーライト、QUOカードPay等）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 28
+  },
+  {
+   "code": "6301",
+   "name": "コマツ",
+   "category": "好材料",
+   "price": 7777.0,
+   "buy": false,
+   "headline": "ゴールドマン証が投資判断引き上げ、新高値更新",
+   "yutai": "自社製品（建設機械の縮小模型）。3年以上継続保有が必須。",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "6652",
+   "name": "IDEC",
+   "category": "好材料",
+   "price": 4060.0,
+   "buy": false,
+   "headline": "今期業績予想を上方修正、大幅続伸中",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2753",
+   "name": "あみやき亭",
+   "category": "懸念材料",
+   "price": 1334.0,
+   "buy": false,
+   "headline": "今期経常を12%減益に下方修正、外食不振を反映",
+   "yutai": "贈呈優待券。100株1,000円～1,500株以上18,000円。3年以上継続保有で増額。",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4390",
+   "name": "アイ・ピー・エス",
+   "category": "懸念材料",
+   "price": 3965.0,
+   "buy": true,
+   "headline": "公募増資発表による希薄化を嫌気、大幅反落",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3306",
+   "name": "4 ＳＥＩＭＡ -9.54 %",
+   "category": "買い場候補",
+   "price": 744.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "デジタルギフト。300株3,000円相当～。2027年3月末のみ3,000株以上で20,000円相当。",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "642A",
+   "name": "グス(株) 642A 東証PRM 1,965 +21.5 ( +1.11 % )",
+   "category": "買い場候補",
+   "price": 1943.5,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  }
  ]
 }
