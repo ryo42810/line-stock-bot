@@ -759,5 +759,161 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-10-10": [
+  {
+   "code": "5246",
+   "name": "ELEMENTS",
+   "category": "好材料",
+   "price": 1065.0,
+   "buy": false,
+   "headline": "ストップ高、金融庁が不正アクセス増加に注意喚起",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4260",
+   "name": "HBテクノ",
+   "category": "好材料",
+   "price": 289.0,
+   "buy": false,
+   "headline": "+38.28%の大幅上昇、グロース市場で買気配",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4498",
+   "name": "サイバートラスト",
+   "category": "好材料",
+   "price": 1572.0,
+   "buy": false,
+   "headline": "Matter対応デバイス向け認証局構築、+23.58%上昇",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3909",
+   "name": "ショーケース",
+   "category": "好材料",
+   "price": 389.0,
+   "buy": false,
+   "headline": "+25.89%急伸、グロース市場で注目集める",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4918",
+   "name": "アイビー化粧品",
+   "category": "好材料",
+   "price": 325.0,
+   "buy": false,
+   "headline": "上半期中心に業績予想上方修正、+9.43%上昇",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4507",
+   "name": "塩野義製薬",
+   "category": "好材料",
+   "price": 2744.5,
+   "buy": false,
+   "headline": "米バイオベンチャーを3160億円で買収、M&A",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3186",
+   "name": "ネクステージ",
+   "category": "好材料",
+   "price": 2630.0,
+   "buy": false,
+   "headline": "26年11月期3Q増益、経常利益62.7%増",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4361",
+   "name": "川口化学工業",
+   "category": "好材料",
+   "price": 1770.0,
+   "buy": false,
+   "headline": "26年11月期3Q増益、経常利益135.2%増",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3042",
+   "name": "セキュアヴェイル",
+   "category": "好材料",
+   "price": 581.0,
+   "buy": false,
+   "headline": "東証スタンダードS高、サイバー対策関連で注目",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3994",
+   "name": "マネーフォワード",
+   "category": "好材料",
+   "price": 6827.0,
+   "buy": true,
+   "headline": "米系大手証券が強気レーティング、目標株価7700円",
+   "yutai": "マネーフォワード ME等のプレミアムサービスクーポン及びお金のEXPO特典",
+   "kenri_months": [
+    5,
+    11
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3097",
+   "name": "物語コーポレーション",
+   "category": "好材料",
+   "price": 5520.0,
+   "buy": true,
+   "headline": "前場で注目、外食企業として出来高増加",
+   "yutai": "食事割引券3,500円分",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 28
+  },
+  {
+   "code": "8766",
+   "name": "東京海上ホールディングス",
+   "category": "優待",
+   "price": 525.7000122070312,
+   "buy": false,
+   "headline": "10月権利確定、買い物券優待、最低投資5.25万円",
+   "yutai": "買い物券・プリペイドカード",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4417",
+   "name": "スパート(株) 4417 東証GRT 6,650 +40 ( +0.61 % )",
+   "category": "買い場候補",
+   "price": 6650.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "デジタルギフト又はセキュリティ教育サービス",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  }
  ]
 }
