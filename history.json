@@ -915,5 +915,157 @@
    ],
    "kenri_day": 31
   }
+ ],
+ "2026-10-11": [
+  {
+   "code": "4498",
+   "name": "サイバートラスト",
+   "category": "好材料",
+   "price": 1572.0,
+   "buy": false,
+   "headline": "スマートホーム分野のセキュリティ認証サービス対応に期待",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5246",
+   "name": "ELEMENTS",
+   "category": "好材料",
+   "price": 1065.0,
+   "buy": false,
+   "headline": "金融庁サイバー攻撃対策強化でセキュリティ関連株が活況",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4260",
+   "name": "ハイブリッドテクノロジーズ",
+   "category": "好材料",
+   "price": 289.0,
+   "buy": false,
+   "headline": "大幅上昇、テクノロジー関連への期待が高まる",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3909",
+   "name": "ショーケース",
+   "category": "好材料",
+   "price": 389.0,
+   "buy": false,
+   "headline": "25%超の大幅上昇で市場の注目を集める",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2735",
+   "name": "ワッツ",
+   "category": "好材料",
+   "price": 712.0,
+   "buy": true,
+   "headline": "自社株買いと増配を発表、株主還元強化",
+   "yutai": "ワッツ防災グッズ詰め合わせ（1,500円相当）",
+   "kenri_months": [
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6264",
+   "name": "マルマエ",
+   "category": "好材料",
+   "price": 2243.0,
+   "buy": false,
+   "headline": "増配発表で好感、配当利回り上昇見込み",
+   "yutai": "2,000円分（継続保有半年以上）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6814",
+   "name": "古野電気",
+   "category": "好材料",
+   "price": 7930.0,
+   "buy": true,
+   "headline": "業績上方修正と増配を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8200",
+   "name": "リンガーハット",
+   "category": "好材料",
+   "price": 2314.0,
+   "buy": true,
+   "headline": "中間決算で好業績、増配を発表",
+   "yutai": "1,650ポイント（100株以上）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3048",
+   "name": "ビックカメラ",
+   "category": "好材料",
+   "price": 1653.0,
+   "buy": true,
+   "headline": "増配発表で投資家からの評価が上昇",
+   "yutai": "2月末日：2,000円、8月末日：1,000円（100株以上）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "7069",
+   "name": "Ｇ－サイバー・バズ",
+   "category": "好材料",
+   "price": 490.0,
+   "buy": true,
+   "headline": "業績上方修正で期待度が高まる",
+   "yutai": "1,000円分（デジタルギフト含む選択制）",
+   "kenri_months": [
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3289",
+   "name": "東急不動産ホールディングス",
+   "category": "優待",
+   "price": 1185.0,
+   "buy": false,
+   "headline": "11月権利確定で買い物券など複数優待が魅力的",
+   "yutai": "100株以上：宿泊優待券、飲食優待券等、500株以上3年以上継続保有：最大12万円分/年の株主優待ポイント",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3003",
+   "name": "ヒューリック",
+   "category": "優待",
+   "price": 1670.0,
+   "buy": false,
+   "headline": "11月権利確定で高利回り優待が人気",
+   "yutai": "保有期間2年以上：6,000円相当（300株以上）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 31
+  }
  ]
 }
