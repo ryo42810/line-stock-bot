@@ -1067,5 +1067,132 @@
    ],
    "kenri_day": 31
   }
+ ],
+ "2026-10-12": [
+  {
+   "code": "2735",
+   "name": "ワッツ",
+   "category": "好材料",
+   "price": 712.0,
+   "buy": true,
+   "headline": "増配と自社株買いを発表、株主還元を強化",
+   "yutai": "ワッツ防災グッズ詰め合わせ（1,500円相当）",
+   "kenri_months": [
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6136",
+   "name": "ＯＳＧ",
+   "category": "好材料",
+   "price": 3653.0,
+   "buy": true,
+   "headline": "自己株式取得を決定、経営判断の好転を示唆",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6264",
+   "name": "マルマエ",
+   "category": "好材料",
+   "price": 2243.0,
+   "buy": false,
+   "headline": "配当予想を上方修正、好調な業績推移を反映",
+   "yutai": "2,000円分（継続保有半年以上）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8200",
+   "name": "リンガーハット",
+   "category": "好材料",
+   "price": 2314.0,
+   "buy": true,
+   "headline": "増配を発表、2月期業績予想が好調に推移",
+   "yutai": "1,650ポイント以上（食事割引券）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3048",
+   "name": "ビックカメラ",
+   "category": "好材料",
+   "price": 1653.0,
+   "buy": true,
+   "headline": "配当を増配発表、経営体制の改善が鮮明",
+   "yutai": "2,000円以上（買い物券）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "7069",
+   "name": "Ｇ－サイバー・バズ",
+   "category": "好材料",
+   "price": 490.0,
+   "buy": true,
+   "headline": "連結業績予想を上方修正、好調なビジネス展開",
+   "yutai": "1,000円分（デジタルギフト）",
+   "kenri_months": [
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4507",
+   "name": "塩野義製薬",
+   "category": "好材料",
+   "price": 2744.5,
+   "buy": false,
+   "headline": "米バイオベンチャー買収で希少疾患薬を強化、パイプライン充実",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4918",
+   "name": "アイビー化粧品",
+   "category": "好材料",
+   "price": 325.0,
+   "buy": false,
+   "headline": "上半期業績予想を上方修正、売上好調続く",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4361",
+   "name": "川口化学工業",
+   "category": "好材料",
+   "price": 1770.0,
+   "buy": false,
+   "headline": "3Q経常利益が135%増加、増益傾向が鮮明",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "212A",
+   "name": "フィットイージー",
+   "category": "優待",
+   "price": 2826.0,
+   "buy": false,
+   "headline": "10月末権利確定の魅力的なスポーツ優待、権利取り狙い層へ",
+   "yutai": "6,000円または月額1,000円など（複数選択肢）",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 0
+  }
  ]
 }
