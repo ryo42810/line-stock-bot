@@ -1194,5 +1194,151 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-10-13": [
+  {
+   "code": "3936",
+   "name": "グローバルウェイ",
+   "category": "好材料",
+   "price": 127.0,
+   "buy": false,
+   "headline": "インドAI企業と資本業務提携し合弁会社設立へ",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6645",
+   "name": "オムロン",
+   "category": "好材料",
+   "price": 6395.0,
+   "buy": false,
+   "headline": "米OnLogic買収で産業用PC分野を強化",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6523",
+   "name": "PHCホールディングス",
+   "category": "懸念材料",
+   "price": 1586.0,
+   "buy": false,
+   "headline": "東邦HDの買収検討終了で売り気配",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4493",
+   "name": "サイバーセキュリティクラウド",
+   "category": "好材料",
+   "price": 3700.0,
+   "buy": false,
+   "headline": "サイバー攻撃被害増で関連株が高い",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4417",
+   "name": "グローバルセキュリティエキスパート",
+   "category": "好材料",
+   "price": 6650.0,
+   "buy": false,
+   "headline": "サイバーセキュリティ関連で注目度上昇",
+   "yutai": "デジタルギフト2,000円またはセキュリティ教育サービス（継続保有半年以上）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4398",
+   "name": "ブロードバンドセキュリティ",
+   "category": "好材料",
+   "price": 2822.0,
+   "buy": true,
+   "headline": "セキュリティ関連銘柄として買われ気配",
+   "yutai": "ビットコイン・Amazonギフトカード・QUOカードPay等と交換可能な5,000円分（継続保有半年以上）",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "2157",
+   "name": "コシダカホールディングス",
+   "category": "決算",
+   "price": 974.0,
+   "buy": false,
+   "headline": "26年8月期は減益、経常利益5.1%減",
+   "yutai": "カラオケ店等で使用可能な優待券（継続保有3年未満：2,000～10,000円相当、3年以上：4,000～20,000円相当）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3753",
+   "name": "フライトソリューションズ",
+   "category": "好材料",
+   "price": 296.0,
+   "buy": false,
+   "headline": "注目度上昇、前場で5%超上昇",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7085",
+   "name": "カーブスホールディングス",
+   "category": "好材料",
+   "price": 928.0,
+   "buy": false,
+   "headline": "本日決算発表予定銘柄、4%以上上昇",
+   "yutai": "QUOカード・デジタルギフト・カーブス定期便割引（継続保有1年未満：1,000～2,000円相当、1年以上：1,500～3,000円相当、3年以上：2,000～5,000円相当）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4393",
+   "name": "バンク・オブ・イノベーション",
+   "category": "好材料",
+   "price": 6750.0,
+   "buy": false,
+   "headline": "ゲーム関連銘柄として注目度上昇",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4597",
+   "name": "5 ソレイジア",
+   "category": "買い場候補",
+   "price": 29.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7888",
+   "name": "三光合成(株) 7888 東証PRM 846 -42 ( -4.73 % )",
+   "category": "買い場候補",
+   "price": 888.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  }
  ]
 }
