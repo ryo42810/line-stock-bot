@@ -1340,5 +1340,187 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-10-14": [
+  {
+   "code": "4714",
+   "name": "リソー教育グループ",
+   "category": "好材料",
+   "price": 215.0,
+   "buy": false,
+   "headline": "中間期過去最高の営業利益達成、親会社による完全子会社化買付開始",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4176",
+   "name": "ココナラ",
+   "category": "好材料",
+   "price": 272.0,
+   "buy": false,
+   "headline": "ストップ高買い気配、ElithとAIセキュリティ関連の提携材料",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "153A",
+   "name": "カウリス",
+   "category": "好材料",
+   "price": 2999.0,
+   "buy": false,
+   "headline": "セキュリティ関連銘柄、相次ぐ不正アクセスで買い集中",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "436A",
+   "name": "サイバーソリューションズ",
+   "category": "好材料",
+   "price": 2181.0,
+   "buy": false,
+   "headline": "AIメールセキュリティー強化キャンペーン開始、年初来高値更新",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8081",
+   "name": "カナデン",
+   "category": "好材料",
+   "price": 2630.0,
+   "buy": false,
+   "headline": "2027年3月期中間期業績予想を上方修正",
+   "yutai": "買い物券・プリペイドカード（500円分～3,000円分）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6814",
+   "name": "古野電気",
+   "category": "好材料",
+   "price": 8060.0,
+   "buy": false,
+   "headline": "通期営業益を上方修正し配当予想も増額",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6469",
+   "name": "放電精密加工研究所",
+   "category": "好材料",
+   "price": 2681.0,
+   "buy": false,
+   "headline": "今期経常を30％上方修正、配当も5円増額",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8008",
+   "name": "４℃ホールディングス",
+   "category": "好材料",
+   "price": 2026.0,
+   "buy": false,
+   "headline": "27年2月期2Qは増益、経常利益は119.2％増",
+   "yutai": "株主優待券、QUOカード、ジュエリー等（1,000円分～15,000円分）",
+   "kenri_months": [
+    2
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "212A",
+   "name": "フィットイージー",
+   "category": "優待",
+   "price": 2818.0,
+   "buy": false,
+   "headline": "10月末が権利確定月、買い物券・スポーツ関連優待が魅力的",
+   "yutai": "QUOカード、会費割引、ビジター券（500円分～25,000円分）",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "1434",
+   "name": "JESCOホールディングス",
+   "category": "決算",
+   "price": 1621.0,
+   "buy": false,
+   "headline": "本決算発表予定、決算内容に注目",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2153",
+   "name": "E・Jホールディングス",
+   "category": "決算",
+   "price": 1858.0,
+   "buy": false,
+   "headline": "第1四半期決算発表予定",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "138A",
+   "name": "光フードサービス",
+   "category": "決算",
+   "price": 3150.0,
+   "buy": true,
+   "headline": "第3四半期決算発表予定",
+   "yutai": "食事券（5,000円分～25,000円相当）",
+   "kenri_months": [
+    11,
+    5
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3087",
+   "name": "ドトル日レス",
+   "category": "買い場候補",
+   "price": 3160.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "飲食料品、食事割引券（1,000円分～5,000円分）",
+   "kenri_months": [
+    2
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4597",
+   "name": "3 ソレイジア",
+   "category": "買い場候補",
+   "price": 27.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2379",
+   "name": "ディップ(株) 2379 東証PRM 1,658 -93 ( -5.31 % )",
+   "category": "買い場候補",
+   "price": 1751.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "買い物券・プリペイドカード（500円相当～1,000円相当）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  }
  ]
 }
