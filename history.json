@@ -1522,5 +1522,163 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-10-15": [
+  {
+   "code": "4176",
+   "name": "ココナラ",
+   "category": "好材料",
+   "price": 352.0,
+   "buy": false,
+   "headline": "26年8月期は経常利益が前期比121%増と大幅増益を達成",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3608",
+   "name": "TSIホールディングス",
+   "category": "好材料",
+   "price": 1208.0,
+   "buy": false,
+   "headline": "ワールドとの経営統合で来年3月に共同持ち株会社設立へ",
+   "yutai": "割引券またはクーポンブック。100株以上で1冊（3年未満）～4冊（3年以上1000株以上）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3678",
+   "name": "メディアドゥ",
+   "category": "好材料",
+   "price": 1192.0,
+   "buy": true,
+   "headline": "2027年3月期業績予想と配当予想を上方修正",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4429",
+   "name": "G-リックソフト",
+   "category": "好材料",
+   "price": 736.0,
+   "buy": false,
+   "headline": "2027年2月期業績予想を上方修正",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3560",
+   "name": "ほぼ日",
+   "category": "好材料",
+   "price": 5100.0,
+   "buy": false,
+   "headline": "剰余金の配当で増配を決定",
+   "yutai": "学校クーポン6ヶ月無料またはほぼ日商品から1つ選択",
+   "kenri_months": [
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3922",
+   "name": "PRTIMES",
+   "category": "好材料",
+   "price": 2131.0,
+   "buy": false,
+   "headline": "配当予想を修正し増配を実施",
+   "yutai": "全国サービス利用券・食事券・クーポン・食品日用品など。継続保有により優待品数増加",
+   "kenri_months": [
+    2
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3374",
+   "name": "内外テック",
+   "category": "好材料",
+   "price": 5370.0,
+   "buy": false,
+   "headline": "株式分割と配当予想修正で利益成長を加速",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "138A",
+   "name": "光フードサービス",
+   "category": "好材料",
+   "price": 3120.0,
+   "buy": true,
+   "headline": "株式分割と優待制度拡充で株主還元を強化",
+   "yutai": "食事券。100株以上で5,000円相当（5枚）、300株以上で15,000円相当（15枚）、500株以上で25,000円相当（25枚）",
+   "kenri_months": [
+    5,
+    11
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6668",
+   "name": "アドテックプラズマテクノロジー",
+   "category": "好材料",
+   "price": 5600.0,
+   "buy": false,
+   "headline": "想定以上の業績拡大と増配見通しでストップ高買い気配",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7733",
+   "name": "オリンパス",
+   "category": "懸念材料",
+   "price": 1759.0,
+   "buy": false,
+   "headline": "FDA警告書受け品質管理体制の強化が急務",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3280",
+   "name": "エストラスト",
+   "category": "買い場候補",
+   "price": 910.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5885",
+   "name": "5 ジーデップ +6.88 %",
+   "category": "買い場候補",
+   "price": 2980.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4577",
+   "name": "ダイト",
+   "category": "買い場候補",
+   "price": 1344.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "健康食品。100株以上で1個、500株以上で5個。継続保有半年以上が条件",
+   "kenri_months": [
+    5,
+    11
+   ],
+   "kenri_day": 0
+  }
  ]
 }
