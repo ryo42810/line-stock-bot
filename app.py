@@ -845,8 +845,8 @@ def build_bubble(stock, today, market_closed):
         )
     details += [
         {"type": "text", "text": f"利回り: {stock['yield_fmt']}", "size": "xs", "color": "#555555", "wrap": True},
-        {"type": "text", "text": f"優待: {stock['yutai'] or '不明'}", "size": "xs", "color": "#666666", "wrap": True},
-        {"type": "text", "text": f"権利確定月: {stock['kenri_month'] or '不明'}", "size": "xs", "color": "#666666"},
+        {"type": "text", "text": f"優待: {stock.get('yutai') or '不明'}", "size": "xs", "color": "#666666", "wrap": True},
+        {"type": "text", "text": f"権利確定月: {stock.get('kenri_month') or '不明'}", "size": "xs", "color": "#666666"},
     ]
     if stock.get("buy_reasons"):
         details.append({"type": "text", "text": "買い場候補の理由👀", "size": "xs", "color": "#16A085", "weight": "bold", "margin": "md"})
@@ -1145,7 +1145,7 @@ def find_buy_candidates(picks, disclosures, topic_text, blocked_codes, today):
             pick_by_code[code]["buy_reasons"] = reasons
         elif len(new_cards) < MAX_BUY_CANDIDATES:
             new_cards.append(
-                {"code": code, "name": name, "category": "買い場候補", "headline": "", "source_url": "", "buy_reasons": reasons}
+                {"yutai": "不明", "kenri_month": "不明", "code": code, "name": name, "category": "買い場候補", "headline": "", "source_url": "", "buy_reasons": reasons}
             )
     return new_cards
 
