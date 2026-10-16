@@ -1680,5 +1680,163 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-10-16": [
+  {
+   "code": "6532",
+   "name": "ベイカレント",
+   "category": "好材料",
+   "price": 8695.0,
+   "buy": false,
+   "headline": "ストップ高、好決算と新中期経営計画を評価",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3915",
+   "name": "テラスカイ",
+   "category": "好材料",
+   "price": 2147.0,
+   "buy": false,
+   "headline": "決算速報：27年2月期2Q増益、経常利益104.1%増",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4439",
+   "name": "東名",
+   "category": "好材料",
+   "price": 1014.0,
+   "buy": true,
+   "headline": "決算速報：26年8月期増益、経常利益6.6%増",
+   "yutai": "自社サービス（オフィス光119またはオフィスでんき119）の利用者は追加1,000円分。100株以上1,000円、300株以上1,250円、1,000株以上2,500円相当",
+   "kenri_months": [
+    11,
+    2
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4616",
+   "name": "川上塗料",
+   "category": "好材料",
+   "price": 3120.0,
+   "buy": true,
+   "headline": "営業益上方修正と増配を発表、買い気配で寄る",
+   "yutai": "QUOカードPay 3,000円分（継続保有1年以上の100株以上）",
+   "kenri_months": [
+    11
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "5527",
+   "name": "プロパティテクノロジーズ",
+   "category": "好材料",
+   "price": 807.0,
+   "buy": true,
+   "headline": "決算速報：26年11月期3Q増益、経常利益9.5%増",
+   "yutai": "プレミアム優待倶楽部で利用可能なポイント、300株以上で6,000円分",
+   "kenri_months": [
+    11
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "5932",
+   "name": "三協立山",
+   "category": "好材料",
+   "price": 745.0,
+   "buy": false,
+   "headline": "決算速報：27年5月期1Q黒字転換、経常利益24.3億円",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6217",
+   "name": "津田駒工業",
+   "category": "好材料",
+   "price": 699.0,
+   "buy": false,
+   "headline": "決算速報：26年11月期3Q黒字転換、経常利益8百万円",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4381",
+   "name": "ビープラッツ",
+   "category": "好材料",
+   "price": 201.0,
+   "buy": false,
+   "headline": "AI導入支援コンソーシアム正会員企業15社に拡大",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1814",
+   "name": "大末建設",
+   "category": "好材料",
+   "price": 3355.0,
+   "buy": false,
+   "headline": "自己株式の取得および買付けに関するお知らせ",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5018",
+   "name": "MORESCO",
+   "category": "好材料",
+   "price": 2483.0,
+   "buy": false,
+   "headline": "2027年2月期通期業績予想と配当予想を修正（増配）",
+   "yutai": "QUOカード、300株以上で3年未満3,000円分、3年以上4,000円分",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6136",
+   "name": "OSG",
+   "category": "好材料",
+   "price": 3755.0,
+   "buy": false,
+   "headline": "150万株50億円上限の自社株買いを発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7514",
+   "name": "ヒマラヤ",
+   "category": "買い場候補",
+   "price": 852.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "ヒマラヤポイント、100株以上1,000ポイント相当（商品値引券1枚1,000円）、8月末のみ創業50周年追加ポイント",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "362A",
+   "name": "Ｐ－エクシオＨＤ",
+   "category": "買い場候補",
+   "price": 4950.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  }
  ]
 }
