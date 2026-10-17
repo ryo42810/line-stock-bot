@@ -1985,5 +1985,133 @@
    ],
    "kenri_day": 31
   }
+ ],
+ "2026-10-18": [
+  {
+   "code": "7360",
+   "name": "オンデック",
+   "category": "好材料",
+   "price": 711.0,
+   "buy": true,
+   "headline": "株主優待制度を新たに導入、電子ギフト進呈へ",
+   "yutai": "電子ギフト（1ポイント1円相当の各種電子マネーやポイントと交換可能）",
+   "kenri_months": [
+    11
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4498",
+   "name": "サイバートラスト",
+   "category": "好材料",
+   "price": 1922.0,
+   "buy": false,
+   "headline": "高い好材料で26%超上昇、セキュリティ事業の成長期待",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4382",
+   "name": "HEROZ",
+   "category": "好材料",
+   "price": 1754.0,
+   "buy": false,
+   "headline": "20%超上昇で注目度急上昇、AI関連への期待感",
+   "yutai": "プレミアム優待倶楽部のポイント（食品、電化製品、体験ギフトなど5,000種類以上から交換可能）、WILLsCoin交換可、将棋AI利用権等交換可",
+   "kenri_months": [
+    10,
+    4
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3915",
+   "name": "テラスカイ",
+   "category": "好材料",
+   "price": 2585.0,
+   "buy": false,
+   "headline": "クラウド関連で20%超上昇、企業のDX需要継続",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6721",
+   "name": "ウインテスト",
+   "category": "好材料",
+   "price": 151.0,
+   "buy": true,
+   "headline": "49%超大幅上昇でトップランク、好材料が集中",
+   "yutai": "自社製品IoTヘルスケア便座マット「Body Beat」定価半額提供",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4840",
+   "name": "トライアイズ",
+   "category": "好材料",
+   "price": 1009.0,
+   "buy": false,
+   "headline": "PBR目標再設定で15%上昇、中長期成長戦略改定評価",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4290",
+   "name": "プレステージ・インターナショナル",
+   "category": "優待",
+   "price": 709.0,
+   "buy": false,
+   "headline": "3月権利確定、買い物券優待で配当利回り3.95%",
+   "yutai": "買い物券（電子ギフト）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3003",
+   "name": "ヒューリック",
+   "category": "優待",
+   "price": 1702.5,
+   "buy": true,
+   "headline": "12月権利確定、飲食料品優待で配当利回り3.94%",
+   "yutai": "3,000円相当のカタログからお好きな商品2点（保有期間2年以上が条件）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "7241",
+   "name": "フタバ産業",
+   "category": "優待",
+   "price": 1057.0,
+   "buy": false,
+   "headline": "9月権利確定済み、買い物券優待で配当利回り4.26%",
+   "yutai": "クオカード（継続保有年数に応じて）",
+   "kenri_months": [
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6574",
+   "name": "Ｇ－コンヴァノ",
+   "category": "買い場候補",
+   "price": 126.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "①現金相当＋②ポイント相当（廃止予定：2026年9月末基準日まで）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  }
  ]
 }
