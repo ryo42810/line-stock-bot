@@ -2113,5 +2113,125 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-10-19": [
+  {
+   "code": "9984",
+   "name": "ソフトバンクグループ",
+   "category": "好材料",
+   "price": 4944.0,
+   "buy": false,
+   "headline": "日経平均の上げ主導銘柄として急騰モード継続",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5016",
+   "name": "ＪＸ金属",
+   "category": "好材料",
+   "price": 3114.0,
+   "buy": false,
+   "headline": "資源シフト加速で需要期待、中国PPI好調が追い風",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5803",
+   "name": "フジクラ",
+   "category": "好材料",
+   "price": 4503.0,
+   "buy": false,
+   "headline": "半導体関連需要の回復トレンドに乗る",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "285A",
+   "name": "キオクシア",
+   "category": "懸念材料",
+   "price": 13375.0,
+   "buy": false,
+   "headline": "掲示板で注目度急上昇も、半導体需要の不確実性",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9432",
+   "name": "ＮＴＴ",
+   "category": "好材料",
+   "price": 174.5,
+   "buy": false,
+   "headline": "防衛関連へのシフト益を享受できるポジション",
+   "yutai": "dポイント（保有期間に応じて年間1,500～3,000ポイント以上）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "5246",
+   "name": "ＥＬＥＭＥＮＴＳ",
+   "category": "決算",
+   "price": 1281.0,
+   "buy": false,
+   "headline": "26年11月期3Q黒字転換で経常利益4.13億円達成",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7733",
+   "name": "オリンパス",
+   "category": "懸念材料",
+   "price": 1690.0,
+   "buy": false,
+   "headline": "FDA警告書で品質管理問題が懸念材料に",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4395",
+   "name": "アクリート",
+   "category": "好材料",
+   "price": 885.0,
+   "buy": false,
+   "headline": "注目度急上昇で売買増加、ファンダメンタル改善期待",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3297",
+   "name": "東武住販",
+   "category": "懸念材料",
+   "price": 1994.0,
+   "buy": true,
+   "headline": "カチタスがTOB発表で1株2000円、買収リスク注視",
+   "yutai": "飲食料品（継続保有3年未満1,000円相当、3年以上2,000円相当）",
+   "kenri_months": [
+    5,
+    11
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "6574",
+   "name": "Ｇ－コンヴァノ",
+   "category": "買い場候補",
+   "price": 126.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "①クオカード相当+②商品相当（1,000株以上で合計7,500円相当）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  }
  ]
 }
