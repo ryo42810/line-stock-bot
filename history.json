@@ -2233,5 +2233,156 @@
    ],
    "kenri_day": 31
   }
+ ],
+ "2026-10-20": [
+  {
+   "code": "9602",
+   "name": "東宝",
+   "category": "好材料",
+   "price": 1633.5,
+   "buy": false,
+   "headline": "2Q決算説明会でゴジラ新作へ自信、アナリスト評価上向き",
+   "yutai": "映画・演劇チケット（株主優待券）",
+   "kenri_months": [
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4664",
+   "name": "ＲＳＣ",
+   "category": "好材料",
+   "price": 1235.0,
+   "buy": false,
+   "headline": "出来高急増ランクイン、12%超の急騰",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6532",
+   "name": "ベイカレント",
+   "category": "決算",
+   "price": 10740.0,
+   "buy": false,
+   "headline": "27年2月期2Q増益、経常利益28.6%増",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3922",
+   "name": "ＰＲ　ＴＩＭＥＳ",
+   "category": "決算",
+   "price": 2598.0,
+   "buy": false,
+   "headline": "今期経常を2%上方修正、配当も57.5円増額",
+   "yutai": "サービスやお食事券、クーポン、食品飲料・日用品などの現物商品",
+   "kenri_months": [
+    2
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3760",
+   "name": "ケイブ",
+   "category": "好材料",
+   "price": 899.0,
+   "buy": true,
+   "headline": "ストップ高買い気配、第1四半期営業黒字転換を評価",
+   "yutai": "QUOカード（継続保有期間に応じて500～2,000円分）",
+   "kenri_months": [
+    5,
+    11
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3788",
+   "name": "ＧＭＯＧＳ",
+   "category": "好材料",
+   "price": 2355.0,
+   "buy": true,
+   "headline": "通期業績を上方修正、増配も発表",
+   "yutai": "ビットコイン（GMOクリック証券における買付代金×0.03%、上限10,000円）",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6658",
+   "name": "シライ電子",
+   "category": "好材料",
+   "price": 442.0,
+   "buy": true,
+   "headline": "27年3月期連結業績上方修正、配当も増配",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6407",
+   "name": "ＣＫＤ",
+   "category": "好材料",
+   "price": 4935.0,
+   "buy": false,
+   "headline": "自己株式取得枠の新規設定を決定",
+   "yutai": "QUOカード（保有年数に応じて500～5,000円分）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8624",
+   "name": "いちよし",
+   "category": "好材料",
+   "price": 1545.0,
+   "buy": false,
+   "headline": "27年3月期中間普通配当を増配",
+   "yutai": "自社オリジナルカレンダー",
+   "kenri_months": [
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2776",
+   "name": "新都ＨＤ",
+   "category": "優待",
+   "price": 90.0,
+   "buy": false,
+   "headline": "株主優待制度を新設、デジタルギフト贈呈",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5990",
+   "name": "(株)スーパーツール",
+   "category": "買い場候補",
+   "price": 1950.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1965",
+   "name": "株)テクノ菱和 1965 東証STD 2,122 -28 ( -1.30 % )",
+   "category": "買い場候補",
+   "price": 2150.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "食品セット（1パック）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  }
  ]
 }
