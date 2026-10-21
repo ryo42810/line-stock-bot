@@ -2384,5 +2384,165 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-10-21": [
+  {
+   "code": "4506",
+   "name": "住友ファーマ",
+   "category": "好材料",
+   "price": 1886.0,
+   "buy": false,
+   "headline": "米系大手証券がレーティング強気に引上げ、目標株価2,500円",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6505",
+   "name": "東洋電機製造",
+   "category": "好材料",
+   "price": 3180.0,
+   "buy": false,
+   "headline": "今期経常を14%増益に上方修正・最高益、配当も22円増額",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6658",
+   "name": "シライ電子工業",
+   "category": "好材料",
+   "price": 522.0,
+   "buy": false,
+   "headline": "今期経常を2倍上方修正、配当も8円増額",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4176",
+   "name": "ココナラ",
+   "category": "好材料",
+   "price": 305.0,
+   "buy": false,
+   "headline": "26年8月期は増益、経常利益は121％増で決算超過達成",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9478",
+   "name": "ＳＥホールディングス・アンド・インキュベーションズ",
+   "category": "好材料",
+   "price": 510.0,
+   "buy": true,
+   "headline": "業績上方修正で通期営業利益は一転2ケタ増に",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4344",
+   "name": "ソースネクスト",
+   "category": "懸念材料",
+   "price": 103.0,
+   "buy": true,
+   "headline": "大量の個人情報流出の可能性を発表で13年ぶり安値",
+   "yutai": "ポイント制（食品・日用品・家電など5000種類以上から選択可能）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3608",
+   "name": "ＴＳＩホールディングス",
+   "category": "好材料",
+   "price": 1218.0,
+   "buy": true,
+   "headline": "ワールド傘下のアパレル大手、来年3月に統合で国内3位へ",
+   "yutai": "ナノ・ユニバース割引券ブック（クーポンブック）・スチューシー金券、2月末に選択式優待",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "130A",
+   "name": "Ｖｅｒｉｔａｓ Ｉｎ Ｓｉｌｉｃｏ",
+   "category": "好材料",
+   "price": 418.0,
+   "buy": false,
+   "headline": "新株予約権の発行で約17億円を調達、自社パイプラインに充当",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2776",
+   "name": "新都ホールディングス",
+   "category": "優待",
+   "price": 93.0,
+   "buy": false,
+   "headline": "株主優待制度を新設、権利確定日は10月末日",
+   "yutai": "カタログギフト（現金換算）",
+   "kenri_months": [
+    1
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "212A",
+   "name": "フィットイージー",
+   "category": "優待",
+   "price": 2877.0,
+   "buy": false,
+   "headline": "10月末日権利確定で買い物券・スポーツ関連優待が人気",
+   "yutai": "会費割引（6,000円相当又は月額割引）、ビジター券、長期保有でQUOカード又は体組成計",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3038",
+   "name": "神戸物産",
+   "category": "優待",
+   "price": 3033.0,
+   "buy": false,
+   "headline": "10月末日権利確定で飲食料品等の優待を提供",
+   "yutai": "Gyomucaカード（業務スーパー利用可、VISA商品券等と交換可）",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "5900",
+   "name": "ダイケン",
+   "category": "買い場候補",
+   "price": 849.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "自社取扱い製品",
+   "kenri_months": [
+    2
+   ],
+   "kenri_day": 29
+  },
+  {
+   "code": "5204",
+   "name": "石塚硝子(株)",
+   "category": "買い場候補",
+   "price": 2980.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "QUOカード又は自社グループ製品・選べるギフト（長期保有3年以上）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 20
+  }
  ]
 }
