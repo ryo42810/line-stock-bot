@@ -2544,5 +2544,176 @@
    ],
    "kenri_day": 20
   }
+ ],
+ "2026-10-22": [
+  {
+   "code": "3697",
+   "name": "SHIFT",
+   "category": "決算",
+   "price": 1056.5,
+   "buy": false,
+   "headline": "26年8月期決算は減益も株価反発、出来高増加",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4684",
+   "name": "オービック",
+   "category": "好材料",
+   "price": 5774.0,
+   "buy": false,
+   "headline": "27年3月期第2四半期は営業最高益を達成",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5576",
+   "name": "オービーシステム",
+   "category": "好材料",
+   "price": 3435.0,
+   "buy": false,
+   "headline": "27年3月期中間期、AI・DX需要で売上高20%超増収増益",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4929",
+   "name": "アジュバンホールディングス",
+   "category": "好材料",
+   "price": 760.0,
+   "buy": true,
+   "headline": "27年3月期中間期、利益面が大幅改善で営業黒字転換",
+   "yutai": "日用品・家電",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "296A",
+   "name": "令和アカウンティング・ホールディングス",
+   "category": "好材料",
+   "price": 1086.0,
+   "buy": true,
+   "headline": "27年3月期中間期、AI活用でコンサル利益30%超増加",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3680",
+   "name": "ホットリンク",
+   "category": "好材料",
+   "price": 232.0,
+   "buy": false,
+   "headline": "注目度急上昇、前日比5.6%上昇で注目銘柄入り",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7356",
+   "name": "Retty",
+   "category": "懸念材料",
+   "price": 140.0,
+   "buy": false,
+   "headline": "高市首相「GoToイート」支援策検討報道でストップ高",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2531",
+   "name": "宝ホールディングス",
+   "category": "好材料",
+   "price": 2875.0,
+   "buy": false,
+   "headline": "26年ぶり高値、オアシスの大量保有材料視で堅調推移",
+   "yutai": "飲食料品・その他",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3922",
+   "name": "PR TIMES",
+   "category": "懸念材料",
+   "price": 2515.0,
+   "buy": false,
+   "headline": "27年2月期2Q決算は減益、経常利益5.7%減",
+   "yutai": "飲食料品・日用品・家電・食事割引券・宿泊・その他",
+   "kenri_months": [
+    2
+   ],
+   "kenri_day": 28
+  },
+  {
+   "code": "2901",
+   "name": "ウェルディッシュ",
+   "category": "懸念材料",
+   "price": 87.0,
+   "buy": true,
+   "headline": "無配転落と優待廃止で急落、20年ぶり100円割れ",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "212A",
+   "name": "フィットイージー",
+   "category": "優待",
+   "price": 2827.0,
+   "buy": false,
+   "headline": "10月末権利確定の優待銘柄、買い物券・スポーツ関連",
+   "yutai": "買い物券・プリペイドカード・スポーツ・オリジナル限定",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3038",
+   "name": "神戸物産",
+   "category": "優待",
+   "price": 2992.5,
+   "buy": false,
+   "headline": "10月末権利確定、飲食料品・その他優待が人気",
+   "yutai": "飲食料品・その他",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3091",
+   "name": "(株)ブロンコビリー",
+   "category": "買い場候補",
+   "price": 2940.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "飲食料品・食事割引券",
+   "kenri_months": [
+    12,
+    6
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3997",
+   "name": "株)トレードワークス 3997 東証STD 400 +5 ( +1.27 % )",
+   "category": "買い場候補",
+   "price": 395.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "飲食料品・日用品・家電・その他",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 31
+  }
  ]
 }
