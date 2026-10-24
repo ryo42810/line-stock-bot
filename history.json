@@ -2875,5 +2875,174 @@
    ],
    "kenri_day": 28
   }
+ ],
+ "2026-10-24": [
+  {
+   "code": "4385",
+   "name": "メルカリ",
+   "category": "好材料",
+   "price": 3704.0,
+   "buy": false,
+   "headline": "米メタの「ミューズ」提供開始で連携が報じられ大幅反発",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6036",
+   "name": "KeePer技研",
+   "category": "好材料",
+   "price": 3930.0,
+   "buy": true,
+   "headline": "技術的には仕込みゾーンに到達との分析、反発狙い",
+   "yutai": "KeePer技研の洗車・コーティング割引（20～30％OFF）・30,000円分相当",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "1911",
+   "name": "住友林業",
+   "category": "好材料",
+   "price": 1280.0,
+   "buy": false,
+   "headline": "米長期金利低下で住宅・不動産セクターに追い風",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3905",
+   "name": "データセクション",
+   "category": "好材料",
+   "price": 1530.0,
+   "buy": false,
+   "headline": "AI関連銘柄で24%超の上昇率、利益確定売り地点に",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2961",
+   "name": "日本調理機",
+   "category": "好材料",
+   "price": 1719.0,
+   "buy": false,
+   "headline": "ストップ高で大幅上昇、21%超の騰落率を記録",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3387",
+   "name": "クリエイト・レストランツ・ホールディングス",
+   "category": "優待",
+   "price": 798.0,
+   "buy": false,
+   "headline": "食事割引券優待で2月末・8月末が権利確定、年2回取得可能",
+   "yutai": "クリエイト・レストランツグループ店舗での食事券1,500～30,000円分",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 28
+  },
+  {
+   "code": "7856",
+   "name": "萩原工業",
+   "category": "優待",
+   "price": 2015.0,
+   "buy": false,
+   "headline": "10月末権利確定で優待が魅力的、飲食料品など多彩",
+   "yutai": "岡山県産食品・商品券・QUOカード等から選択、1,000～6,000円相当",
+   "kenri_months": [
+    10,
+    4
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3003",
+   "name": "ヒューリック",
+   "category": "優待",
+   "price": 1773.5,
+   "buy": true,
+   "headline": "12月末権利確定で配当利回り3.78%、飲食料品優待",
+   "yutai": "カタログギフト、3,000円相当×2点",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "8136",
+   "name": "サンリオ",
+   "category": "優待",
+   "price": 1303.0,
+   "buy": false,
+   "headline": "9月末・3月末権利確定、娯楽関連優待で人気",
+   "yutai": "テーマパーク優待券・サンリオショップ1,000円割引クーポン",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3289",
+   "name": "東急不動産ホールディングス",
+   "category": "優待",
+   "price": 1235.0,
+   "buy": false,
+   "headline": "3月末・9月末権利確定で配当利回り4.05%、多彩な優待",
+   "yutai": "宿泊優待券・飲食優待券・スポーツ優待券など",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "5832",
+   "name": "シャルグループ 5832 東証PRM 3,264 -42 ( -1.27 % )",
+   "category": "買い場候補",
+   "price": 3264.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "岡山県特産品カタログから1点選択・5,000～10,000円相当",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "8308",
+   "name": "ングス 8308 東証PRM 2,141.5 -68.5 ( -3.10 % )",
+   "category": "買い場候補",
+   "price": 2141.5,
+   "buy": true,
+   "headline": "",
+   "yutai": "クラブポイント、月間20～200ポイント進呈",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4784",
+   "name": "インターネット(株) 4784 東証PRM 491 -7 ( -1.41 % )",
+   "category": "買い場候補",
+   "price": 491.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "ビットコイン、上限10,000円分相当",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 28
+  }
  ]
 }
