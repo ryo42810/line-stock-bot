@@ -3044,5 +3044,148 @@
    ],
    "kenri_day": 28
   }
+ ],
+ "2026-10-25": [
+  {
+   "code": "4385",
+   "name": "メルカリ",
+   "category": "好材料",
+   "price": 3704.0,
+   "buy": false,
+   "headline": "米メタの「ミューズ」提携で大幅反発、プラットフォーム拡大に期待",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3905",
+   "name": "データセクション",
+   "category": "好材料",
+   "price": 1530.0,
+   "buy": false,
+   "headline": "24.39%上昇、注目度が急上昇している注目銘柄",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3635",
+   "name": "コーエーテクモホールディングス",
+   "category": "好材料",
+   "price": 1658.0,
+   "buy": false,
+   "headline": "上期経常を40%増益に上方修正、ゲーム好調",
+   "yutai": "ゲームソフト・オリジナルコンテンツ（ゲーム機向けコンテンツ等）1本～5本",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "5832",
+   "name": "ちゅうぎんフィナンシャルグループ",
+   "category": "好材料",
+   "price": 3264.0,
+   "buy": true,
+   "headline": "連結純利益予想を297億円に上方修正、26年9月中間決算",
+   "yutai": "岡山県特産品カタログまたは寄付またはTSUBASAアライアンス特産品カタログから1つ選択",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "8395",
+   "name": "佐賀銀",
+   "category": "好材料",
+   "price": 6070.0,
+   "buy": true,
+   "headline": "業績と配当予想を修正、増配で株主還元強化",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8541",
+   "name": "愛媛銀",
+   "category": "好材料",
+   "price": 3440.0,
+   "buy": false,
+   "headline": "業績と配当予想を修正、増配で積極的な株主還元",
+   "yutai": "優待品またはカタログ（6,500円相当）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4666",
+   "name": "パーク２４",
+   "category": "懸念材料",
+   "price": 1814.5,
+   "buy": false,
+   "headline": "特別損失計上で通期業績予想を修正、減益見通し",
+   "yutai": "駐車場月額基本料無料期間・時間料金割引券",
+   "kenri_months": [
+    4,
+    10
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "9449",
+   "name": "ＧＭＯインターネットグループ",
+   "category": "懸念材料",
+   "price": 3769.0,
+   "buy": true,
+   "headline": "不正アクセスで認証情報が不正利用された可能性判明",
+   "yutai": "ビットコイン（上限1万円相当）",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4784",
+   "name": "ＧＭＯインターネット",
+   "category": "懸念材料",
+   "price": 491.0,
+   "buy": true,
+   "headline": "FX口座で不正操作、ログイン情報の漏えい可能性",
+   "yutai": "ビットコイン（上限1万円相当）",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8766",
+   "name": "東京海上ホールディングス",
+   "category": "優待",
+   "price": 572.2000122070312,
+   "buy": false,
+   "headline": "10月11月権利確定。買い物券・プリペイドカード優待が魅力的",
+   "yutai": "初回優待7,500円相当、翌年以降2,500円",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8308",
+   "name": "ングス 8308 東証PRM 2,141.5 -68.5 ( -3.10 % )",
+   "category": "買い場候補",
+   "price": 2141.5,
+   "buy": true,
+   "headline": "",
+   "yutai": "クラブポイント（パートナー企業ポイント等に交換可能）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  }
  ]
 }
