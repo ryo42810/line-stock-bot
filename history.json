@@ -3187,5 +3187,121 @@
    ],
    "kenri_day": 31
   }
+ ],
+ "2026-10-26": [
+  {
+   "code": "8395",
+   "name": "佐賀銀行",
+   "category": "好材料",
+   "price": 6070.0,
+   "buy": true,
+   "headline": "業績予想修正・増配を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8541",
+   "name": "愛媛銀行",
+   "category": "好材料",
+   "price": 3440.0,
+   "buy": false,
+   "headline": "業績予想修正・増配を発表",
+   "yutai": "優待カタログ（6,500円相当）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4666",
+   "name": "パーク24",
+   "category": "懸念材料",
+   "price": 1814.5,
+   "buy": false,
+   "headline": "特別損失計上で通期業績予想を修正",
+   "yutai": "継続保有期間に応じた駐車場無料利用券",
+   "kenri_months": [
+    4,
+    10
+   ],
+   "kenri_day": 30
+  },
+  {
+   "code": "3635",
+   "name": "コーエーテクモホールディングス",
+   "category": "決算",
+   "price": 1658.0,
+   "buy": false,
+   "headline": "上期経常利益を40%上方修正",
+   "yutai": "自社ゲーム製品（本数は保有株数で変動）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "6036",
+   "name": "KeePer技研",
+   "category": "好材料",
+   "price": 3930.0,
+   "buy": true,
+   "headline": "注目度の急騰、テクニカル的に仕込みゾーン",
+   "yutai": "サービス割引と現金（最大30,000円相当）",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 30
+  },
+  {
+   "code": "1911",
+   "name": "住友林業",
+   "category": "好材料",
+   "price": 1280.0,
+   "buy": false,
+   "headline": "米長期金利低下で不動産セクター追い風",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9449",
+   "name": "GMOインターネットグループ",
+   "category": "懸念材料",
+   "price": 3769.0,
+   "buy": true,
+   "headline": "FX取引口座で不正アクセス・認証情報漏えい",
+   "yutai": "ビットコイン等の暗号資産（上限1万円）",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "2531",
+   "name": "宝ホールディングス",
+   "category": "決算",
+   "price": 2693.5,
+   "buy": false,
+   "headline": "1Q減益も権利確定月前で注目",
+   "yutai": "自社グループ製品詰合せ（1,000円～4,000円相当）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4664",
+   "name": "ＲＳＣ 4664 東証STD 1,060 --- ( --- % )",
+   "category": "買い場候補",
+   "price": 1060.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  }
  ]
 }
