@@ -3303,5 +3303,180 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-10-27": [
+  {
+   "code": "7970",
+   "name": "信越ポリマー",
+   "category": "好材料",
+   "price": 2236.0,
+   "buy": false,
+   "headline": "中間期増収増益、年間配当を72円に増額予定",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6203",
+   "name": "豊和工業",
+   "category": "好材料",
+   "price": 2279.0,
+   "buy": false,
+   "headline": "北朝鮮情勢で防衛関連銘柄として注目集める",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6999",
+   "name": "ＫＯＡ",
+   "category": "好材料",
+   "price": 2101.0,
+   "buy": false,
+   "headline": "27年3月期2Q経常利益146.2%増で好決算",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7459",
+   "name": "メディパルホールディングス",
+   "category": "好材料",
+   "price": 3396.0,
+   "buy": false,
+   "headline": "上方修正と上限100億円の自社株買い発表",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3042",
+   "name": "セキュアヴェイル",
+   "category": "好材料",
+   "price": 1403.0,
+   "buy": false,
+   "headline": "セキュリティ関連として注目度上昇",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4062",
+   "name": "イビデン",
+   "category": "好材料",
+   "price": 8248.0,
+   "buy": false,
+   "headline": "AI・半導体関連銘柄として市場の買いを集める",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6857",
+   "name": "アドバンテスト",
+   "category": "好材料",
+   "price": 31070.0,
+   "buy": true,
+   "headline": "AI・半導体関連で買い継続、テスト装置需要堅調",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3436",
+   "name": "ＳＵＭＣＯ",
+   "category": "好材料",
+   "price": 2265.0,
+   "buy": false,
+   "headline": "半導体材料関連、AI関連需要で買い優勢",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8366",
+   "name": "滋賀銀行",
+   "category": "好材料",
+   "price": 2466.0,
+   "buy": false,
+   "headline": "池田泉州HD統合へ、関西トップの地銀グループに",
+   "yutai": "継続保有期間に応じたポイント・商品券等",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "2334",
+   "name": "イオレ",
+   "category": "好材料",
+   "price": 487.0,
+   "buy": false,
+   "headline": "全国300拠点・総受電容量600MWのAIデータセンター構築に参画",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4519",
+   "name": "中外製薬",
+   "category": "決算",
+   "price": 6897.0,
+   "buy": false,
+   "headline": "10月27日第3四半期決算発表予定",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4063",
+   "name": "信越化学工業",
+   "category": "決算",
+   "price": 5783.0,
+   "buy": false,
+   "headline": "10月27日中間期決算発表予定",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8173",
+   "name": "3 ジョーシン -9.48 %",
+   "category": "買い場候補",
+   "price": 4220.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "買い物券（Joshin web対応）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4597",
+   "name": "3 ソレイジア",
+   "category": "買い場候補",
+   "price": 27.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3934",
+   "name": "フィットジャパン 3934 東証STD 2,210 -6 ( -0.27 % )",
+   "category": "買い場候補",
+   "price": 2216.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "QUOカード・割引クーポン等から選択可能",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  }
  ]
 }
