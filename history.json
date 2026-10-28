@@ -3478,5 +3478,149 @@
    ],
    "kenri_day": 31
   }
+ ],
+ "2026-10-28": [
+  {
+   "code": "285A",
+   "name": "キオクシアホールディングス",
+   "category": "好材料",
+   "price": 12605.0,
+   "buy": false,
+   "headline": "SK Hynixの好決算に連動、半導体需要堅調の見通し",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6976",
+   "name": "太陽誘電",
+   "category": "好材料",
+   "price": 8587.0,
+   "buy": false,
+   "headline": "半導体需要回復の恩恵を受ける電子部品関連",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6668",
+   "name": "アドテック プラズマ テクノロジー",
+   "category": "好材料",
+   "price": 4800.0,
+   "buy": false,
+   "headline": "半導体製造装置メーカー、ハイテク好調が追い風",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4186",
+   "name": "東京応化工業",
+   "category": "好材料",
+   "price": 7750.0,
+   "buy": false,
+   "headline": "半導体向け材料需要の増加で業績好調",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6988",
+   "name": "日東電工",
+   "category": "好材料",
+   "price": 3600.0,
+   "buy": false,
+   "headline": "データセンター・半導体向け部材需要が好調",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4894",
+   "name": "クオリプス",
+   "category": "好材料",
+   "price": 7050.0,
+   "buy": false,
+   "headline": "脊髄損傷の再生医療製品が厚労省に本承認予定",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5029",
+   "name": "サークレイス",
+   "category": "好材料",
+   "price": 2014.0,
+   "buy": false,
+   "headline": "ヒルハウス系HHH1による1株2020円のTOB実施",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8697",
+   "name": "日本取引所グループ",
+   "category": "好材料",
+   "price": 2088.0,
+   "buy": true,
+   "headline": "26年9月中間は増収増益、売買代金が過去最高",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3769",
+   "name": "GMOペイメントゲートウェイ",
+   "category": "好材料",
+   "price": 8315.0,
+   "buy": false,
+   "headline": "親会社サイバー攻撃事案で関心高まる、決済プラットフォーム企業",
+   "yutai": "GMOクリック証券における自社株式買付代金×0.03％相当のビットコイン（上限10,000円）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3038",
+   "name": "神戸物産",
+   "category": "優待",
+   "price": 2963.0,
+   "buy": false,
+   "headline": "10月末権利確定、飲食料品等の魅力的な優待",
+   "yutai": "業務スーパーのGyomuca取扱い店舗で利用可能カード（3年未満1,000～15,000円分、3年以上3,000～20,000円分）",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "212A",
+   "name": "フィットイージー",
+   "category": "優待",
+   "price": 2770.0,
+   "buy": false,
+   "headline": "10月末権利確定、スポーツ・買い物券など多様な優待",
+   "yutai": "①会費割引6,000～25,000円分 ②月額割引1,000～4,000円 ③ビジター券4～16枚、長期保有でQUOカード10,000円又は体組成計相当",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6574",
+   "name": "5 コンヴァノ +13.04 %",
+   "category": "買い場候補",
+   "price": 92.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "①1,000～5,000円相当 ②6,500～32,500円相当（2026年9月末で廃止）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  }
  ]
 }
