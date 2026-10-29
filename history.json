@@ -3622,5 +3622,172 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-10-29": [
+  {
+   "code": "6857",
+   "name": "アドバンテスト",
+   "category": "好材料",
+   "price": 34930.0,
+   "buy": false,
+   "headline": "米ハイテク・半導体高で買い継続、好決算の流れ",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "285A",
+   "name": "キオクシア",
+   "category": "好材料",
+   "price": 14340.0,
+   "buy": false,
+   "headline": "SKハイニックス好決算、NAND需給改善に期待",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6146",
+   "name": "ディスコ",
+   "category": "決算",
+   "price": 52360.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益44%増で好調継続",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6337",
+   "name": "テセック",
+   "category": "決算",
+   "price": 2787.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益183%増の高成長",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6723",
+   "name": "ルネサスエレクトロニクス",
+   "category": "決算",
+   "price": 3100.0,
+   "buy": false,
+   "headline": "タイミング事業譲渡益で大幅利益転換、売上27%増",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7276",
+   "name": "小糸製作所",
+   "category": "好材料",
+   "price": 2508.5,
+   "buy": false,
+   "headline": "中間配当増配発表、営利性改善を評価",
+   "yutai": "買い物券・プリペイドカード、その他。継続保有期間に応じて1,000円～4,000円分",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "7283",
+   "name": "愛三工業",
+   "category": "好材料",
+   "price": 2007.0,
+   "buy": false,
+   "headline": "通期業績上方修正・増配発表で収益好調",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8524",
+   "name": "北洋銀行",
+   "category": "好材料",
+   "price": 1183.0,
+   "buy": false,
+   "headline": "業績修正・増配発表で金融株上昇の流れ",
+   "yutai": "北海道特産品またはホテル等宿泊補助券。継続保有期間に応じて2,000円～9,000円相当",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "1934",
+   "name": "ユアテック",
+   "category": "好材料",
+   "price": 2550.0,
+   "buy": false,
+   "headline": "業績上方修正と中間配当・増配で評価好転",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4956",
+   "name": "コニシ",
+   "category": "好材料",
+   "price": 1475.0,
+   "buy": false,
+   "headline": "2Q好調で通期業績上方修正、接着剤需要堅調",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3843",
+   "name": "フリービット",
+   "category": "好材料",
+   "price": 1745.0,
+   "buy": false,
+   "headline": "通信・集合住宅向け事業が伸展、営利性改善",
+   "yutai": "電化製品や食品など約4,000点以上の商品から交換可能なポイント。保有株数に応じて3,000～10,000ポイント",
+   "kenri_months": [
+    4
+   ],
+   "kenri_day": 30
+  },
+  {
+   "code": "7419",
+   "name": "ノジマ",
+   "category": "決算",
+   "price": 1210.0,
+   "buy": false,
+   "headline": "26年9月期中間増収増益、投資有価証券売却益計上",
+   "yutai": "カタログギフト、ノジマポイント、優待券、オリジナル商品。保有株数と継続保有期間に応じて変動",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3038",
+   "name": "神戸物産",
+   "category": "優待",
+   "price": 2907.0,
+   "buy": false,
+   "headline": "10月末権利確定、飲食料品優待で人気継続",
+   "yutai": "Gyomucaカード（業務スーパー利用可能）。継続保有期間に応じて1,000円～20,000円分",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "2315",
+   "name": "ＣＡＩＣＡ　ＤＩＧＩＴＡＬ 2315 東証STD 61 0 ( 0.00 % )",
+   "category": "買い場候補",
+   "price": 61.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  }
  ]
 }
