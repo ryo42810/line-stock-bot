@@ -3789,5 +3789,184 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-10-30": [
+  {
+   "code": "4528",
+   "name": "小野薬品工業",
+   "category": "決算",
+   "price": 2224.5,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益12%増で好調",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2737",
+   "name": "トーメンデバイス",
+   "category": "決算",
+   "price": 25730.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益393.7%増と大幅改善",
+   "yutai": "オリーブオイル、QUOカード、デジタルギフト、寄付、ヘルシーオイルなどから選択。継続保有3年以上で追加贈呈あり",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4205",
+   "name": "日本ゼオン",
+   "category": "好材料",
+   "price": 2247.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益75.4%増で好調",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5471",
+   "name": "大同特殊鋼",
+   "category": "好材料",
+   "price": 2166.5,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益38.9%増で堅調",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5344",
+   "name": "MARUWA",
+   "category": "好材料",
+   "price": 56250.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益58.6%増で好調",
+   "yutai": "MARUWA CHRISTMAS CONCERTへの招待、公演チケット優待、軽井沢MARUWAアカデミーヒルズ利用優待",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 29
+  },
+  {
+   "code": "2594",
+   "name": "キーコーヒー",
+   "category": "好材料",
+   "price": 1966.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益12.3%増で堅調",
+   "yutai": "自社商品（コーヒー製品相当）。100株以上で1,000円相当、200株以上で2,000円相当、300株以上で3,000円相当、1,000株以上で5,000円相当",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 29
+  },
+  {
+   "code": "6305",
+   "name": "日立建機",
+   "category": "好材料",
+   "price": 5105.0,
+   "buy": false,
+   "headline": "27年3月期連結業績予想を上方修正、好業績継続",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7970",
+   "name": "信越ポリマー",
+   "category": "好材料",
+   "price": 2555.0,
+   "buy": false,
+   "headline": "27年3月期業績上方修正、自社株買いも実施へ",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1959",
+   "name": "クラフティア",
+   "category": "好材料",
+   "price": 8049.0,
+   "buy": false,
+   "headline": "配当予想の修正、増配を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4507",
+   "name": "塩野義薬",
+   "category": "好材料",
+   "price": 2989.0,
+   "buy": false,
+   "headline": "業績予想と配当予想を修正、増配",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2212",
+   "name": "山崎製パン",
+   "category": "好材料",
+   "price": 3767.0,
+   "buy": true,
+   "headline": "26年12月期3Q増益、経常利益7.7%増で堅調",
+   "yutai": "自社グループ製品。1,000株以上で3,000円相当",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 28
+  },
+  {
+   "code": "8366",
+   "name": "滋賀銀行",
+   "category": "懸念材料",
+   "price": 2597.0,
+   "buy": false,
+   "headline": "池田泉州HDとの統合合意、関西最大地銀グループへ",
+   "yutai": "自社取扱商品またはギフト。1,000株以上で継続保有1年以上3,000円相当、3年以上6,000円相当。5,000株以上で継続保有1年以上6,000円相当、3年以上10,000円相当",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "6702",
+   "name": "3 富士通 -16.17 %",
+   "category": "買い場候補",
+   "price": 4322.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4597",
+   "name": "5 ソレイジア",
+   "category": "買い場候補",
+   "price": 28.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8628",
+   "name": "松井証券(株) 8628 東証PRM 1,029 -31 ( -2.92 % )",
+   "category": "買い場候補",
+   "price": 1060.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  }
  ]
 }
