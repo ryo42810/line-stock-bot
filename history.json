@@ -3968,5 +3968,131 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-10-31": [
+  {
+   "code": "9766",
+   "name": "コナミグループ",
+   "category": "好材料",
+   "price": 26385.0,
+   "buy": false,
+   "headline": "今期最終を34%上方修正、最高益予想を上乗せ、配当も75円増額",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9551",
+   "name": "メタウォーター",
+   "category": "好材料",
+   "price": 3700.0,
+   "buy": false,
+   "headline": "今期経常を19%上方修正、最高益予想を上乗せ、配当も10円増額",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1939",
+   "name": "四電工",
+   "category": "好材料",
+   "price": 2149.0,
+   "buy": false,
+   "headline": "今期経常を16%上方修正、最高益予想を上乗せ、配当も16円増額",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6029",
+   "name": "アトラグループ",
+   "category": "好材料",
+   "price": 229.0,
+   "buy": true,
+   "headline": "フィジカルAI分野に参入し大幅上昇、ストップ高水準",
+   "yutai": "日用品・家電、オリジナル・限定商品",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "9697",
+   "name": "カプコン",
+   "category": "好材料",
+   "price": 3957.0,
+   "buy": true,
+   "headline": "27年3月期2Q増益、経常利益は67.5%増で好調推移",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2702",
+   "name": "日本マクドナルドホールディングス",
+   "category": "優待",
+   "price": 8690.0,
+   "buy": true,
+   "headline": "12月権利確定、食事割引券が人気の優待銘柄",
+   "yutai": "食事（割引）券",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 28
+  },
+  {
+   "code": "7856",
+   "name": "萩原工業",
+   "category": "優待",
+   "price": 1890.0,
+   "buy": true,
+   "headline": "10月権利確定、複数カテゴリーの充実した優待内容",
+   "yutai": "飲食料品、日用品・家電、買い物券・プリペイドカード、その他、オリジナル・限定",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "212A",
+   "name": "フィットイージー",
+   "category": "優待",
+   "price": 2650.0,
+   "buy": false,
+   "headline": "10月権利確定、スポーツ関連の優待が魅力的",
+   "yutai": "買い物券・プリペイドカード、スポーツ、オリジナル・限定",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "5929",
+   "name": "三和ホールディングス",
+   "category": "好材料",
+   "price": 3935.0,
+   "buy": false,
+   "headline": "今期経常を8%減益に下方修正も配当は23円増額",
+   "yutai": "買い物券・プリペイドカード、オリジナル・限定",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "2489",
+   "name": "(株)アドウェイズ",
+   "category": "買い場候補",
+   "price": 390.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "宿泊、その他",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 31
+  }
  ]
 }
