@@ -4243,5 +4243,157 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-02": [
+  {
+   "code": "7537",
+   "name": "丸文",
+   "category": "好材料",
+   "price": 1780.0,
+   "buy": false,
+   "headline": "配当予想を増配修正、20%超高騰",
+   "yutai": "キャッシュレスポイント交換、100株以上1,000円相当、500株以上3,000円相当、継続保有1年以上",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "5333",
+   "name": "ＮＧＫ",
+   "category": "好材料",
+   "price": 4613.0,
+   "buy": false,
+   "headline": "中間配当及び期末配当予想を増配修正",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8137",
+   "name": "サンワテクノス",
+   "category": "好材料",
+   "price": 4180.0,
+   "buy": true,
+   "headline": "通期連結業績を上方修正、中間配当増配",
+   "yutai": "電子ギフト、100株以上2,000円分、200株以上5,000円分、400株以上10,000円分、800株以上20,000円分",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8035",
+   "name": "東エレク",
+   "category": "懸念材料",
+   "price": 9514.0,
+   "buy": false,
+   "headline": "AI・半導体相場過熱修正で下押し圧力強い",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7735",
+   "name": "スクリーンＨ",
+   "category": "懸念材料",
+   "price": 11375.0,
+   "buy": false,
+   "headline": "インテル急落で半導体関連が連鎖安",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6752",
+   "name": "パナソニックＨＤ",
+   "category": "好材料",
+   "price": 3548.0,
+   "buy": false,
+   "headline": "配当予想を増配修正、利益改善続く",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9020",
+   "name": "ＪＲ東",
+   "category": "好材料",
+   "price": 3638.0,
+   "buy": false,
+   "headline": "業績予想及び配当予想を修正、増配",
+   "yutai": "割引券、300株以上1枚、以降株数に応じて増加、最大250枚",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8704",
+   "name": "トレイダーズＨＤ",
+   "category": "好材料",
+   "price": 1215.0,
+   "buy": true,
+   "headline": "通期連結業績予想を上方修正",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3542",
+   "name": "ベガコーポレーション",
+   "category": "好材料",
+   "price": 1535.0,
+   "buy": false,
+   "headline": "業績及び配当予想を修正、15%超上昇",
+   "yutai": "LOWYA5,000円分割引クーポン、100株以上",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6029",
+   "name": "アトラグループ",
+   "category": "懸念材料",
+   "price": 229.0,
+   "buy": true,
+   "headline": "フィジカルAI分野に参入でストック高",
+   "yutai": "電子ギフト、100株以上4,800円相当",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3648",
+   "name": "ＡＧＳ",
+   "category": "買い場候補",
+   "price": 1031.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "VJAギフトカード・QUOカード、200株以上継続保有1年以上2,000円分(3月9月各1,000円)、500株以上2,000円分(各1,000円)または3,000円分(各1,500円)、1,000株以上3,000円分(各1,500円)または5,000円分(各2,500円)",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3788",
+   "name": "5 ＧＭＯＧＳ -14.40 %",
+   "category": "買い場候補",
+   "price": 2396.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "ビットコイン付与(上限10,000円)、100株以上、継続保有半年以上",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  }
  ]
 }
