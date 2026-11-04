@@ -4532,5 +4532,158 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-11-04": [
+  {
+   "code": "6861",
+   "name": "キーエンス",
+   "category": "好材料",
+   "price": 74890.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益48.9%増で市場を上回る",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4528",
+   "name": "小野薬品工業",
+   "category": "好材料",
+   "price": 2311.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益12%増と好調推移",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8084",
+   "name": "RYODEN",
+   "category": "好材料",
+   "price": 2217.0,
+   "buy": true,
+   "headline": "27年3月期2Q増益、経常利益73.7%増で大幅増益",
+   "yutai": "買い物券2,000円分～5,000円分（継続保有期間と保有株数に応じて）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "7276",
+   "name": "小糸製作所",
+   "category": "好材料",
+   "price": 2337.5,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益48.2%増と好調",
+   "yutai": "買い物券1,000円分～4,000円分、自社国内事業所見学会（継続保有期間と保有株数に応じて）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4410",
+   "name": "ハリマ化成グループ",
+   "category": "好材料",
+   "price": 1319.0,
+   "buy": false,
+   "headline": "今期経常を67%増益に上方修正、8期ぶり最高益見通し",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6356",
+   "name": "日本ギア工業",
+   "category": "好材料",
+   "price": 1166.0,
+   "buy": false,
+   "headline": "上期経常を40%上方修正、最高益予想を上乗せ",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7366",
+   "name": "LITALICO",
+   "category": "好材料",
+   "price": 1920.0,
+   "buy": false,
+   "headline": "連結業績予想を修正、配当増額を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3132",
+   "name": "マクニカホールディングス",
+   "category": "好材料",
+   "price": 3705.0,
+   "buy": false,
+   "headline": "27年3月期通期予想を修正、増配を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3580",
+   "name": "小松マテーレ",
+   "category": "好材料",
+   "price": 688.0,
+   "buy": false,
+   "headline": "業績予想を修正、中間配当増配を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6467",
+   "name": "ニチダイ",
+   "category": "好材料",
+   "price": 375.0,
+   "buy": false,
+   "headline": "第2四半期実績を発表、通期予想修正で増配",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8053",
+   "name": "住友商事",
+   "category": "好材料",
+   "price": 1664.5,
+   "buy": false,
+   "headline": "27年3月期連結予想を修正、中間配当増額",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9064",
+   "name": "ヤマトホールディングス",
+   "category": "好材料",
+   "price": 1967.5,
+   "buy": false,
+   "headline": "市場下落の中で13%超の上昇、業績好調を評価",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3788",
+   "name": "ィングス(株) 3788 東証PRM 1,984 -87 ( -4.20 % )",
+   "category": "買い場候補",
+   "price": 2071.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "ビットコイン（自社株式買付代金×0.03%相当、上限10,000円）",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 31
+  }
  ]
 }
