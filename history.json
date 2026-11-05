@@ -4685,5 +4685,208 @@
    ],
    "kenri_day": 31
   }
+ ],
+ "2026-11-05": [
+  {
+   "code": "5857",
+   "name": "ＡＲＥホールディングス",
+   "category": "好材料",
+   "price": 3070.0,
+   "buy": false,
+   "headline": "今期最終を24%上方修正・配当20円増額で最高益予想",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4559",
+   "name": "ゼリア新薬工業",
+   "category": "好材料",
+   "price": 1962.0,
+   "buy": false,
+   "headline": "期末配当予想を増配、医療用医薬品事業が拡大",
+   "yutai": "飲食料品・日用品から選択（100株以上3年未満：Gコース、3年以上：ヘパリーゼWプレミアム極10本など）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8002",
+   "name": "丸紅",
+   "category": "好材料",
+   "price": 4754.0,
+   "buy": false,
+   "headline": "27年3月期純利益予想を上方修正、銅・原料炭市況上昇",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4582",
+   "name": "シンバイオ製薬",
+   "category": "好材料",
+   "price": 42.0,
+   "buy": false,
+   "headline": "ブリンシドホビルの英国承認申請で急騰、+61.90%",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7951",
+   "name": "ヤマハ",
+   "category": "好材料",
+   "price": 1264.5,
+   "buy": false,
+   "headline": "米系大手証券が強気レーティング引上げ、目標株価1600円",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7366",
+   "name": "ＬＩＴＡＬＩＣＯ",
+   "category": "好材料",
+   "price": 1976.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益44.7%増で好調",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4228",
+   "name": "積水化成品工業",
+   "category": "好材料",
+   "price": 702.0,
+   "buy": false,
+   "headline": "今期経常を69%上方修正、配当も8円増額",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5451",
+   "name": "ヨドコウ",
+   "category": "好材料",
+   "price": 1331.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益2.8%増で堅調",
+   "yutai": "カタログギフト（500株以上3年未満2,000円相当～2,500株以上3年以上8,000円相当）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "8255",
+   "name": "アクシアル　リテイリング",
+   "category": "好材料",
+   "price": 1445.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益9%増で安定成長",
+   "yutai": "株主優待券またはQUOカード（100株以上500円分～12,000株以上25,000円分）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4506",
+   "name": "住友ファーマ",
+   "category": "好材料",
+   "price": 1933.5,
+   "buy": false,
+   "headline": "医薬品事業の好調で+10.16%上昇、買い気配継続",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2002",
+   "name": "日清製粉グループ本社",
+   "category": "好材料",
+   "price": 2278.0,
+   "buy": false,
+   "headline": "1400万株・200億円上限の自社株買いで+5.38%",
+   "yutai": "自社グループ製品または寄付から選択（500株以上30,000円相当）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "1911",
+   "name": "住友林業",
+   "category": "好材料",
+   "price": 1252.0,
+   "buy": false,
+   "headline": "第3四半期決算発表予定、+10.10%で推移",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2136",
+   "name": "ヒップ",
+   "category": "買い場候補",
+   "price": 1359.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4430",
+   "name": "東海ソフト",
+   "category": "買い場候補",
+   "price": 1662.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3626",
+   "name": "ＴＩＳＩ",
+   "category": "買い場候補",
+   "price": 4327.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7883",
+   "name": "サンメッセ",
+   "category": "買い場候補",
+   "price": 410.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "株主優待券（100株以上500円分、500株以上2,000円分、1,000株以上3,000円分）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "8393",
+   "name": "宮崎銀",
+   "category": "買い場候補",
+   "price": 2337.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "宮崎県の特産品またはQUOカード（500株以上2,000円相当～3,000株以上8,000円相当）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  }
  ]
 }
