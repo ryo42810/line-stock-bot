@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk > /dev/null
-          pip install requests yfinance anthropic beautifulsoup4 jpholiday matplotlib requests-oauthlib
+          pip install requests yfinance anthropic beautifulsoup4 jpholiday matplotlib requests-oauthlib pypdf
 
       - name: Run script
         env:
@@ -37,6 +37,8 @@ jobs:
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          # ウォッチ銘柄の決算チェック（スプシ「気になるテーマ株_一覧表」のID。Variables で設定）
+          WATCHLIST_SHEET_ID: ${{ vars.WATCHLIST_SHEET_ID }}
         run: python app.py
 
       - name: Save history

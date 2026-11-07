@@ -15,6 +15,7 @@ import requests
 import yfinance as yf
 from bs4 import BeautifulSoup
 
+import earnings_watch
 import x_media
 
 # yfinanceは、ETFなど決算データが無い銘柄で「HTTP Error 404」を表示するので、ログに出さない
@@ -271,7 +272,7 @@ def fetch_tdnet(days):
     """当日・前日などの適時開示を取得。取れなくても処理は続ける"""
     items = []
     for day in days:
-        url = f"https://webapi.yanoshin.jp/webapi/tdnet/list/{day:%Y%m%d}.json?limit=500"
+        url = f"https://webapi.yanoshin.jp/webapi/tdnet/list/{day:%Y%m%d}.json?limit=2000"
         try:
             res = requests.get(url, timeout=20)
             res.raise_for_status()
@@ -943,7 +944,8 @@ def run():
     # 前営業日から今日までのニュースを拾う（土日・祝日明けも漏れないように）
     start = prev_business_day(today)
     days = [start + datetime.timedelta(days=i) for i in range((today - start).days + 1)]
-    disclosures = pick_material_disclosures(fetch_tdnet(days))
+    tdnet_items = fetch_tdnet(days)
+    disclosures = pick_material_disclosures(tdnet_items)
     print(f"材料になりそうな開示: {len(disclosures)}件")
 
     history = load_history()
@@ -1032,6 +1034,15 @@ def run():
             if images.get(kind) in urls:
                 extra.append(x_media.line_image_message(urls[images[kind]]))
     send_line_flex_message(picks, market_bubble, today, market_closed, extra)
+
+    # ウォッチ銘柄（スプシ「マスター」）の決算チェック。失敗しても朝の配信は止めない
+    if client is not None:
+        try:
+            earnings_text = earnings_watch.run_earnings_watch(client, MODEL, tdnet_items, start, track_usage)
+            if earnings_text:
+                send_line_text(earnings_text)
+        except Exception as e:
+            print("ウォッチ銘柄の決算チェックに失敗:", e)
     # Xの投稿は間隔をあけて時間がかかるので、配信履歴は先に保存しておく
     save_history(history, today, picks)
     print_cost(usd_jpy)
