@@ -5059,5 +5059,164 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-07": [
+  {
+   "code": "6367",
+   "name": "ダイキン工業",
+   "category": "好材料",
+   "price": 21790.0,
+   "buy": true,
+   "headline": "27年3月期予想を上方修正、高付加価値商品拡大",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6731",
+   "name": "ピクセラ",
+   "category": "好材料",
+   "price": 65.0,
+   "buy": false,
+   "headline": "ソフトバンクとのIOT完了で法人向け通信市場展開強化",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4902",
+   "name": "コニカミノルタ",
+   "category": "好材料",
+   "price": 570.4000244140625,
+   "buy": false,
+   "headline": "今期最終を一転4％増益に上方修正",
+   "yutai": "自社製カレンダー",
+   "kenri_months": [
+    9
+   ],
+   "kenri_day": 30
+  },
+  {
+   "code": "5830",
+   "name": "いよぎんホールディングス",
+   "category": "好材料",
+   "price": 2921.5,
+   "buy": false,
+   "headline": "通期連結純利益予想800億円に上方修正、中間8%増益",
+   "yutai": "愛媛県特産品またはTSUBASAアライアンス共同企画特産品、預金利率優遇、預入上限200万円、5,000円～15,000円相当の商品",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3774",
+   "name": "インターネットイニシアティブ",
+   "category": "好材料",
+   "price": 3607.0,
+   "buy": false,
+   "headline": "27年3月期の業績予想を引き上げ",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4582",
+   "name": "シンバイオ製薬",
+   "category": "好材料",
+   "price": 68.0,
+   "buy": false,
+   "headline": "「ブリンシドホビル」の英国承認申請で合意",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6971",
+   "name": "京セラ",
+   "category": "好材料",
+   "price": 2800.5,
+   "buy": false,
+   "headline": "27年3月期予想を上方修正、AI・半導体需要拡大で売上高最高に",
+   "yutai": "1,000円相当または3,000円～10,000円相当のギフト、グループ製品・サービスの特別価格提供",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4565",
+   "name": "ネクセラファーマ",
+   "category": "好材料",
+   "price": 1587.0,
+   "buy": false,
+   "headline": "アッヴィとグローバルライセンス契約",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1942",
+   "name": "関電工",
+   "category": "好材料",
+   "price": 4062.0,
+   "buy": false,
+   "headline": "27年3月期2Qは増益、経常利益は15.6%増",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5480",
+   "name": "日本冶金工業",
+   "category": "好材料",
+   "price": 5270.0,
+   "buy": false,
+   "headline": "通期営業益を上方修正、増配も発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9475",
+   "name": "昭文社ホールディングス",
+   "category": "懸念材料",
+   "price": 552.0,
+   "buy": false,
+   "headline": "資産管理会社MSEがTOB、1株752円で9日から買い付け",
+   "yutai": "自社製品（3,000円相当）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "3003",
+   "name": "ヒューリック",
+   "category": "優待",
+   "price": 1895.5,
+   "buy": true,
+   "headline": "12月権利確定、飲食料品優待、配当利回り3.69%",
+   "yutai": "3,000円相当のカタログから2点選択（6,000円相当）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "9432",
+   "name": "2 ＮＴＴ",
+   "category": "買い場候補",
+   "price": 160.1999969482422,
+   "buy": true,
+   "headline": "",
+   "yutai": "dポイント（1,500～3,000ポイント）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  }
  ]
 }
