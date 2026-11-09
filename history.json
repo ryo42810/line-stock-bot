@@ -5391,5 +5391,135 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-11-09": [
+  {
+   "code": "4902",
+   "name": "コニカミノルタ",
+   "category": "好材料",
+   "price": 570.4000244140625,
+   "buy": true,
+   "headline": "今期最終を4%増益に上方修正",
+   "yutai": "自社製カレンダー",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "5830",
+   "name": "いよぎんホールディングス",
+   "category": "好材料",
+   "price": 2921.5,
+   "buy": false,
+   "headline": "通期純利益予想800億円に上方修正、中間8%増益",
+   "yutai": "愛媛県特産品またはTSUBASAアライアンス共同企画特産品、預入（定期預金）、現金相当",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4565",
+   "name": "ネクセラファーマ",
+   "category": "好材料",
+   "price": 1587.0,
+   "buy": false,
+   "headline": "アッヴィとグローバルライセンス契約で提携拡大",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1942",
+   "name": "関電工",
+   "category": "好材料",
+   "price": 4062.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益15.6%増",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7537",
+   "name": "丸文",
+   "category": "好材料",
+   "price": 1950.0,
+   "buy": false,
+   "headline": "今期経常を32%上方修正、配当23円増額",
+   "yutai": "キャッシュレスポイント",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "7228",
+   "name": "デイトナ",
+   "category": "好材料",
+   "price": 4130.0,
+   "buy": true,
+   "headline": "26年12月期通期連結業績予想修正、増配発表",
+   "yutai": "株主優待ポイント（静岡の名産品やバイク関連商品、プレミアム優待倶楽部の商品と交換可）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8425",
+   "name": "みずほリース",
+   "category": "好材料",
+   "price": 1236.0,
+   "buy": false,
+   "headline": "通期連結業績上方修正、中間配当増配",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2702",
+   "name": "日本マクドナルドホールディングス",
+   "category": "決算",
+   "price": 8698.0,
+   "buy": true,
+   "headline": "中間期増益、営業利益15%増で通期も好調見込み",
+   "yutai": "マクドナルド引換券",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2814",
+   "name": "佐藤食品",
+   "category": "買い場候補",
+   "price": 1820.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "タリーズコーヒー飲食代金",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8012",
+   "name": "長瀬産",
+   "category": "買い場候補",
+   "price": 1070.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "商品（飲食料品、日用品・家電等）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  }
  ]
 }
