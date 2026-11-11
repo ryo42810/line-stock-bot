@@ -5695,5 +5695,195 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-11": [
+  {
+   "code": "3402",
+   "name": "東レ",
+   "category": "好材料",
+   "price": 1320.0,
+   "buy": false,
+   "headline": "27年3月期予想を上方修正、自動車向け回復",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4064",
+   "name": "日本カーバイド工業",
+   "category": "好材料",
+   "price": 3890.0,
+   "buy": false,
+   "headline": "ストップ高、業績・配当予想を上方修正",
+   "yutai": "Amazonギフトカード、PayPayマネーライト、dポイント、au PAY ギフトカード等に交換可能",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6418",
+   "name": "日本金銭機械",
+   "category": "好材料",
+   "price": 1242.0,
+   "buy": false,
+   "headline": "通期連結業績予想の修正並びに増配を決定",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4047",
+   "name": "関東電化工業",
+   "category": "好材料",
+   "price": 1687.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益879.8%増",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1885",
+   "name": "東亜建設工業",
+   "category": "好材料",
+   "price": 2288.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益21.9%増",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6845",
+   "name": "アズビル",
+   "category": "好材料",
+   "price": 1432.0,
+   "buy": false,
+   "headline": "自己株式取得及び消却、経常利益11.0%増",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8830",
+   "name": "住友不動産",
+   "category": "好材料",
+   "price": 3294.0,
+   "buy": false,
+   "headline": "通期予想上方修正、増配加速で5年内配当倍増へ",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9880",
+   "name": "イノテック",
+   "category": "好材料",
+   "price": 2874.0,
+   "buy": false,
+   "headline": "業績予想の修正及び増配と記念配当を決定",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1960",
+   "name": "サンテック",
+   "category": "好材料",
+   "price": 1555.0,
+   "buy": false,
+   "headline": "業績予想修正及び増配決定、16.21%上昇",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3569",
+   "name": "セーレン",
+   "category": "好材料",
+   "price": 3185.0,
+   "buy": false,
+   "headline": "中間配当増配及び期末配当予想上方修正",
+   "yutai": "自社商品割引販売20%割引、3月末に3,000円分の株主優待クーポン",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2331",
+   "name": "ALSOK",
+   "category": "好材料",
+   "price": 1268.0,
+   "buy": false,
+   "headline": "通期業績上方修正、中間増配及び期末配当上方修正",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3003",
+   "name": "ヒューリック",
+   "category": "優待",
+   "price": 1936.5,
+   "buy": true,
+   "headline": "12月権利確定、飲食料品や商品券など優待充実",
+   "yutai": "カタログギフト（3,000円相当の商品を2点選択で6,000円相当）、保有期間2年以上が条件",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 31
+  },
+  {
+   "code": "4554",
+   "name": "富士製薬",
+   "category": "買い場候補",
+   "price": 1886.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8912",
+   "name": "エリアクエスト",
+   "category": "買い場候補",
+   "price": 158.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "自社オリジナルQUOカード4,000円相当または寄付を選択",
+   "kenri_months": [
+    6
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4046",
+   "name": "大阪ソーダ",
+   "category": "買い場候補",
+   "price": 1951.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7389",
+   "name": "あいちＦＧ",
+   "category": "買い場候補",
+   "price": 1696.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "カタログギフト3,000円相当（1,500株以上1年以上継続保有時）、カタログギフト5,000円相当（5,000株以上1年以上継続保有時）、その他全額に株主優遇定期預金特典あり",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 31
+  }
  ]
 }
