@@ -6074,5 +6074,180 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-11-13": [
+  {
+   "code": "2801",
+   "name": "キッコーマン",
+   "category": "決算",
+   "price": 1720.5,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益21.2%増の好決算",
+   "yutai": "継続保有6ヶ月以上で、100株以上1,000円相当、500株以上2,000円相当、5,000株以上6,000円相当の自社グループ商品等",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "5142",
+   "name": "アキレス",
+   "category": "決算",
+   "price": 2213.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益84.4%増で上方修正",
+   "yutai": "参考小売価格の3割引（100株以上）または5割引（500株以上）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2820",
+   "name": "やまみ",
+   "category": "決算",
+   "price": 7630.0,
+   "buy": false,
+   "headline": "27年6月期1Q増益、経常利益157.2%増の大幅増加",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3040",
+   "name": "ソリトンシステムズ",
+   "category": "決算",
+   "price": 2606.0,
+   "buy": true,
+   "headline": "26年12月期3Q増益、経常利益59.1%増で好調",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2207",
+   "name": "meito",
+   "category": "決算",
+   "price": 3670.0,
+   "buy": false,
+   "headline": "27年3月期2Q増益、経常利益39.6%増で堅調",
+   "yutai": "3月末2,000円相当（200株以上）、9月末2,000円相当（100株以上）等",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3106",
+   "name": "クラボウ",
+   "category": "決算",
+   "price": 2201.0,
+   "buy": true,
+   "headline": "27年3月期2Q増益、経常利益49.6%増で好調",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4631",
+   "name": "ディーアイシー",
+   "category": "好材料",
+   "price": 5068.0,
+   "buy": false,
+   "headline": "26年12月期の連結業績予想を上方修正",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7235",
+   "name": "東京ラジエーター製造",
+   "category": "好材料",
+   "price": 1500.0,
+   "buy": false,
+   "headline": "通期業績予想修正・増配で急伸、18.8%高",
+   "yutai": "100株以上で競馬関連優待①、1,000株以上で①＋②",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2681",
+   "name": "セカンドリテイリング",
+   "category": "好材料",
+   "price": 2247.0,
+   "buy": false,
+   "headline": "通期業績上方修正で2ケタ営業増に転換",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3182",
+   "name": "オイシックス",
+   "category": "好材料",
+   "price": 1632.0,
+   "buy": false,
+   "headline": "業績予想・配当予想を修正、増配で買い材料",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6027",
+   "name": "弁護士ドットコム",
+   "category": "決算",
+   "price": 4400.0,
+   "buy": true,
+   "headline": "27年3月期2Q増益、経常利益30.5%増で好調推移",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3591",
+   "name": "ワコールホールディングス",
+   "category": "好材料",
+   "price": 3665.0,
+   "buy": false,
+   "headline": "自己株式取得・消却で株主還元を強化",
+   "yutai": "お買い上げ毎に20%引き（100株以上）、30%引き（500株以上）、40%引き（1,500株以上）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "9271",
+   "name": "Ｇ－和心",
+   "category": "買い場候補",
+   "price": 954.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "2,000円相当（100株以上）または25,000円相当（1,000株以上）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6193",
+   "name": "Ｇ－バーチャレクス",
+   "category": "買い場候補",
+   "price": 1045.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "5,000円（200株以上）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  }
  ]
 }
