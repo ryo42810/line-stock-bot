@@ -50,6 +50,8 @@ jobs:
           WATCHLIST_SHEET_ID: ${{ vars.WATCHLIST_SHEET_ID }}
           # 画像の配色（空なら初期値のミッドナイト×金）
           IMAGE_THEME: ${{ vars.IMAGE_THEME }}
+          # X投稿の文章を書くモデル（空なら claude-sonnet-5-5）
+          X_MODEL: ${{ vars.X_MODEL }}
         run: python app.py
 
       # 途中で失敗しても、そこまでの記録は残す（次の予約が同じ配信をやり直さないように）

@@ -19,8 +19,10 @@ MIN_TOPICS = 5
 MAX_TOPICS = 8
 WEB_SEARCH_MAX_USES = 8
 KEEP_DAYS = 14  # 同じネタを何日さかのぼって避けるか
-# モデルは Variables の TOPICS_MODEL で変えられる（空なら朝の配信と同じモデル）
+# モデルは上から順に試す（失敗したら次へ）。Variables の TOPICS_MODEL を入れると、そのモデルだけを使う
+TOPICS_MODELS = ["claude-fable-5-2", "claude-sonnet-5-5"]
 TOPICS_MODEL = (os.environ.get("TOPICS_MODEL") or "").strip()
+MAX_TOKENS = 16000  # 上位モデルは考える分（thinking）も出力の上限に数えるので、多めに取る
 
 def load_state():
     try:
@@ -132,7 +134,7 @@ def ask_claude(tools, client, model, yesterday, market, disclosures, avoid, use_
 ## 最近の候補（避ける）
 {avoid_text}"""
     messages = [{"role": "user", "content": prompt}]
-    kwargs = {"model": model, "max_tokens": 4000, "messages": messages}
+    kwargs = {"model": model, "max_tokens": MAX_TOKENS, "messages": messages}
     if use_web:
         kwargs["tools"] = [
             {
@@ -202,15 +204,18 @@ def run(tools, today):
     topics, used_web = [], True
     try:
         client = anthropic.Anthropic()
-        model = TOPICS_MODEL or tools.MODEL
-        for use_web in (True, False):
+        models = [TOPICS_MODEL] if TOPICS_MODEL else TOPICS_MODELS
+        # Web検索ありで上位モデルから順に試し、だめならWeb検索なし（最後のモデル）で作る
+        attempts = [(m, True) for m in models] + [(models[-1], False)]
+        for model, use_web in attempts:
             used_web = use_web
             try:
                 topics = ask_claude(tools, client, model, yesterday, market, disclosures, avoid, use_web)
             except Exception as e:
-                print(f"ネタ候補づくりに失敗（Web検索{'あり' if use_web else 'なし'}）:", e)
+                print(f"ネタ候補づくりに失敗（{model}・Web検索{'あり' if use_web else 'なし'}）:", e)
                 topics = []
             if len(topics) >= MIN_TOPICS:
+                print(f"ネタ候補: {model}（Web検索{'あり' if use_web else 'なし'}）で{len(topics)}個")
                 break
             print(f"ネタ候補が{len(topics)}個しか出なかったので、作り直します")
     except Exception as e:

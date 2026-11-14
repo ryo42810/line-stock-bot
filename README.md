@@ -54,7 +54,7 @@ GitHub Actions で毎日動く。サーバーは不要。
 - 材料：Claude APIのWeb検索（前日の株・経済ニュース）と、前日の適時開示・相場の動き
 - 最近14日に出したトピックは避ける（`topics_state.json` に記録）
 - Web検索が使えないときは開示と相場だけで作り直し、それも無理なら前日の開示を並べて送る
-- モデルは Variables の `TOPICS_MODEL` で変えられる（空なら朝の配信と同じ `claude-haiku-4-5`）
+- モデルは `claude-fable-5-2`（だめなら `claude-sonnet-5-5`）。Variables の `TOPICS_MODEL` を入れると、そのモデルだけを使う
 - 書くときは、Claudeで「note：トピック」と送る
 
 ### 夕方（平日 16:55 JST を目標に開始・祝日は休み）
@@ -116,6 +116,8 @@ GitHub Actionsの定時実行は、数時間遅れることが多い（2026/11�
 | 名前 | 用途 |
 |---|---|
 | `X_AUTO_POST` | `on` で X に自動投稿。止めるときは `off` |
+| `X_MODEL` | X投稿の文章を書くモデル。空なら `claude-sonnet-5-5` |
+| `TOPICS_MODEL` | ネタ候補のモデル。空なら `claude-fable-5-2`（だめなら `claude-sonnet-5-5`） |
 | `IMAGE_THEME` | 画像の配色。空ならミッドナイト×金（noteと同じ）。前の白いカードに戻すなら `gold_solid` |
 | `WATCHLIST_SHEET_ID` | ウォッチ銘柄のスプシのID（URLの `/d/` と `/edit` の間）。スプシは「リンクを知っている全員が閲覧可」にしておく |
 
