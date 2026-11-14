@@ -6249,5 +6249,177 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-14": [
+  {
+   "code": "3182",
+   "name": "オイシックス",
+   "category": "好材料",
+   "price": 1866.0,
+   "buy": false,
+   "headline": "今期最終を14%上方修正、最高益予想を上乗せ、配当も増額",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6273",
+   "name": "ＳＭＣ",
+   "category": "好材料",
+   "price": 62320.0,
+   "buy": false,
+   "headline": "27年3月期の連結業績予想を上方修正",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3591",
+   "name": "ワコールホールディングス",
+   "category": "好材料",
+   "price": 3999.0,
+   "buy": false,
+   "headline": "27年3月期純利益を上方修正、固定資産譲渡益を計上",
+   "yutai": "自社店舗でのお買い上げ時に割引（20%～40%引き、上限年20万円）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8050",
+   "name": "セイコーグループ",
+   "category": "好材料",
+   "price": 8220.0,
+   "buy": false,
+   "headline": "今期経常を14%上方修正、最高益予想、配当も15円増額",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5142",
+   "name": "アキレス",
+   "category": "好材料",
+   "price": 2023.0,
+   "buy": false,
+   "headline": "今期経常を一転15%増益に上方修正、配当も10円増額",
+   "yutai": "自社ウェブショップでの購入時に割引（30%～50%引き）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6145",
+   "name": "ＮＩＴＴＯＫＵ",
+   "category": "好材料",
+   "price": 3465.0,
+   "buy": false,
+   "headline": "ヒューマノイドロボット向けモータ生産設備で約82億円の大型受注",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1860",
+   "name": "戸田建設",
+   "category": "好材料",
+   "price": 1570.0,
+   "buy": false,
+   "headline": "27年3月期の連結業績予想を上方修正、自己株式取得枠も設定",
+   "yutai": "季節のプレミアムジャムなど飲食料品8種類から1つ選択",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "7235",
+   "name": "東京ラヂエーター製造",
+   "category": "好材料",
+   "price": 1789.0,
+   "buy": false,
+   "headline": "27年3月期2Qは増益、経常利益は19.7%増",
+   "yutai": "競馬場での利用券・優待品（詳細は自社ホームページで案内予定）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4222",
+   "name": "児玉化学工業",
+   "category": "好材料",
+   "price": 616.0,
+   "buy": false,
+   "headline": "27年3月期2Qは増益、経常利益は46.2%増",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1419",
+   "name": "タマホーム",
+   "category": "優待",
+   "price": 2471.0,
+   "buy": true,
+   "headline": "11月末日が権利確定日、買い物券・プリペイドカード優待が魅力的",
+   "yutai": "自社店舗での購入券2,000円分または4,000円分（保有期間により異なる）",
+   "kenri_months": [
+    11
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3156",
+   "name": "レスター",
+   "category": "買い場候補",
+   "price": 5070.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7695",
+   "name": "Ｇ－リフォームテクノ",
+   "category": "買い場候補",
+   "price": 839.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "ギフト3,000円相当～100,000円相当またはカード5,000円分～50,000円分",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4406",
+   "name": "新日本理化",
+   "category": "買い場候補",
+   "price": 215.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7823",
+   "name": "アートネイチャー",
+   "category": "買い場候補",
+   "price": 762.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "自社ヘアケア商品やグルメなど5,000種類以上から選択可能（ポイント制3,000～30,000ポイント）",
+   "kenri_months": [
+    9
+   ],
+   "kenri_day": 0
+  }
  ]
 }
