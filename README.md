@@ -49,6 +49,14 @@ GitHub Actions で毎日動く。サーバーは不要。
 - 発表のPDFの1ページ目をAIに読ませて、「何がどう変わったか」を一言にする。PDFに無い数字が混ざったら、決まった型の文章に切り替える
 - **土曜の朝：今週のまとめ**　その週（月〜金）の発表を種類ごとに数えて1本にする（AIは使わない・画像付き）
 
+### 毎朝7:00：徹底解説のネタ候補（`note_topics.py`・`topics.yml`）
+- noteの「徹底解説」の記事用に、前日の時事ネタを5〜8個、トピックと簡単なサマリでLINEに送る（土日も）
+- 材料：Claude APIのWeb検索（前日の株・経済ニュース）と、前日の適時開示・相場の動き
+- 最近14日に出したトピックは避ける（`topics_state.json` に記録）
+- Web検索が使えないときは開示と相場だけで作り直し、それも無理なら前日の開示を並べて送る
+- モデルは Variables の `TOPICS_MODEL` で変えられる（空なら朝の配信と同じ `claude-haiku-4-5`）
+- 書くときは、Claudeで「note：トピック」と送る
+
 ### 夕方（平日 16:55 JST を目標に開始・祝日は休み）
 - 朝の銘柄の当日の騰落（振り返り）
 - 週の最終営業日：今週の成績（分類別・ベスト3／ワースト3）＋買い場候補の1週間後・1ヶ月後の成績
@@ -78,14 +86,17 @@ GitHub Actionsの定時実行は、数時間遅れることが多い（2026/11�
 | `x_media.py` | X用の画像づくり（matplotlib）とXへの投稿 |
 | `kujira_posts.py` | くじら枠（優待・高配当の投稿。月〜木の朝に1本） |
 | `news_posts.py` | 株ニュース（朝と夕方に1本ずつ）と、土曜の朝の週まとめ |
+| `note_topics.py` | 徹底解説のネタ候補（毎朝7時） |
 | `earnings_calendar.py` | 決算発表の予定日（JPXのExcel）の読み込み |
 | `earnings_watch.py` | ウォッチ銘柄の決算チェック（スプシ読み込み・TDnet・決算短信PDFの要約） |
+| `topics_state.json` | ネタ候補をその日に送ったかどうかと、最近のトピック。botが自動でコミット |
 | `state.json` | その日に配信済みかどうかと、くじら枠で紹介した銘柄の記録。botが自動でコミット |
 | `history.json` | 配信履歴（60日分）。振り返り・成績・同じ銘柄の配信回数制限（7日で2回まで）に使う。botが毎日自動でコミット |
 | `images/` | X用の画像（14日で自動削除）。raw.githubusercontent.com のURLでLINEに添付 |
 | `assets/whale.png` | 画像右上のクジラのアイコン |
 | `.github/workflows/daily.yml` | 朝の実行（目標 JST 6:43。早めの予約を4回） |
 | `.github/workflows/evening.yml` | 夕方の実行（目標 JST 16:55・月〜金。早めの予約を4回） |
+| `.github/workflows/topics.yml` | 徹底解説のネタ候補（目標 JST 7:00・毎日。早めの予約を4回） |
 | `.github/workflows/check.yml` | プルリクエストを出したときの動作確認（キーを使わないテストだけ） |
 | `requirements.txt` | ライブラリのバージョン固定 |
 | `scripts/` | 準備（フォント・ライブラリ）、記録の保存、失敗の通知 |

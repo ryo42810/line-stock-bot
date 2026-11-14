@@ -1,0 +1,57 @@
+name: Note Topics
+
+# 徹底解説（note）の記事用のトピック候補を、毎朝7:00（JST）にLINEへ送る（note_topics.py）
+on:
+  workflow_dispatch: # 手動実行用ボタン
+  schedule:
+    # 目標は日本時間(JST)の 07:00（土日も）。
+    # 定時実行は数時間遅れることが多いので、早めの時刻にも起動の予約を入れておく。
+    # 早く起動できた回は 07:00 まで待ってから動き、その日すでに送っていれば何もしないで終わる（app.py の schedule_gate）
+    # 11月の実績では、予約から実際の起動まで3〜6時間遅れている。6時間前の予約が、遅れても7:00までに起動する本命
+    - cron: '3 16 * * *'  # JST 01:03
+    - cron: '3 18 * * *'  # JST 03:03
+    - cron: '3 20 * * *'  # JST 05:03
+    - cron: '58 21 * * *' # JST 06:58
+
+permissions:
+  contents: write # 送った候補の記録（topics_state.json）を保存するため
+
+concurrency:
+  group: note-topics
+  cancel-in-progress: false
+
+jobs:
+  run-topics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: ./scripts/setup.sh
+
+      - name: Run topics
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # 使うモデル（空なら朝の配信と同じ）。質を上げたいときは Variables に claude-sonnet-5-5 などを入れる
+          TOPICS_MODEL: ${{ vars.TOPICS_MODEL }}
+        run: python app.py topics
+
+      - name: Save state
+        if: always()
+        run: ./scripts/save_state.sh
+
+      - name: Notify failure
+        if: failure() && hashFiles('notified.flag') == ''
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+        run: ./scripts/notify_failure.sh "⚠️ 徹底解説のネタ候補の配信が失敗しました。ログを確認してください。"

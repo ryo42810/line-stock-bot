@@ -20,6 +20,7 @@ import earnings_calendar
 import earnings_watch
 import kujira_posts
 import news_posts
+import note_topics
 import x_media
 
 # yfinanceは、ETFなど決算データが無い銘柄で「HTTP Error 404」を表示するので、ログに出さない
@@ -43,10 +44,10 @@ NOTIFIED_FLAG = "notified.flag"  # エラー通知済みの目印（ワークフ
 # 定時実行のずれ対策。GitHub Actionsの定時実行は数時間遅れることが多いので、
 # 早めの時刻にも起動の予約を入れておき、早く起動できた回はここで目標の時刻まで待つ
 STATE_FILE = "state.json"  # 朝・夕方をその日に配信済みかどうかと、くじら枠で紹介した銘柄の記録
-TARGET_TIME = {"morning": datetime.time(6, 43), "evening": datetime.time(16, 55)}
+TARGET_TIME = {"morning": datetime.time(6, 43), "evening": datetime.time(16, 55), "topics": datetime.time(7, 0)}
 EARLY_LIMIT_MIN = 240  # 目標よりこれ以上早く起動した回は、何もしないで終わる（あとの予約に任せる）
 # これより遅く起動した回は、LINEには送るがXには自動投稿しない（昼に「今朝の〜」が出るのを防ぐ）
-X_DEADLINE = {"morning": datetime.time(8, 55), "evening": datetime.time(22, 0)}
+X_DEADLINE = {"morning": datetime.time(8, 55), "evening": datetime.time(22, 0), "topics": datetime.time(23, 59)}  # topics はXに投稿しない
 EVENING_ROLLOVER_HOUR = 9  # 夕方の回が翌日のこの時刻より前に起動したら、前の日の分として動かす
 
 CATEGORY_STYLE = {
@@ -1965,9 +1966,20 @@ def run_evening(today, allow_x=True):
 
 
 def main():
-    mode = "evening" if len(sys.argv) > 1 and sys.argv[1] == "evening" else "morning"
+    mode = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in ("evening", "topics") else "morning"
     try:
         scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+        if mode == "topics":
+            # 徹底解説のネタ候補（毎朝7時）。記録は topics_state.json に分けて持つ
+            day, _ = schedule_gate(mode, now_jst(), scheduled, note_topics.load_state()["done"])
+            if day is None:
+                return
+            note_topics.run(sys.modules[__name__], day)
+            if scheduled:
+                state = note_topics.load_state()
+                state["done"] = day.isoformat()
+                note_topics.save_state(state)
+            return
         day, allow_x = schedule_gate(mode, now_jst(), scheduled, load_state()["done"].get(mode, ""))
         if day is None:
             return

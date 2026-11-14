@@ -17,6 +17,7 @@ import app  # noqa: E402
 import earnings_calendar  # noqa: E402
 import kujira_posts  # noqa: E402
 import news_posts  # noqa: E402
+import note_topics  # noqa: E402
 import x_media  # noqa: E402
 
 JST = app.JST
@@ -244,6 +245,41 @@ class NewsPostsTest(unittest.TestCase):
         self.assertIn("11/09〜11/13", weekly["post"])
         self.assertEqual(weekly["points"][0], "優待の新設・再開：1社（C社）")
         self.assertEqual(news_posts.build_weekly(app, [], sat, {}), {})
+
+
+class NoteTopicsTest(unittest.TestCase):
+    """徹底解説のネタ候補（毎朝7時）"""
+
+    def test_gate_targets_seven(self):
+        waited = []
+        day, _ = app.schedule_gate("topics", at(16, 5, 3), True, "", sleep=waited.append)
+        self.assertEqual((day, waited), (datetime.date(2026, 11, 16), [(60 - 3 + 60) * 60]))
+        self.assertIsNone(app.schedule_gate("topics", at(16, 7, 30), True, "2026-11-16")[0])
+
+    def test_parse_topics(self):
+        text = '結果です。\n{"topics": [{"title": "日銀が利上げ", "summary": "銀行株に追い風", "related": "銀行"}, {"title": "", "summary": "x", "related": ""}]}'
+        self.assertEqual(note_topics.parse_topics(text), [{"title": "日銀が利上げ", "summary": "銀行株に追い風", "related": "銀行"}])
+        self.assertEqual(note_topics.parse_topics("JSONなし"), [])
+
+    def test_text_after_search_only(self):
+        from types import SimpleNamespace as N
+        response = N(content=[N(type="text", text="調べます"), N(type="server_tool_use"), N(type="web_search_tool_result"), N(type="text", text="答え")])
+        self.assertEqual(note_topics.text_of(response), ("答え", True))
+
+    def test_fallback_mixes_kinds(self):
+        news = [
+            {"code": "1111", "name": "A", "kind": "自社株買い", "title": "自己株式の取得"},
+            {"code": "2222", "name": "B", "kind": "自社株買い", "title": "自己株式の取得"},
+            {"code": "3333", "name": "C", "kind": "増配", "title": "増配"},
+        ]
+        self.assertEqual([t["related"] for t in note_topics.fallback_topics(news)], ["A(1111)", "C(3333)", "B(2222)"])
+
+    def test_message(self):
+        topics = [{"title": f"ネタ{i}", "summary": "サマリ", "related": ""} for i in range(5)]
+        text = note_topics.format_message(datetime.date(2026, 11, 16), datetime.date(2026, 11, 15), topics, True)
+        self.assertIn("11/15の時事ネタ", text)
+        self.assertIn("5. ネタ4", text)
+        self.assertIn("note：トピック", text)
 
 
 class PostFormatTest(unittest.TestCase):
