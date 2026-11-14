@@ -145,6 +145,10 @@ X_EXAMPLE_NEWS = """はい。
 売上は10.1%増✨
 ただ減損2億円で減益に⚠️"""
 
+# 朝のX投稿は、くじら枠（優待・高配当）に置き換えた（2026/11/14）。
+# ニュース版・買い場候補版をXに戻すときは True にする。LINEのカードと買い場候補の注目理由は、どちらでも届く
+X_MORNING_NEWS_POSTS = False
+
 MAX_BUY_CANDIDATES = 5
 BUY_UNIVERSE_LIMIT = 40  # 買い場候補を探す銘柄数の上限（株価取得の時間を抑えるため）
 
@@ -1096,6 +1100,8 @@ def run(today, allow_x=True):
     x_post_buy, x_post_news, x_post_survey = "", "", ""
     if client is not None:
         x_post_buy, x_post_news, x_post_survey = write_x_posts(client, picks, buy_list, disclosures, topic_text, today)
+    if not X_MORNING_NEWS_POSTS:
+        x_post_buy, x_post_news = "", ""
     for p in picks:
         p["continued"] = p["code"] in prev_codes
 
