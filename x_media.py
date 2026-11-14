@@ -645,7 +645,7 @@ def render_single_card(path, title, subtitle, stock, stats, table, get_history, 
     return path
 
 
-def render_points_card(path, title, subtitle, points, date_text=""):
+def render_points_card(path, title, subtitle, points, date_text="", note="※一般的な仕組みの説明です。銘柄ごとの条件は各社の資料で確認を"):
     """要点を番号つきで並べる画像（水曜の解説）。points: 文章のリスト。最大4つ"""
     fig, ax = _m_canvas()
     _m_header(fig, ax, title, subtitle, date_text)
@@ -669,7 +669,7 @@ def render_points_card(path, title, subtitle, points, date_text=""):
         lines = lines[:4]
         for k, line in enumerate(lines):
             ax.text(tx, y + ph / 2 + (k - (len(lines) - 1) / 2) * step, line, fontsize=size, color=M["ink"], weight="bold", va="center", fontfamily=_serif(), zorder=4)
-    _m_footer(ax, "※一般的な仕組みの説明です。銘柄ごとの条件は各社の資料で確認を")
+    _m_footer(ax, note)
     fig.savefig(path, facecolor=M["bg0"])
     plt.close(fig)
     return path

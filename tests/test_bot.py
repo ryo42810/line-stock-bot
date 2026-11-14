@@ -16,6 +16,7 @@ from openpyxl import Workbook  # noqa: E402
 import app  # noqa: E402
 import earnings_calendar  # noqa: E402
 import kujira_posts  # noqa: E402
+import news_posts  # noqa: E402
 import x_media  # noqa: E402
 
 JST = app.JST
@@ -159,6 +160,62 @@ class ImageTest(unittest.TestCase):
             for topic in kujira_posts.KAISETSU_TOPICS:
                 points = x_media.render_points_card(os.path.join(d, "points.png"), topic["title"], "配当・優待の見方", topic["facts"], "2026.11.18（水）")
                 self.assertGreater(os.path.getsize(points), 10000)
+
+
+class NewsPostsTest(unittest.TestCase):
+    """優待・配当ニュース"""
+
+    @staticmethod
+    def item(code, name, title, pubdate="2026-11-13 15:30:00"):
+        return {"code": code, "name": name, "title": title, "pubdate": pubdate, "url": ""}
+
+    def test_classify(self):
+        cases = {
+            "株主優待制度の再導入に関するお知らせ": "優待新設",
+            "配当予想の修正（無配）及び株主優待制度の廃止に関するお知らせ": "優待廃止",
+            "株主優待制度の変更（拡充）に関するお知らせ": "優待拡充",
+            "株主優待制度の一部変更に関するお知らせ": "優待変更",
+            "配当予想の修正(増配）及び記念株主優待実施に関するお知らせ": "増配",
+            "通期業績予想および配当予想の修正（増配）に関するお知らせ": "増配",
+            "自己株式の取得及び自己株式立会外買付取引（ToSTNeT-3）による自己株式の買付けに関するお知らせ": "自社株買い",
+            "自己株式の取得状況に関するお知らせ": None,
+            "株主優待実施の見送りに関するお知らせ": None,
+            "2027年3月期 第2四半期決算短信": None,
+        }
+        for title, kind in cases.items():
+            self.assertEqual(news_posts.classify(title), kind, title)
+
+    def test_pick_news_orders_and_skips_posted(self):
+        items = [
+            self.item("1111", "Ａ社", "配当予想の修正（増配）に関するお知らせ"),
+            self.item("2222", "Ｂ社", "株主優待制度の廃止に関するお知らせ"),
+            self.item("3333", "Ｃ社", "株主優待制度の導入に関するお知らせ"),
+            self.item("3333", "Ｃ社", "配当予想の修正（増配）に関するお知らせ"),
+        ]
+        news = news_posts.pick_news(items)
+        self.assertEqual([(d["code"], d["kind"]) for d in news], [("3333", "優待新設"), ("2222", "優待廃止"), ("1111", "増配")])
+        self.assertEqual(news[0]["name"], "C社")
+        posted = {news_posts.doc_key(items[1]): "2026-11-13"}
+        self.assertNotIn("2222", [d["code"] for d in news_posts.pick_news(items, posted=posted)])
+
+    def test_numbers_must_come_from_pdf(self):
+        source = "年間配当金 60円 → 70円"
+        self.assertTrue(news_posts.numbers_ok("①A社(1111)\n年間配当を60円から70円に増額", source + " 1111"))
+        self.assertFalse(news_posts.numbers_ok("年間配当を80円に増額", source))
+
+    def test_weekly_summary(self):
+        sat = datetime.date(2026, 11, 14)
+        self.assertEqual(news_posts.week_days(sat)[0], datetime.date(2026, 11, 9))
+        items = [
+            self.item("3333", "Ｃ社", "株主優待制度の導入に関するお知らせ"),
+            self.item("2222", "Ｂ社", "株主優待制度の廃止に関するお知らせ"),
+            self.item("1111", "Ａ社", "配当予想の修正（増配）に関するお知らせ"),
+        ]
+        weekly = news_posts.build_weekly(app, items, sat, {})
+        self.assertIn("優待の新設・再開 1社", weekly["post"])
+        self.assertIn("11/09〜11/13", weekly["post"])
+        self.assertEqual(weekly["points"][0], "優待の新設・再開：1社（C社）")
+        self.assertEqual(news_posts.build_weekly(app, [], sat, {}), {})
 
 
 class PostFormatTest(unittest.TestCase):
