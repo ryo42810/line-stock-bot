@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import sys
+import time
 import traceback
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
@@ -15,7 +16,9 @@ import requests
 import yfinance as yf
 from bs4 import BeautifulSoup
 
+import earnings_calendar
 import earnings_watch
+import kujira_posts
 import x_media
 
 # yfinanceは、ETFなど決算データが無い銘柄で「HTTP Error 404」を表示するので、ログに出さない
@@ -35,6 +38,15 @@ HISTORY_FILE = "history.json"
 HISTORY_KEEP_DAYS = 60  # 成績集計用に60日分残す
 WEEKLY_LIMIT = 2  # 同じ銘柄は直近7日間で2回まで
 NOTIFIED_FLAG = "notified.flag"  # エラー通知済みの目印（ワークフロー側の二重通知防止）
+
+# 定時実行のずれ対策。GitHub Actionsの定時実行は数時間遅れることが多いので、
+# 早めの時刻にも起動の予約を入れておき、早く起動できた回はここで目標の時刻まで待つ
+STATE_FILE = "state.json"  # 朝・夕方をその日に配信済みかどうかと、くじら枠で紹介した銘柄の記録
+TARGET_TIME = {"morning": datetime.time(6, 43), "evening": datetime.time(16, 55)}
+EARLY_LIMIT_MIN = 240  # 目標よりこれ以上早く起動した回は、何もしないで終わる（あとの予約に任せる）
+# これより遅く起動した回は、LINEには送るがXには自動投稿しない（昼に「今朝の〜」が出るのを防ぐ）
+X_DEADLINE = {"morning": datetime.time(8, 55), "evening": datetime.time(22, 0)}
+EVENING_ROLLOVER_HOUR = 9  # 夕方の回が翌日のこの時刻より前に起動したら、前の日の分として動かす
 
 CATEGORY_STYLE = {
     "好材料": {"color": "#1DB446", "label": "📈 好材料"},
@@ -62,6 +74,13 @@ X_POST_STYLE = """## X投稿の書き方（共通）
 - 絵文字は多めに使う（1行に1つ程度）。必ず言葉の後に付け、行頭には置かない（例: 「好材料📈」「出来高急増🔥」）
 - ハッシュタグは書かない（プログラムで最後に付ける）。免責文も書かない
 - 長さは200字程度まで
+
+### 人が書いた文に見せる
+- 同じ言い回しを続けない（「注目です」「期待です」を何度も使わない）。3銘柄とも同じ文の形にしない
+- 「〜と言えます」「〜が見込まれます」「〜となっています」のような硬い説明調は使わない
+- 情報が足りないことには触れない（「資料からは分かりません」「詳細は不明」などは書かず、その話題ごと省く）
+- ％は半角の % で書く。数字は半角
+- 「いかがでしたか」「まとめると」のような締めの決まり文句は書かない
 
 ### やってはいけないこと
 - 「使ってみた」「もらった」「買った」などの体験談は書かない（事実ではないため）
@@ -157,6 +176,72 @@ def print_cost(usd_jpy=None):
     print("===== API料金（推定） =====")
     print(f"入力 {usage_total['input']:,} / 出力 {usage_total['output']:,} トークン")
     print(f"今回: 約${usd:.3f}（約{usd * rate:.1f}円） / 30日換算: 約${usd * 30:.2f}（約{usd * rate * 30:,.0f}円）")
+
+
+# ---------------------------------------------------------------
+# 定時実行のずれ対策（早く起動したら待つ・同じ日に二重に配信しない・遅すぎたらXは見送る）
+# ---------------------------------------------------------------
+def load_state():
+    try:
+        with open(STATE_FILE, encoding="utf-8") as f:
+            state = json.load(f)
+    except Exception:
+        state = {}
+    state.setdefault("done", {})
+    state.setdefault("featured", {})
+    return state
+
+
+def save_state(state):
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=1)
+
+
+def mark_done(mode, day):
+    """その日の配信が済んだ印を付ける（あとの予約が同じ配信をやり直さないように）"""
+    state = load_state()
+    state["done"][mode] = day.isoformat()
+    save_state(state)
+
+
+def target_day(mode, now):
+    """この回が受け持つ日付。夕方の回が日付をまたいで起動したら、前の日の分として動かす"""
+    day = now.date()
+    if mode == "evening" and now.hour < EVENING_ROLLOVER_HOUR:
+        day -= datetime.timedelta(days=1)
+    return day
+
+
+def schedule_gate(mode, now, scheduled, done_day="", sleep=time.sleep):
+    """定時実行の回をどう扱うか決める。戻り値は (受け持つ日付 or None, Xに自動投稿してよいか)。
+    日付が None のときは何もしないで終わる。手動実行（scheduled=False）は待たずにそのまま動かす"""
+    day = target_day(mode, now)
+    if not scheduled:
+        return day, True
+    if done_day == day.isoformat():
+        print(f"{day:%m/%d} の分は配信済みなので、この回は何もしません")
+        return None, False
+    target = datetime.datetime.combine(day, TARGET_TIME[mode], tzinfo=JST)
+    wait_sec = (target - now).total_seconds()
+    if wait_sec > EARLY_LIMIT_MIN * 60:
+        print(f"目標の{target:%H:%M}より{wait_sec / 60:.0f}分早いので、この回は何もしません（あとの予約に任せます）")
+        return None, False
+    if wait_sec > 0:
+        print(f"目標の{target:%H:%M}まで{wait_sec / 60:.0f}分待ちます")
+        sleep(wait_sec)
+        return day, True
+    deadline = datetime.datetime.combine(day, X_DEADLINE[mode], tzinfo=JST)
+    if now > deadline:
+        print(f"起動が{now:%m/%d %H:%M}まで遅れたため、Xの自動投稿は見送ります（LINEには送ります）")
+        return day, False
+    return day, True
+
+
+def x_skipped_notice(now, posts):
+    """起動が遅れてXへの自動投稿を見送ったときに、LINEで知らせる文"""
+    if not x_media.x_enabled() or not any(text for text, _ in posts):
+        return ""
+    return f"⏭ 起動が{now:%H:%M}まで遅れたため、Xへの自動投稿は見送りました。\n使うときは、上の下書きをコピーして投稿してください。"
 
 
 # ---------------------------------------------------------------
@@ -501,6 +586,15 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
 
     earnings_blocks = []
     if not market_closed:
+        jpx_rows = earnings_calendar.scheduled_on(today)
+        if jpx_rows:
+            print(f"今日の決算発表予定（JPX）: {len(jpx_rows)}社")
+            earnings_blocks = [
+                f"<page url=\"{earnings_calendar.INDEX_URL}\">\n今日（{today:%m月%d日}）決算発表を予定している会社（JPXの予定表）\n"
+                + earnings_calendar.as_text(jpx_rows, limit=150)
+                + "\n</page>"
+            ]
+    if not market_closed and not earnings_blocks:
         earnings_urls = EARNINGS_PAGES + links_matching(links, "決算", ["予定", "スケジュール", "カレンダー", "発表日"])
         earnings_blocks = fetch_pages(earnings_urls, limit=2, max_chars=6000, require_word="決算")
         print(f"決算予定ページ取得: {len(earnings_blocks)}件（候補{len(set(earnings_urls))}件）")
@@ -936,9 +1030,7 @@ def send_line_text(text):
 # ---------------------------------------------------------------
 # メイン
 # ---------------------------------------------------------------
-def run():
-    now = now_jst()
-    today = now.date()
+def run(today, allow_x=True):
     market_closed = is_market_holiday(today)
 
     # 前営業日から今日までのニュースを拾う（土日・祝日明けも漏れないように）
@@ -1007,6 +1099,21 @@ def run():
     for p in picks:
         p["continued"] = p["code"] in prev_codes
 
+    # くじら枠（優待・高配当の投稿。平日の朝に1本）。失敗しても朝の配信は止めない
+    kujira = {}
+    try:
+        held = set()
+        try:
+            held = {code for code, info in earnings_watch.load_watchlist().items() if info.get("status") == "購入済"}
+        except Exception as e:
+            print("保有銘柄（スプシ）を読めなかったので、「保有中」の表示は付けられません:", e)
+        state = load_state()
+        used = set(x_media.codes_in_post(x_post_news) + x_media.codes_in_post(x_post_buy))
+        kujira = kujira_posts.build(sys.modules[__name__], client, MODEL, today, state, exclude=used, held=held)
+        save_state(state)
+    except Exception as e:
+        print("くじら枠の作成に失敗:", e)
+
     market_bubble = build_market_bubble(market_rows, market_comment, today) if (market_rows or market_comment) else None
     # X下書きと画像（本文だけ送る。順番はニュース版→買い場候補版→アンケート版）
     by_code = {p["code"]: p for p in picks}
@@ -1025,10 +1132,23 @@ def run():
                 )
             except Exception as e:
                 print(f"画像の作成に失敗 ({kind}):", e)
+    if kujira.get("stocks"):
+        try:
+            path = x_media.image_path(today, "kujira")
+            if kujira.get("stats"):
+                images["kujira"] = x_media.render_single_card(
+                    path, kujira["title"], kujira["subtitle"], kujira["stocks"][0], kujira["stats"], kujira["notes"], get_history, date_text
+                )
+            else:
+                images["kujira"] = x_media.render_stock_card(
+                    path, kujira["title"], kujira["subtitle"], kujira["stocks"], x_media.COLORS["gold"], get_history, date_text
+                )
+        except Exception as e:
+            print("画像の作成に失敗 (kujira):", e)
     urls = x_media.publish_images(list(images.values()), today)
 
     extra = []
-    for kind, post in (("news", x_post_news), ("buy", x_post_buy), ("survey", x_post_survey)):
+    for kind, post in (("news", x_post_news), ("buy", x_post_buy), ("kujira", kujira.get("post", "")), ("survey", x_post_survey)):
         if post:
             extra.append({"type": "text", "text": post})
             if images.get(kind) in urls:
@@ -1047,10 +1167,16 @@ def run():
     save_history(history, today, picks)
     print_cost(usd_jpy)
 
+    mark_done("morning", today)
+
     # Xに自動投稿（オンのときだけ）。失敗やスキップがあったときだけLINEで知らせる
-    x_result = x_media.post_all_to_x(
-        [(x_post_news, images.get("news")), (x_post_buy, images.get("buy")), (x_post_survey, None)]
-    )
+    posts = [(x_post_news, images.get("news")), (x_post_buy, images.get("buy")), (kujira.get("post", ""), images.get("kujira")), (x_post_survey, None)]
+    if not allow_x:
+        notice = x_skipped_notice(now_jst(), posts)
+        if notice:
+            send_line_text(notice)
+        return
+    x_result = x_media.post_all_to_x(posts)
     if "⚠️" in x_result or "⏭" in x_result:
         send_line_text(x_result)
 
@@ -1626,9 +1752,21 @@ def evening_with_claude(client, today):
                 watch.setdefault(e["code"], e["name"])
     for code, name in movers.items():
         watch.setdefault(code, name)
-    tomorrow_earnings, with_dates = earnings_tomorrow(dict(list(watch.items())[:150]), tomorrow)
-    print(f"決算予定日の確認: {min(len(watch), 150)}銘柄（うち予定日データあり {with_dates}銘柄）→ 明日決算 {len(tomorrow_earnings)}件")
-    earnings_info = "\n".join(f"- {name}({code})" for code, name in tomorrow_earnings)
+    # 明日の決算発表は、JPX（日本取引所グループ）が公開している予定表から拾う。
+    # 取れなかったときだけ、yfinanceの決算予定日で代用する（こちらは日本株のデータが少ない）
+    try:
+        watch.update({code: info["name"] for code, info in earnings_watch.load_watchlist().items()})
+    except Exception as e:
+        print("ウォッチ銘柄（スプシ）は読めませんでした:", e)
+    jpx_rows = earnings_calendar.scheduled_on(tomorrow, watch)
+    if jpx_rows:
+        hits = sum(1 for r in jpx_rows if r["code"] in watch)
+        print(f"明日（{tomorrow:%m/%d}）の決算発表予定: {len(jpx_rows)}社（うちウォッチ・配信済み {hits}社）")
+        earnings_info = earnings_calendar.as_text(jpx_rows, watch)
+    else:
+        tomorrow_earnings, with_dates = earnings_tomorrow(dict(list(watch.items())[:150]), tomorrow)
+        print(f"決算予定日の確認: {min(len(watch), 150)}銘柄（うち予定日データあり {with_dates}銘柄）→ 明日決算 {len(tomorrow_earnings)}件")
+        earnings_info = "\n".join(f"- {name}({code})" for code, name in tomorrow_earnings)
 
     prompt = f"""今日は{today:%Y年%m月%d日}、明日（次の営業日）は{tomorrow:%m月%d日}です。夕方のLINE配信とX投稿の文章を作ります。
 下の情報だけを使い、書いていない材料やニュースは作らないでください。
@@ -1643,7 +1781,9 @@ def evening_with_claude(client, today):
 
 ## 2. earnings（明日の決算予告・LINE用）
 - 「明日（{tomorrow:%m月%d日}）決算発表予定の銘柄」から、注目度の高いものを最大5件
-- note には注目ポイントを書く。下の情報に書いていなければ「決算発表予定」とだけ書く
+- ★が付いた銘柄は、自分がウォッチしている銘柄・最近配信した銘柄なので優先して選ぶ。残りは個人投資家によく知られた会社を選ぶ
+- 一覧に載っていない会社は選ばない。会社名とコードは一覧のとおりに書く
+- note には「第2四半期」「本決算」のように、一覧に書いてある決算の種類だけを書く。業績の予想や見通しは書かない
 - 一覧が空なら空の配列
 
 ## 3. earnings_post（明日の決算予告・X下書き）
@@ -1686,10 +1826,9 @@ def evening_with_claude(client, today):
     return earnings_text, movers, earnings_post
 
 
-def run_evening():
-    today = now_jst().date()
+def run_evening(today, allow_x=True):
     if is_market_holiday(today):
-        print("今日は休場日のため振り返りなし")
+        print(f"{today:%m/%d} は休場日のため振り返りなし")
         return
     history = load_history()
     is_week_end = is_last_business_day_of_week(today)
@@ -1735,21 +1874,37 @@ def run_evening():
             messages.append({"type": "text", "text": post})
             if image in urls:
                 messages.append(x_media.line_image_message(urls[image]))
+    # 週の最終営業日は、自分の売買・配当の記録を書くための型を送る（実体験は自分で書く。自動投稿はしない）
+    if is_week_end:
+        messages.append({"type": "text", "text": kujira_posts.DIARY_TEMPLATE})
     if not messages:
         print("送る内容がありません")
         return
     push_line(messages)
+    mark_done("evening", today)
     print_cost()
 
-    x_result = x_media.post_all_to_x([(movers_post, None), (earnings_post, None), (perf_post, perf_image)])
+    posts = [(movers_post, None), (earnings_post, None), (perf_post, perf_image)]
+    if not allow_x:
+        notice = x_skipped_notice(now_jst(), posts)
+        if notice:
+            send_line_text(notice)
+        return
+    x_result = x_media.post_all_to_x(posts)
     if "⚠️" in x_result or "⏭" in x_result:
         send_line_text(x_result)
 
 
 def main():
-    mode = sys.argv[1] if len(sys.argv) > 1 else "morning"
+    mode = "evening" if len(sys.argv) > 1 and sys.argv[1] == "evening" else "morning"
     try:
-        run_evening() if mode == "evening" else run()
+        scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+        day, allow_x = schedule_gate(mode, now_jst(), scheduled, load_state()["done"].get(mode, ""))
+        if day is None:
+            return
+        run_evening(day, allow_x) if mode == "evening" else run(day, allow_x)
+        if scheduled:
+            mark_done(mode, day)  # 休場日など、送るものが無かった日も「済み」にする
     except Exception as e:
         traceback.print_exc()
         try:

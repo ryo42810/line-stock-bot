@@ -3,28 +3,37 @@ name: Daily Stock Bot
 on:
   workflow_dispatch: # 手動実行用ボタンを残す
   schedule:
-    # UTC 21:43 ＝ 日本時間(JST)の翌朝 06:43（ちょうど0分は混んで遅れやすいので避ける）
-    - cron: '43 21 * * *'
+    # 目標は日本時間(JST)の朝 06:43。
+    # GitHub Actionsの定時実行は数時間遅れることが多いので、早めの時刻にも起動の予約を入れておく。
+    # 早く起動できた回は 06:43 まで待ってから動き、その日すでに配信済みなら何もしないで終わる（app.py の schedule_gate）
+    - cron: '43 15 * * *' # JST 00:43
+    - cron: '43 17 * * *' # JST 02:43
+    - cron: '43 19 * * *' # JST 04:43
+    - cron: '43 21 * * *' # JST 06:43
 
 permissions:
   contents: write # 配信履歴（history.json）を保存するため
 
+# 同じ日の予約が重なっても、1つずつ順番に動かす（二重配信を防ぐ）
+concurrency:
+  group: daily-stock-bot
+  cancel-in-progress: false
+
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    timeout-minutes: 350
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.10'
+          python-version: '3.13'
 
       - name: Install dependencies
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk > /dev/null
-          pip install requests yfinance anthropic beautifulsoup4 jpholiday matplotlib requests-oauthlib pypdf
+        run: ./scripts/setup.sh
 
       - name: Run script
         env:
@@ -39,23 +48,18 @@ jobs:
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
           # ウォッチ銘柄の決算チェック（スプシ「気になるテーマ株_一覧表」のID。Variables で設定）
           WATCHLIST_SHEET_ID: ${{ vars.WATCHLIST_SHEET_ID }}
+          # 画像の配色（空なら初期値のミッドナイト×金）
+          IMAGE_THEME: ${{ vars.IMAGE_THEME }}
         run: python app.py
 
+      # 途中で失敗しても、そこまでの記録は残す（次の予約が同じ配信をやり直さないように）
       - name: Save history
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add history.json
-          git diff --cached --quiet || (git commit -m "配信履歴を更新" && git push)
+        if: always()
+        run: ./scripts/save_state.sh
 
-      # Pythonが動く前に失敗したとき（インストール失敗など）もLINEに知らせる
       - name: Notify failure
         if: failure() && hashFiles('notified.flag') == ''
         env:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
           USER_ID: ${{ secrets.USER_ID }}
-        run: |
-          curl -sS -X POST https://api.line.me/v2/bot/message/push \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${LINE_ACCESS_TOKEN}" \
-            -d "{\"to\":\"${USER_ID}\",\"messages\":[{\"type\":\"text\",\"text\":\"⚠️ 注目株botのGitHub Actionsが失敗しました。ログを確認してください。\"}]}"
+        run: ./scripts/notify_failure.sh "⚠️ 注目株botのGitHub Actionsが失敗しました。ログを確認してください。"

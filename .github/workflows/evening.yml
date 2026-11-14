@@ -3,28 +3,36 @@ name: Evening Review
 on:
   workflow_dispatch: # 手動実行用ボタン
   schedule:
-    # UTC 07:55 ＝ 日本時間(JST) 16:55（月〜金。祝日はスクリプト側でスキップ）
-    - cron: '55 7 * * 1-5'
+    # 目標は日本時間(JST)の 16:55（月〜金。祝日はスクリプト側でスキップ）。
+    # 定時実行は数時間遅れることが多いので、早めの時刻にも起動の予約を入れておく。
+    # 早く起動できた回は 16:55 まで待ってから動き、その日すでに配信済みなら何もしないで終わる（app.py の schedule_gate）
+    - cron: '55 1 * * 1-5' # JST 10:55
+    - cron: '55 3 * * 1-5' # JST 12:55
+    - cron: '55 5 * * 1-5' # JST 14:55
+    - cron: '55 7 * * 1-5' # JST 16:55
 
 permissions:
-  contents: write # X用の画像をリポジトリに置くため
+  contents: write # X用の画像と実行の記録をリポジトリに置くため
+
+concurrency:
+  group: evening-review
+  cancel-in-progress: false
 
 jobs:
   run-review:
     runs-on: ubuntu-latest
+    timeout-minutes: 350
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.10'
+          python-version: '3.13'
 
       - name: Install dependencies
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk > /dev/null
-          pip install requests yfinance anthropic beautifulsoup4 jpholiday matplotlib requests-oauthlib pypdf
+        run: ./scripts/setup.sh
 
       - name: Run review
         env:
@@ -37,15 +45,17 @@ jobs:
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          WATCHLIST_SHEET_ID: ${{ vars.WATCHLIST_SHEET_ID }}
+          IMAGE_THEME: ${{ vars.IMAGE_THEME }}
         run: python app.py evening
+
+      - name: Save state
+        if: always()
+        run: ./scripts/save_state.sh
 
       - name: Notify failure
         if: failure() && hashFiles('notified.flag') == ''
         env:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
           USER_ID: ${{ secrets.USER_ID }}
-        run: |
-          curl -sS -X POST https://api.line.me/v2/bot/message/push \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${LINE_ACCESS_TOKEN}" \
-            -d "{\"to\":\"${USER_ID}\",\"messages\":[{\"type\":\"text\",\"text\":\"⚠️ 注目株botの夕方の振り返りが失敗しました。ログを確認してください。\"}]}"
+        run: ./scripts/notify_failure.sh "⚠️ 注目株botの夕方の振り返りが失敗しました。ログを確認してください。"

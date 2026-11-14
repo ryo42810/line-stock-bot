@@ -1,0 +1,11 @@
+# バージョンを固定（勝手に新しい版が入って急に動かなくなるのを防ぐ）
+# 更新するときは、ここの数字を変えてプルリクエストを出す（check.yml が自動で動作確認する）
+anthropic==2.8.0
+beautifulsoup4==4.15.0
+jpholiday==1.0.3
+matplotlib==3.11.2
+openpyxl==3.1.5
+pypdf==6.17.0
+requests==2.34.2
+requests-oauthlib==2.0.0
+yfinance==1.8.0
