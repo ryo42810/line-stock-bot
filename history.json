@@ -6421,5 +6421,205 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-15": [
+  {
+   "code": "3962",
+   "name": "チェンジホールディングス",
+   "category": "懸念材料",
+   "price": 751.0,
+   "buy": false,
+   "headline": "子会社の減損損失と不正アクセスで下方修正。株価は16%超安で安値を更新",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7522",
+   "name": "ワタミ",
+   "category": "懸念材料",
+   "price": 1008.0,
+   "buy": false,
+   "headline": "13日引け後に無配への修正と株主優待制度の廃止を発表",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6464",
+   "name": "ツバキ・ナカシマ",
+   "category": "懸念材料",
+   "price": 277.0,
+   "buy": false,
+   "headline": "減損損失と拠点再編損失で通期予想を修正し、中期経営計画も調整",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1860",
+   "name": "戸田建設",
+   "category": "好材料",
+   "price": 1570.0,
+   "buy": false,
+   "headline": "27年3月期の業績予想を上方修正し、自社株買い枠も設定。5日続伸",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6273",
+   "name": "SMC",
+   "category": "好材料",
+   "price": 62320.0,
+   "buy": false,
+   "headline": "27年3月期の連結業績予想を上方修正し、株価は3.87%高",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8050",
+   "name": "セイコーグループ",
+   "category": "好材料",
+   "price": 8220.0,
+   "buy": false,
+   "headline": "今期経常を14%上方修正して最高益予想を上乗せ。配当も15円増額",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8511",
+   "name": "日本証券金融",
+   "category": "好材料",
+   "price": 2309.0,
+   "buy": false,
+   "headline": "通期の連結純利益予想を130億円に上方修正。株価は8.71%高",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6145",
+   "name": "NITTOKU",
+   "category": "好材料",
+   "price": 3465.0,
+   "buy": false,
+   "headline": "ヒューマノイドロボット向けモータ生産設備で約82億円の大型受注",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9475",
+   "name": "昭文社ホールディングス",
+   "category": "好材料",
+   "price": 749.0,
+   "buy": true,
+   "headline": "MBOで上場廃止へ。TOB価格は752円で、終値749円にさや寄せ",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3088",
+   "name": "マツキヨココカラ&カンパニー",
+   "category": "好材料",
+   "price": 2799.0,
+   "buy": false,
+   "headline": "ToSTNeT-3での自社株買いと消却、配当予想の上方修正を同時に発表",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6837",
+   "name": "京写",
+   "category": "好材料",
+   "price": 420.0,
+   "buy": false,
+   "headline": "通期業績予想を上方修正し、配当も増配に修正。株価は8.81%高",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3156",
+   "name": "レスター",
+   "category": "好材料",
+   "price": 5070.0,
+   "buy": true,
+   "headline": "27年3月期の通期業績予想を上方修正し、配当予想も増配",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3003",
+   "name": "ヒューリック",
+   "category": "優待",
+   "price": 1987.0,
+   "buy": false,
+   "headline": "12月末が権利確定の人気優待株。配当利回り3.52%、優待は飲食料品など",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3197",
+   "name": "すかいらーくホールディングス",
+   "category": "優待",
+   "price": 3648.0,
+   "buy": false,
+   "headline": "12月末が権利確定の食事券優待。食事券カテゴリーで人気2位",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7272",
+   "name": "ヤマハ発動機",
+   "category": "優待",
+   "price": 1778.5,
+   "buy": false,
+   "headline": "12月末が権利確定。優待カテゴリーが多彩で、配当利回りは3.37%",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7695",
+   "name": "Ｇ－リフォームテクノ",
+   "category": "買い場候補",
+   "price": 839.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4406",
+   "name": "新日本理化",
+   "category": "買い場候補",
+   "price": 215.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7823",
+   "name": "アートネイチャー",
+   "category": "買い場候補",
+   "price": 762.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  }
  ]
 }
