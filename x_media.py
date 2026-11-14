@@ -572,9 +572,11 @@ def _midnight_stock_card(path, title, subtitle, stocks, get_history, date_text="
     return path
 
 
-def render_single_card(path, title, subtitle, stock, stats, notes, get_history, date_text=""):
+def render_single_card(path, title, subtitle, stock, stats, table, get_history, date_text="", table_title="チェック表"):
     """1銘柄を大きく紹介する画像（今日の1銘柄）。
-    stats: [(見出し, 数字, 単位), ...] 最大4つ / notes: [(見出し, 文章), ...] 最大2つ"""
+    stats: [(見出し, 数字, 単位), ...] 最大4つ
+    table: 下のチェック表の行 [(項目, 数字, ひとこと), ...] 最大5行。数字が空の行は、ひとことを広く使う。
+           項目が「気になる点」の行は、金の見出し・太字で目立たせる"""
     fig, ax = _m_canvas()
     _m_header(fig, ax, title, subtitle, date_text)
     x, w = 40, W - 80
@@ -610,16 +612,32 @@ def render_single_card(path, title, subtitle, stock, stats, notes, get_history, 
     except Exception as e:
         print(f"チャート描画失敗 ({stock['code']}):", e)
 
-    # 優待の中身・気になる点などの文章
-    notes = [n for n in notes if n and n[1]][:2]
-    ny, nh = 954, (H - 954 - 70 - 14 * (len(notes) - 1)) / max(len(notes), 1)
-    for i, (label, text) in enumerate(notes):
-        y = ny + i * (nh + 14)
-        _m_panel(ax, x, y, w, nh)
-        ax.text(x + 24, y + 34, label, fontsize=15, color=M["gold"], weight="bold", va="center", zorder=4)
-        max_lines = max(int((nh - 60) // 36), 1)
-        for j, line in enumerate(wrap_ja(text, w - 48, 21, max_lines)):
-            ax.text(x + 24, y + 76 + j * 36, line, fontsize=21, color=M["ink"], weight="bold", va="center", zorder=4)
+    # チェック表（新聞の表のように、項目・数字・ひとことを点線で区切って並べる）
+    rows = [r for r in table if r and (r[1] or r[2])][:5]
+    ty, th = 954, H - 954 - 70
+    _m_panel(ax, x, ty, w, th)
+    ax.text(x + 24, ty + 34, table_title, fontsize=15, color=M["gold"], weight="bold", va="center", zorder=4)
+    rh = (th - 64) / max(len(rows), 1)
+    for i, (label, value, note) in enumerate(rows):
+        ry = ty + 60 + i * rh + rh / 2
+        if i:
+            ax.plot([x + 24, x + w - 24], [ry - rh / 2, ry - rh / 2], color=M["hair"], linewidth=1, linestyle=(0, (2, 4)), zorder=3)
+        strong = label == "気になる点"
+        ax.text(x + 24, ry, label, fontsize=17, color=M["gold"] if strong else M["sub"], weight="bold", va="center", zorder=4)
+        if value:
+            size = fit_size(value, 240, 24, 15)
+            ax.text(x + 420, ry, value, fontsize=size, color=M["gold"], weight="bold", va="center", ha="right", fontfamily=_serif(), zorder=4)
+        nx = x + 450 if value else x + 200
+        size = 18 if value or not strong else 21
+        if not value and not strong:
+            size = 19
+        lines = wrap_ja(note, (x + w - 24 - nx) * 0.9, size, 2 if rh >= 50 else 1)  # 幅の見積もりは少し甘いので、余裕を取る
+        if len(lines) > 1:  # 2行になるときは、行の高さに収まるように文字を小さくする
+            size = 15
+            lines = wrap_ja(note, (x + w - 24 - nx) * 0.9, size, 2)
+        step = size * 100 / 72 + 3
+        for k, line in enumerate(lines):
+            ax.text(nx, ry + (k - (len(lines) - 1) / 2) * step, line, fontsize=size, color=M["ink"], weight="bold" if strong else "normal", va="center", zorder=4)
 
     _m_footer(ax, "※株価は前営業日終値ベース・配当は会社予想")
     fig.savefig(path, facecolor=M["bg0"])
