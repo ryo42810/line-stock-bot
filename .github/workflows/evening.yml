@@ -47,8 +47,9 @@ jobs:
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
           WATCHLIST_SHEET_ID: ${{ vars.WATCHLIST_SHEET_ID }}
           IMAGE_THEME: ${{ vars.IMAGE_THEME }}
-          # X投稿の文章を書くモデル（空なら claude-sonnet-5-5）
-          X_MODEL: ${{ vars.X_MODEL }}
+          # AIのモデルと使いすぎ防止（ai.py）。空なら Opus 5.5、今月の使用額が50ドルを超えたら Sonnet 5.5
+          AI_MODEL: ${{ vars.AI_MODEL }}
+          BUDGET_USD: ${{ vars.BUDGET_USD }}
         run: python app.py evening
 
       - name: Save state

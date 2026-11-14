@@ -9,9 +9,9 @@ Web検索が使えないときは、材料2だけで候補を作る（それも�
 """
 import datetime
 import json
-import os
 import re
 
+import ai
 import news_posts
 
 STATE_FILE = "topics_state.json"
@@ -19,10 +19,7 @@ MIN_TOPICS = 5
 MAX_TOPICS = 8
 WEB_SEARCH_MAX_USES = 8
 KEEP_DAYS = 14  # 同じネタを何日さかのぼって避けるか
-# モデルは上から順に試す（失敗したら次へ）。Variables の TOPICS_MODEL を入れると、そのモデルだけを使う
-TOPICS_MODELS = ["claude-fable-5-2", "claude-sonnet-5-5"]
-TOPICS_MODEL = (os.environ.get("TOPICS_MODEL") or "").strip()
-MAX_TOKENS = 16000  # 上位モデルは考える分（thinking）も出力の上限に数えるので、多めに取る
+MAX_TOKENS = 24000  # Fable は考える分（thinking）も出力の上限に数えるので、多めに取る（モデルは ai.py で決める）
 
 def load_state():
     try:
@@ -63,14 +60,9 @@ def disclosure_text(tools, tdnet_items, limit=25):
 
 
 def text_of(response):
-    """Web検索つきの返事から、最後の文章だけを取り出す（検索結果のブロックは飛ばす）"""
-    texts, after_tool = [], False
-    for block in response.content:
-        if block.type in ("server_tool_use", "web_search_tool_result"):
-            texts, after_tool = [], True
-        elif block.type == "text":
-            texts.append(block.text)
-    return "".join(texts).strip(), after_tool
+    """Web検索つきの返事から、最後の文章だけを取り出す（考えた部分・検索結果のブロックは飛ばす）"""
+    after_tool = any(b.type in ("server_tool_use", "web_search_tool_result") for b in response.content)
+    return ai.text_of(response), after_tool
 
 
 def parse_topics(text):
@@ -87,7 +79,8 @@ def parse_topics(text):
         title = str(t.get("title", "")).strip()
         summary = str(t.get("summary", "")).strip()
         if title and summary:
-            topics.append({"title": title[:40], "summary": summary[:140], "related": str(t.get("related", "")).strip()[:40]})
+            outline = [str(o).strip()[:40] for o in (t.get("outline") or []) if str(o).strip()][:4]
+            topics.append({"title": title[:40], "summary": summary[:140], "related": str(t.get("related", "")).strip()[:40], "outline": outline})
     return topics
 
 
@@ -119,11 +112,12 @@ def ask_claude(tools, client, model, yesterday, market, disclosures, avoid, use_
 - title：トピック（30字以内）。記事の題になりそうな言い方で
 - summary：何が起きたかと、株にどう関わるか（100字以内）。数字は確かめたものだけ
 - related：関係する銘柄・業種・指標（なければ空文字）
+- outline：徹底解説の記事の構成案。見出しを3つ（各25字以内）。「何が起きたか→背景・なぜ今か→個人投資家への影響（優待・配当・関連銘柄）」の流れを基本に、トピックに合わせて具体的に
 - 「買い」「おすすめ」のような売買のすすめは書かない
 
 ## 出力
 最後に、次の形のJSONだけを書いてください（前後に説明は書かない）。
-{{"topics": [{{"title": "…", "summary": "…", "related": "…"}}]}}
+{{"topics": [{{"title": "…", "summary": "…", "related": "…", "outline": ["…", "…", "…"]}}]}}
 
 ## 材料：相場の動き（前日の終値）
 {market or "（取得できず）"}
@@ -134,7 +128,7 @@ def ask_claude(tools, client, model, yesterday, market, disclosures, avoid, use_
 ## 最近の候補（避ける）
 {avoid_text}"""
     messages = [{"role": "user", "content": prompt}]
-    kwargs = {"model": model, "max_tokens": MAX_TOKENS, "messages": messages}
+    kwargs = {"model": model, "max_tokens": MAX_TOKENS, "messages": messages, "effort": "high"}
     if use_web:
         kwargs["tools"] = [
             {
@@ -171,7 +165,7 @@ def fallback_topics(news, limit=MAX_TOPICS):
             kinds.add(d["kind"])
     picked += [d for d in news if d not in picked]
     return [
-        {"title": f"{d['name']}の{d['kind']}", "summary": news_posts.norm(d["title"])[:100], "related": f"{d['name']}({d['code']})"}
+        {"title": f"{d['name']}の{d['kind']}", "summary": news_posts.norm(d["title"])[:100], "related": f"{d['name']}({d['code']})", "outline": []}
         for d in picked[:limit]
     ]
 
@@ -183,6 +177,8 @@ def format_message(today, yesterday, topics, used_web):
         lines.append(t["summary"])
         if t.get("related"):
             lines.append(f"関連：{t['related']}")
+        if t.get("outline"):
+            lines.append("構成案：" + " → ".join(t["outline"]))
         lines.append("")
     if not used_web:
         lines.append("※今朝はWeb検索が使えなかったので、適時開示だけから選んでいます")
@@ -192,8 +188,6 @@ def format_message(today, yesterday, topics, used_web):
 
 def run(tools, today):
     """7時の配信の本体。送った候補の数を返す"""
-    import anthropic
-
     yesterday = today - datetime.timedelta(days=1)
     state = load_state()
     market = news_posts.market_text(tools.fetch_market_data())
@@ -203,11 +197,11 @@ def run(tools, today):
 
     topics, used_web = [], True
     try:
-        client = anthropic.Anthropic()
-        models = [TOPICS_MODEL] if TOPICS_MODEL else TOPICS_MODELS
-        # Web検索ありで上位モデルから順に試し、だめならWeb検索なし（最後のモデル）で作る
-        attempts = [(m, True) for m in models] + [(models[-1], False)]
-        for model, use_web in attempts:
+        client = ai.Client("topics", today)
+        # Fable（予算を超えた月は Sonnet）でWeb検索ありで作り、だめならWeb検索なしで作り直す。
+        # Fable が失敗したときの Sonnet でのやり直しは ai.Client がする
+        model = client.model
+        for use_web in (True, False):
             used_web = use_web
             try:
                 topics = ask_claude(tools, client, model, yesterday, market, disclosures, avoid, use_web)
@@ -215,7 +209,7 @@ def run(tools, today):
                 print(f"ネタ候補づくりに失敗（{model}・Web検索{'あり' if use_web else 'なし'}）:", e)
                 topics = []
             if len(topics) >= MIN_TOPICS:
-                print(f"ネタ候補: {model}（Web検索{'あり' if use_web else 'なし'}）で{len(topics)}個")
+                print(f"ネタ候補: Web検索{'あり' if use_web else 'なし'}で{len(topics)}個")
                 break
             print(f"ネタ候補が{len(topics)}個しか出なかったので、作り直します")
     except Exception as e:
@@ -230,6 +224,8 @@ def run(tools, today):
 
     tools.send_line_text(format_message(today, yesterday, topics, used_web))
     remember(state, topics, today)
+    # kujira-note（徹底解説の自動下書き）が、ここから1位のネタを読む
+    state["latest"] = {"date": today.isoformat(), "news_date": yesterday.isoformat(), "used_web": used_web, "topics": topics}
     state["done"] = today.isoformat()
     save_state(state)
     tools.print_cost()
