@@ -156,6 +156,9 @@ class ImageTest(unittest.TestCase):
                  ("気になる点", "", "配当性向は55%でやや高め")], self.history, "2026.11.19（木）", "配当を見るときのチェック表",
             )
             self.assertGreater(os.path.getsize(single), 10000)
+            for topic in kujira_posts.KAISETSU_TOPICS:
+                points = x_media.render_points_card(os.path.join(d, "points.png"), topic["title"], "配当・優待の見方", topic["facts"], "2026.11.18（水）")
+                self.assertGreater(os.path.getsize(points), 10000)
 
 
 class PostFormatTest(unittest.TestCase):

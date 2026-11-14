@@ -1138,10 +1138,12 @@ def run(today, allow_x=True):
                 )
             except Exception as e:
                 print(f"画像の作成に失敗 ({kind}):", e)
-    if kujira.get("stocks"):
+    if kujira.get("stocks") or kujira.get("points"):
         try:
             path = x_media.image_path(today, "kujira")
-            if kujira.get("stats"):
+            if kujira.get("points"):
+                images["kujira"] = x_media.render_points_card(path, kujira["title"], kujira["subtitle"], kujira["points"], date_text)
+            elif kujira.get("stats"):
                 images["kujira"] = x_media.render_single_card(
                     path, kujira["title"], kujira["subtitle"], kujira["stocks"][0], kujira["stats"], kujira["table"], get_history, date_text, kujira["table_title"]
                 )

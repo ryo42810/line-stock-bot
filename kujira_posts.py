@@ -414,6 +414,7 @@ def build_kaisetsu(today):
     lines = [f"{topic['title']}、3行でまとめた📝↓↓", ""] + [f"・{f}" for f in topic["facts"][:3]]
     return {
         "kind": "kaisetsu", "stocks": [], "facts": facts, "fallback": "\n".join(lines),
+        "points": topic["facts"], "title": topic["title"], "subtitle": "配当・優待の見方",
         "rule": "個別の銘柄名は出さない。初心者がつまずく点を、材料に書いてあることだけで3〜4行にまとめる。①②③は使わず、短い文を改行で並べる",
     }
 
