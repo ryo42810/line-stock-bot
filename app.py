@@ -30,7 +30,10 @@ logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 LINE_ACCESS_TOKEN = (os.environ.get("LINE_ACCESS_TOKEN") or "").strip()
 USER_ID = (os.environ.get("USER_ID") or "").strip()
 
-MODEL = "claude-haiku-4-5"
+MODEL = "claude-haiku-4-5"  # 銘柄選び・優待の読み取り・決算要約など（量が多く、速さと安さを優先）
+# X投稿の文章を書くモデル（くじら枠・株ニュース・夕方の投稿・アンケート）。文章の質を優先して上位モデルにしている。
+# 変えるときは Variables の X_MODEL に入れる（例: claude-haiku-4-5 に戻す）
+X_MODEL = (os.environ.get("X_MODEL") or "claude-sonnet-5-5").strip()
 JST = ZoneInfo("Asia/Tokyo")
 MIN_PICKS = 5
 MAX_PICKS = 15
@@ -160,11 +163,16 @@ GOOD_WORDS = ["上方修正", "増配", "自社株買い", "自己株式の取�
 ROUTINE_WORDS = ["取得状況", "取得結果", "取得終了", "取得の終了", "買付結果", "買付けの結果", "買付けに関する結果"]
 BAD_WORDS = ["下方修正", "減配", "無配", "赤字", "優待廃止", "特別損失", "減損", "業務停止", "不適切", "上場廃止"]
 
-# 料金の目安（Claude Haiku 4.5、USD）
-PRICE_INPUT = 1.00 / 1_000_000
-PRICE_OUTPUT = 5.00 / 1_000_000
+# 料金の目安（USD／100万トークン：入力, 出力）。表に無いモデルは、いちばん高いものとして数える
+PRICES = {
+    "claude-haiku-4-5": (1.00, 5.00),
+    "claude-sonnet-5-5": (2.00, 10.00),
+    "claude-opus-5-5": (4.00, 20.00),
+    "claude-fable-5-2": (8.00, 40.00),
+}
+WEB_SEARCH_PRICE = 0.01  # Web検索 1回あたり
 
-usage_total = {"input": 0, "output": 0}
+usage_total = {"input": 0, "output": 0, "usd": 0.0}
 
 
 def now_jst():
@@ -172,12 +180,18 @@ def now_jst():
 
 
 def track_usage(response):
-    usage_total["input"] += response.usage.input_tokens or 0
-    usage_total["output"] += response.usage.output_tokens or 0
+    usage = response.usage
+    tokens_in, tokens_out = usage.input_tokens or 0, usage.output_tokens or 0
+    usage_total["input"] += tokens_in
+    usage_total["output"] += tokens_out
+    model = str(getattr(response, "model", "") or MODEL)
+    price_in, price_out = next((p for name, p in PRICES.items() if model.startswith(name)), max(PRICES.values()))
+    searches = getattr(getattr(usage, "server_tool_use", None), "web_search_requests", 0) or 0
+    usage_total["usd"] += (tokens_in * price_in + tokens_out * price_out) / 1_000_000 + searches * WEB_SEARCH_PRICE
 
 
 def print_cost(usd_jpy=None):
-    usd = usage_total["input"] * PRICE_INPUT + usage_total["output"] * PRICE_OUTPUT
+    usd = usage_total["usd"]
     rate = usd_jpy or 150
     print("===== API料金（推定） =====")
     print(f"入力 {usage_total['input']:,} / 出力 {usage_total['output']:,} トークン")
@@ -1120,7 +1134,7 @@ def run(today, allow_x=True):
     try:
         state = load_state()
         used = set(x_media.codes_in_post(x_post_news) + x_media.codes_in_post(x_post_buy))
-        kujira = kujira_posts.build(sys.modules[__name__], client, MODEL, today, state, exclude=used, held=held)
+        kujira = kujira_posts.build(sys.modules[__name__], client, X_MODEL, today, state, exclude=used, held=held)
         save_state(state)
     except Exception as e:
         print("くじら枠の作成に失敗:", e)
@@ -1130,7 +1144,7 @@ def run(today, allow_x=True):
     try:
         state = load_state()
         when = "昨日" if (today - start).days == 1 else "先週末から今朝まで"
-        news = news_posts.build(sys.modules[__name__], client, MODEL, tdnet_items, today, state, when, held, market_rows)
+        news = news_posts.build(sys.modules[__name__], client, X_MODEL, tdnet_items, today, state, when, held, market_rows)
         if today.weekday() == 5:
             weekly = news_posts.build_weekly(sys.modules[__name__], fetch_tdnet(news_posts.week_days(today)), today, state)
         save_state(state)
@@ -1452,7 +1466,7 @@ def write_x_posts(client, picks, buy_list, disclosures, topic_text, today):
 {chr(10).join(news_blocks) or "（なし）"}"""
     try:
         response = client.messages.create(
-            model=MODEL,
+            model=X_MODEL,
             max_tokens=4000,
             output_config={"format": {"type": "json_schema", "schema": BUY_REASON_SCHEMA}},
             messages=[{"role": "user", "content": prompt}],
@@ -1847,7 +1861,7 @@ def evening_with_claude(client, today):
 ## 理由の手がかりがある値動き銘柄
 {chr(10).join(mover_info) or "（なし）"}"""
     response = client.messages.create(
-        model=MODEL,
+        model=X_MODEL,
         max_tokens=4000,
         output_config={"format": {"type": "json_schema", "schema": EVENING_SCHEMA}},
         messages=[{"role": "user", "content": prompt}],
@@ -1913,7 +1927,7 @@ def run_evening(today, allow_x=True):
         except Exception:
             news_client = None
         state = load_state()
-        news = news_posts.build(sys.modules[__name__], news_client, MODEL, fetch_tdnet([today]), today, state, "今日", load_held(), fetch_market_data())
+        news = news_posts.build(sys.modules[__name__], news_client, X_MODEL, fetch_tdnet([today]), today, state, "今日", load_held(), fetch_market_data())
         save_state(state)
         if news.get("stocks"):
             weekday_str = "月火水木金土日"[today.weekday()]

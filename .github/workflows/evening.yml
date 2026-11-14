@@ -47,6 +47,8 @@ jobs:
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
           WATCHLIST_SHEET_ID: ${{ vars.WATCHLIST_SHEET_ID }}
           IMAGE_THEME: ${{ vars.IMAGE_THEME }}
+          # X投稿の文章を書くモデル（空なら claude-sonnet-5-5）
+          X_MODEL: ${{ vars.X_MODEL }}
         run: python app.py evening
 
       - name: Save state

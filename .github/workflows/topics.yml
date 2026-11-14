@@ -41,7 +41,7 @@ jobs:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
           USER_ID: ${{ secrets.USER_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          # 使うモデル（空なら朝の配信と同じ）。質を上げたいときは Variables に claude-sonnet-5-5 などを入れる
+          # 使うモデル（空なら claude-fable-5-2 → だめなら claude-sonnet-5-5 の順に試す）。安くしたいときは Variables に claude-sonnet-5-5 などを入れる
           TOPICS_MODEL: ${{ vars.TOPICS_MODEL }}
         run: python app.py topics
 
