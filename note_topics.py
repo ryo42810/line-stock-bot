@@ -224,6 +224,8 @@ def run(tools, today):
 
     tools.send_line_text(format_message(today, yesterday, topics, used_web))
     remember(state, topics, today)
+    # kujira-note（徹底解説の自動下書き）が、ここから1位のネタを読む
+    state["latest"] = {"date": today.isoformat(), "news_date": yesterday.isoformat(), "used_web": used_web, "topics": topics}
     state["done"] = today.isoformat()
     save_state(state)
     tools.print_cost()

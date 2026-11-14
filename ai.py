@@ -1,8 +1,9 @@
 """Claude APIの呼び出しをまとめる（モデルの選び方と、使いすぎ防止）
 
-- ふだんは Fable 5.2 を使う（銘柄選び・X投稿・夕方の解説・ネタ候補・優待の読み取り・決算要約、すべて）
+- ふだんは Opus 5.5 を使う（銘柄選び・X投稿・夕方の解説・ネタ候補・優待の読み取り・決算要約、すべて）
+  Fable 5.2 は kujira-note（noteの週次・月次・徹底解説）に回す（2026/11/15 本人の指定）
 - その月（クレジットの更新日から1ヶ月）に、このbotで使った金額が BUDGET_USD を超えたら、Sonnet 5.5 に切り替える
-- Fable が失敗したとき（モデルが使えない・混んでいるなど）も、その回だけ Sonnet 5.5 でやり直す
+- 上のモデルが失敗したとき（使えない・混んでいるなど）も、その回だけ Sonnet 5.5 でやり直す
 - Haiku は使わない
 
 使った金額は budget/朝・夕方・ネタ候補 ごとのファイルに記録して、足し合わせて判断する
@@ -17,14 +18,15 @@ from pathlib import Path
 
 import anthropic
 
-PRIMARY_MODEL = (os.environ.get("AI_MODEL") or "claude-fable-5-2").strip()
+PRIMARY_MODEL = (os.environ.get("AI_MODEL") or "claude-opus-5-5").strip()
 SAVER_MODEL = "claude-sonnet-5-5"
-# Maxプランの月100ドルのAPIクレジットのうち、このbotで使ってよい額（残りは kujira-note の分と予備）
-BUDGET_USD = float(os.environ.get("BUDGET_USD") or 65)
+# Maxプランの月100ドルのAPIクレジットのうち、このbotで使ってよい額（残りの50ドルは kujira-note の分）
+BUDGET_USD = float(os.environ.get("BUDGET_USD") or 50)
 CREDIT_DAY = int(os.environ.get("CREDIT_DAY") or 9)  # クレジットが入る日（毎月9日）
 BUDGET_DIR = Path("budget")
 DEFAULT_EFFORT = "medium"  # 考える量。銘柄選びとネタ候補は high にしている（呼び出し側で指定）
-FABLE_MIN_TOKENS = 16000  # Fable は考える分（thinking）も出力の上限に数えるので、多めに取る
+THINKING_MIN_TOKENS = 16000  # Opus・Fable は考える分（thinking）も出力の上限に数えるので、多めに取る
+THINKING_MODELS = ("claude-opus", "claude-fable")
 
 # 料金の目安（USD／100万トークン：入力, 出力）。表に無いモデルは、いちばん高いものとして数える
 PRICES = {
@@ -96,8 +98,8 @@ class Client:
 
     def _params(self, model, kwargs, effort):
         params = dict(kwargs, model=model)
-        if model.startswith("claude-fable"):
-            params["max_tokens"] = max(params.get("max_tokens", 4000), FABLE_MIN_TOKENS)
+        if model.startswith(THINKING_MODELS):
+            params["max_tokens"] = max(params.get("max_tokens", 4000), THINKING_MIN_TOKENS)
             params["output_config"] = {**params.get("output_config", {}), "effort": effort}
         else:
             params["max_tokens"] = max(params.get("max_tokens", 4000), 8000)
@@ -111,7 +113,7 @@ class Client:
                 break
             except (anthropic.BadRequestError, anthropic.NotFoundError, anthropic.PermissionDeniedError,
                     anthropic.InternalServerError, anthropic.RateLimitError, anthropic.APIConnectionError) as e:
-                # 途中まで Fable で考えた会話（pause_turn の続き）は、別のモデルには引き継げないのでやり直さない
+                # 途中まで考えた会話（pause_turn の続き）は、別のモデルには引き継げないのでやり直さない
                 continuing = any(m.get("role") == "assistant" for m in kwargs.get("messages", []))
                 if model == SAVER_MODEL or continuing or attempt:
                     raise

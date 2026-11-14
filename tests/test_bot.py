@@ -338,7 +338,7 @@ class BudgetTest(unittest.TestCase):
         client = ai.Client("morning", day, raw=Raw())
         res = client.messages.create(model="x", max_tokens=600, messages=[{"role": "user", "content": "hi"}], effort="high")
         self.assertEqual(ai.text_of(res), "ok")
-        self.assertEqual(calls, [(ai.PRIMARY_MODEL, ai.FABLE_MIN_TOKENS, "high"), (ai.SAVER_MODEL, 8000, None)])
+        self.assertEqual(calls, [(ai.PRIMARY_MODEL, ai.THINKING_MIN_TOKENS, "high"), (ai.SAVER_MODEL, 8000, None)])
         self.assertGreater(ai.spent(day), 0)
 
 
