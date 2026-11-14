@@ -646,21 +646,22 @@ def render_single_card(path, title, subtitle, stock, stats, table, get_history, 
 
 
 def render_points_card(path, title, subtitle, points, date_text="", note="※一般的な仕組みの説明です。銘柄ごとの条件は各社の資料で確認を"):
-    """要点を番号つきで並べる画像（水曜の解説）。points: 文章のリスト。最大4つ"""
+    """要点を番号つきで並べる画像（水曜の解説・週まとめ）。points: 文章のリスト。最大6つ"""
     fig, ax = _m_canvas()
     _m_header(fig, ax, title, subtitle, date_text)
-    points = [p for p in points if p][:4]
+    points = [p for p in points if p][:6]
     x, w, top, gap = 40, W - 80, 244, 16
     ph = (H - 70 - top - gap * (len(points) - 1)) / max(len(points), 1)
     for i, text in enumerate(points):
         y = top + i * (ph + gap)
         _m_panel(ax, x, y, w, ph)
         # 左：金の四角に明朝体の番号
-        ax.add_patch(FancyBboxPatch((x + 30, y + ph / 2 - 38), 76, 76, boxstyle="round,pad=0,rounding_size=10", facecolor=M["gold"], edgecolor=M["gold_hi"], linewidth=1.5, zorder=3))
-        ax.text(x + 68, y + ph / 2, str(i + 1), fontsize=44, color="#1A1405", weight="bold", ha="center", va="center", fontfamily=_serif(), zorder=4)
+        box = 76 if len(points) <= 4 else 60  # 5つ以上のときは、番号の箱と文字を少し小さくする
+        ax.add_patch(FancyBboxPatch((x + 68 - box / 2, y + ph / 2 - box / 2), box, box, boxstyle="round,pad=0,rounding_size=10", facecolor=M["gold"], edgecolor=M["gold_hi"], linewidth=1.5, zorder=3))
+        ax.text(x + 68, y + ph / 2, str(i + 1), fontsize=44 if box == 76 else 34, color="#1A1405", weight="bold", ha="center", va="center", fontfamily=_serif(), zorder=4)
         # 右：要点（明朝体・太字）。長いときは文字を小さくして4行までに収める
         tx, tw = x + 140, (w - 140 - 30) * 0.92
-        size = 29
+        size = 29 if len(points) <= 4 else 25
         lines = wrap_ja(text, tw, size, 9)
         while len(lines) > min(4, int(ph // (size * 100 / 72 + 14))) and size > 20:
             size -= 1

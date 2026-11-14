@@ -364,8 +364,15 @@ def fetch_tdnet(days):
     for day in days:
         url = f"https://webapi.yanoshin.jp/webapi/tdnet/list/{day:%Y%m%d}.json?limit=2000"
         try:
-            res = requests.get(url, timeout=20)
-            res.raise_for_status()
+            for attempt in range(3):  # 通信が一時的に切れることがあるので、3回まで試す
+                try:
+                    res = requests.get(url, timeout=20)
+                    res.raise_for_status()
+                    break
+                except Exception:
+                    if attempt == 2:
+                        raise
+                    time.sleep(3)
             for row in res.json().get("items", []):
                 t = row.get("Tdnet", {})
                 code = str(t.get("company_code", ""))[:4]
@@ -1117,12 +1124,12 @@ def run(today, allow_x=True):
     except Exception as e:
         print("くじら枠の作成に失敗:", e)
 
-    # 優待・配当ニュース（前の回のあと〜今朝までの会社発表）。土曜は今週のまとめも出す
+    # 株ニュース（前の回のあと〜今朝までの会社発表と、相場全体の動き）。土曜は今週のまとめも出す
     news, weekly = {}, {}
     try:
         state = load_state()
         when = "昨日" if (today - start).days == 1 else "先週末から今朝まで"
-        news = news_posts.build(sys.modules[__name__], client, MODEL, tdnet_items, today, state, when, held)
+        news = news_posts.build(sys.modules[__name__], client, MODEL, tdnet_items, today, state, when, held, market_rows)
         if today.weekday() == 5:
             weekly = news_posts.build_weekly(sys.modules[__name__], fetch_tdnet(news_posts.week_days(today)), today, state)
         save_state(state)
@@ -1897,7 +1904,7 @@ def run_evening(today, allow_x=True):
     if earnings_text:
         sections.append(earnings_text)
 
-    # 優待・配当ニュース（今日出た会社発表）
+    # 株ニュース（今日出た会社発表と、相場全体の動き）
     news, news_image = {}, None
     try:
         try:
@@ -1905,7 +1912,7 @@ def run_evening(today, allow_x=True):
         except Exception:
             news_client = None
         state = load_state()
-        news = news_posts.build(sys.modules[__name__], news_client, MODEL, fetch_tdnet([today]), today, state, "今日", load_held())
+        news = news_posts.build(sys.modules[__name__], news_client, MODEL, fetch_tdnet([today]), today, state, "今日", load_held(), fetch_market_data())
         save_state(state)
         if news.get("stocks"):
             weekday_str = "月火水木金土日"[today.weekday()]

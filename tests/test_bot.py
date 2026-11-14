@@ -157,6 +157,8 @@ class ImageTest(unittest.TestCase):
                  ("気になる点", "", "配当性向は55%でやや高め")], self.history, "2026.11.19（木）", "配当を見るときのチェック表",
             )
             self.assertGreater(os.path.getsize(single), 10000)
+            six = x_media.render_points_card(os.path.join(d, "weekly.png"), "今週の株ニュース", "11/09〜11/13の会社発表を集計", ["優待の新設・再開：8社（A社、B社、C社など）"] * 6, "2026.11.14（土）")
+            self.assertGreater(os.path.getsize(six), 10000)
             for topic in kujira_posts.KAISETSU_TOPICS:
                 points = x_media.render_points_card(os.path.join(d, "points.png"), topic["title"], "配当・優待の見方", topic["facts"], "2026.11.18（水）")
                 self.assertGreater(os.path.getsize(points), 10000)
@@ -179,6 +181,12 @@ class NewsPostsTest(unittest.TestCase):
             "通期業績予想および配当予想の修正（増配）に関するお知らせ": "増配",
             "自己株式の取得及び自己株式立会外買付取引（ToSTNeT-3）による自己株式の買付けに関するお知らせ": "自社株買い",
             "自己株式の取得状況に関するお知らせ": None,
+            "通期業績予想の上方修正に関するお知らせ": "上方修正",
+            "業績予想の修正に関するお知らせ": "業績修正",
+            "株式会社Ａに対する公開買付けの開始に関するお知らせ": "TOB・MBO",
+            "自己株式の公開買付けの結果に関するお知らせ": None,
+            "株式分割及び株式分割に伴う定款の一部変更に関するお知らせ": "株式分割",
+            "Ｂ社との資本業務提携に関するお知らせ": "提携・M&A",
             "株主優待実施の見送りに関するお知らせ": None,
             "2027年3月期 第2四半期決算短信": None,
         }
@@ -198,6 +206,25 @@ class NewsPostsTest(unittest.TestCase):
         posted = {news_posts.doc_key(items[1]): "2026-11-13"}
         self.assertNotIn("2222", [d["code"] for d in news_posts.pick_news(items, posted=posted)])
 
+    def test_choose_keeps_axis_and_prefers_known_companies(self):
+        news = news_posts.pick_news([
+            self.item("1111", "小さい優待", "株主優待制度の導入に関するお知らせ"),
+            self.item("2222", "大きい修正", "業績予想の修正に関するお知らせ"),
+            self.item("3333", "小さい修正", "業績予想の修正に関するお知らせ"),
+            self.item("4444", "中くらいTOB", "Ｃ社に対する公開買付けの開始に関するお知らせ"),
+            self.item("5555", "大きい増配", "配当予想の修正（増配）に関するお知らせ"),
+        ])
+        picked = news_posts.choose(news, {"2222": 0, "5555": 1, "4444": 2})
+        # 1社目は優待（軸）。残りは知られた会社から、種類が重ならないように
+        self.assertEqual([d["code"] for d in picked], ["1111", "2222", "5555"])
+
+    def test_market_line(self):
+        rows = [{"symbol": "^N225", "name": "日経平均", "value": "50,123", "change": 0.82}]
+        self.assertEqual(news_posts.market_line(rows), "日経平均は50,123円（+0.82%）")
+        self.assertEqual(news_posts.market_line([]), "")
+        post = news_posts.fallback_post([{"name": "A社", "code": "1111", "kind": "増配"}], "今日", rows)
+        self.assertIn("日経平均は50,123円（+0.82%）", post)
+
     def test_numbers_must_come_from_pdf(self):
         source = "年間配当金 60円 → 70円"
         self.assertTrue(news_posts.numbers_ok("①A社(1111)\n年間配当を60円から70円に増額", source + " 1111"))
@@ -211,6 +238,7 @@ class NewsPostsTest(unittest.TestCase):
             self.item("2222", "Ｂ社", "株主優待制度の廃止に関するお知らせ"),
             self.item("1111", "Ａ社", "配当予想の修正（増配）に関するお知らせ"),
         ]
+        news_posts._cap_rank = {}
         weekly = news_posts.build_weekly(app, items, sat, {})
         self.assertIn("優待の新設・再開 1社", weekly["post"])
         self.assertIn("11/09〜11/13", weekly["post"])
