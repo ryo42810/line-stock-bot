@@ -1,0 +1,24 @@
+name: Check
+
+# プルリクエストを出したときに、準備（フォント・ライブラリ）とテストが通るかを確かめる。
+# キー類は使わないので、LINE送信・X投稿・AIの呼び出しは一切しない
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: ./scripts/setup.sh
+      - name: Run tests
+        run: python -m unittest discover -s tests -v

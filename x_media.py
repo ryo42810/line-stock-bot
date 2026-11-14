@@ -6,6 +6,7 @@ import subprocess
 import time
 
 import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -40,6 +41,7 @@ CATEGORY_COLORS = {
     "懸念材料": COLORS["red"],
     "決算": COLORS["accent"],
     "優待": COLORS["gold"],
+    "高配当": COLORS["gold"],
     "買い場候補": COLORS["accent"],
 }
 # 配色テーマ（環境変数 IMAGE_THEME で切り替え。初期値はネイビー×ゴールドのベタ塗り）
@@ -61,9 +63,32 @@ THEMES = {
     # プレミアム：ゴールドの見出し文字・ゴールドの枠・ゴールドのチャート
     "gold_premium": {"head": "#1A2530", "title": "#E6B422", "sub": "#E8DDBF", "line": "#E6A100", "pill": "#E6A100", "foot": "#1A2530", "foot_text": "#E6C46A", "bars": "single", "bar": "#1A2530", "bar_text": "#F3D27A", "circle": "#E6A100", "circle_text": "#1A2530", "chart": "#C98C00", "border": "#E6A100", "num": "#1A2530"},
 }
-THEME = THEMES.get((os.environ.get("IMAGE_THEME") or "gold_solid").strip(), THEMES["gold_solid"])
+# 初期値は「midnight」＝noteの画像と同じミッドナイト（深い紺）×金・明朝体の題字（下の「ミッドナイト」の描き方を使う）。
+# 前の白いカードに戻すときは、Variables の IMAGE_THEME に gold_solid などを入れる
+THEME_NAME = (os.environ.get("IMAGE_THEME") or "midnight").strip()
+THEME = THEMES.get(THEME_NAME, THEMES["gold_solid"])
+MIDNIGHT = THEME_NAME not in THEMES
+
+# ミッドナイトの配色（kujira-note の images.py とそろえる）
+M = {
+    "bg0": "#080C18", "bg1": "#111A30", "glow": "#27406E",
+    "ink": "#EEF2F8", "sub": "#98A6BF", "gold": "#E3BC5F", "gold_hi": "#FBE8AE", "gold_lo": "#A97F2A",
+    "up": "#FF7A7A", "down": "#6FB1FF", "edge": (1, 1, 1, 0.16), "hair": (1, 1, 1, 0.12), "panel": (1, 1, 1, 0.06),
+    "chip": (1, 1, 1, 0.09),
+}
+HANDLE = "くじら｜株主優待・高配当"
+SERIF = "Noto Serif CJK JP"
 WHALE_ICON = os.path.join("assets", "whale.png")  # 右上のクジラアイコン（置いてあれば使う）
 W, H = 1080, 1350  # Xで見やすい4:5
+
+
+def _has_font(name):
+    return any(f.name == name for f in font_manager.fontManager.ttflist)
+
+
+def _serif():
+    """題字・数字用の明朝体。入っていなければ本文と同じフォントで描く"""
+    return SERIF if _has_font(SERIF) else plt.rcParams["font.family"][0]
 
 
 def _setup_font():
@@ -218,6 +243,8 @@ def _tint(hex_color, ratio):
 # ---------------------------------------------------------------
 def render_stock_card(path, title, subtitle, stocks, accent, get_history, date_text=""):
     """3銘柄までの紹介画像。銘柄ごとに色付きのタイトルバー＋株価・利回り・理由・3ヶ月チャート"""
+    if MIDNIGHT:
+        return _midnight_stock_card(path, title, subtitle, stocks, get_history, date_text)
     fig, ax = _canvas()
     _header(fig, ax, title, subtitle, date_text, accent)
 
@@ -317,6 +344,8 @@ def render_performance_chart(path, rows, title, date_text=""):
     rows = sorted(rows, key=lambda r: r["change"])[-10:]
     avg = sum(r["change"] for r in rows) / len(rows)
     ups = sum(1 for r in rows if r["change"] > 0)
+    if MIDNIGHT:
+        return _midnight_performance_chart(path, rows, avg, ups, title, date_text)
 
     fig, ax = _canvas()
     _header(fig, ax, title, "配信時の株価から5営業日後までの騰落率", date_text, COLORS["accent"])
@@ -356,6 +385,278 @@ def render_performance_chart(path, rows, title, date_text=""):
 
     _footer(ax, "※配信時の株価は前営業日終値ベース")
     fig.savefig(path, facecolor=THEME.get("page", COLORS["bg"]))
+    plt.close(fig)
+    return path
+
+
+# ---------------------------------------------------------------
+# ミッドナイト（深い紺×金・明朝体の題字・半透明のカード）。noteの画像と同じトンマナ
+# ---------------------------------------------------------------
+def _rgb(hex_color):
+    c = hex_color.lstrip("#")
+    return np.array([int(c[i : i + 2], 16) / 255 for i in (0, 2, 4)])
+
+
+def _m_change_color(change):
+    """上げは赤・下げは青（日本の株価表示の色）"""
+    if change is None:
+        return M["sub"]
+    return M["up"] if change >= 0 else M["down"]
+
+
+def _m_canvas():
+    """背景：斜めの紺のグラデーションに、右上と左下の青い光、うっすらした斜めの光沢"""
+    fig = plt.figure(figsize=(W / 100, H / 100), dpi=100, facecolor=M["bg0"])
+    ax = fig.add_axes([0, 0, 1, 1])
+    yy, xx = np.mgrid[0:H:4, 0:W:4].astype(float)
+    t = np.clip((xx / W * 0.35 + yy / H * 0.65), 0, 1)[..., None]
+    img = _rgb(M["bg0"]) * (1 - t) + _rgb(M["bg1"]) * t
+    for cx, cy, rx, ry in ((0.88 * W, -0.08 * H, 900, 700), (-0.06 * W, 1.08 * H, 760, 650)):
+        d = np.sqrt(((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2)
+        a = np.clip(1 - d / 0.62, 0, 1)[..., None] ** 1.5
+        img = img * (1 - a) + _rgb(M["glow"]) * a
+    sheen = np.exp(-(((xx / W - yy / H * 0.4) - 0.42) / 0.09) ** 2)[..., None] * 0.05
+    img = np.clip(img + sheen, 0, 1)
+    ax.imshow(img, extent=(0, W, H, 0), aspect="auto", zorder=0, interpolation="bilinear")
+    ax.set_xlim(0, W)
+    ax.set_ylim(H, 0)
+    ax.set_axis_off()
+    return fig, ax
+
+
+def _m_metal(ax, x, y, w, h, z=3):
+    """金のグラデーションの帯（明るい金→金→暗い金）"""
+    stops = np.array([_rgb(M["gold_hi"]), _rgb(M["gold"]), _rgb(M["gold_lo"])])
+    t = np.linspace(0, 1, 24)
+    col = np.where(t[:, None] < 0.48, stops[0] + (stops[1] - stops[0]) * (t[:, None] / 0.48), stops[1] + (stops[2] - stops[1]) * ((t[:, None] - 0.48) / 0.52))
+    ax.imshow(col[:, None, :], extent=(x, x + w, y + h, y), aspect="auto", zorder=z, interpolation="bilinear")
+
+
+def _m_panel(ax, x, y, w, h, r=14, top_line=True):
+    """半透明のカード。上の縁に金の線"""
+    ax.add_patch(FancyBboxPatch((x, y + 6), w, h, boxstyle=f"round,pad=0,rounding_size={r}", facecolor=(0, 0, 0, 0.28), edgecolor="none", zorder=1))
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}", facecolor=M["panel"], edgecolor=M["edge"], linewidth=1.2, zorder=2))
+    if top_line:
+        _m_metal(ax, x + r * 0.6, y, w - r * 1.2, 4)
+
+
+def _m_header(fig, ax, title, subtitle, date_text):
+    """上部：金の線、アカウント名、明朝体の大きな題字、日付、クジラ（小さめ）"""
+    _m_metal(ax, 40, 34, W - 80, 6)
+    ax.text(42, 74, HANDLE, fontsize=15, color=M["gold"], weight="bold", va="center", zorder=4)
+    size = fit_size(title, W - 330, 50, 34)
+    ax.text(40, 132, title, fontsize=size, color=M["ink"], weight="bold", va="center", fontfamily=_serif(), zorder=4)
+    ax.text(42, 190, subtitle, fontsize=21, color=M["gold"], weight="bold", va="center", fontfamily=_serif(), zorder=4)
+    right = W - 40
+    if os.path.exists(WHALE_ICON):
+        try:
+            icon = plt.imread(WHALE_ICON)
+            iax = fig.add_axes([(W - 40 - 84) / W, 1 - (56 + 84) / H, 84 / W, 84 / H])
+            iax.imshow(icon)
+            iax.set_axis_off()
+        except Exception as e:
+            print("クジラアイコンの読み込みに失敗:", e)
+    if date_text:
+        ax.text(right, 190, date_text, fontsize=17, color=M["sub"], weight="bold", ha="right", va="center", zorder=4)
+    ax.plot([40, W - 40], [218, 218], color=M["edge"], linewidth=1.2, zorder=3)
+
+
+def _m_footer(ax, note):
+    ax.plot([40, W - 40], [H - 50, H - 50], color=M["hair"], linewidth=1, zorder=3)
+    ax.text(40, H - 27, HANDLE, fontsize=13, color=M["sub"], va="center", zorder=4)
+    ax.text(W - 40, H - 27, note, fontsize=13, color=M["sub"], ha="right", va="center", zorder=4)
+
+
+def _m_chip(ax, x, y, text, size, fg, align="left", bg=None, edge=None):
+    """角丸の小さなラベル。幅を返す"""
+    w = text_px(text, size) + 26
+    h = size * 100 / 72 + 14
+    left = x - w if align == "right" else x
+    ax.add_patch(FancyBboxPatch((left, y), w, h, boxstyle=f"round,pad=0,rounding_size={h / 2}", facecolor=bg or M["chip"], edgecolor=edge or M["edge"], linewidth=1, zorder=3))
+    ax.text(left + w / 2, y + h / 2, text, fontsize=size, color=fg, ha="center", va="center", weight="bold", zorder=4)
+    return w
+
+
+def _m_sparkline(fig, closes, x, y, w, h):
+    ax = fig.add_axes([x / W, 1 - (y + h) / H, w / W, h / H], facecolor="none")
+    vals = closes.values
+    ax.plot(range(len(vals)), vals, color=M["gold"], linewidth=3, solid_capstyle="round")
+    ax.fill_between(range(len(vals)), vals, float(vals.min()), color=M["gold"], alpha=0.14)
+    ax.scatter([len(vals) - 1], [vals[-1]], s=64, color=M["gold_hi"], edgecolor=M["bg0"], linewidth=2, zorder=3)
+    ax.set_xlim(0, len(vals) - 1)
+    ax.set_axis_off()
+
+
+def _m_stat(ax, x, y, w, h, label, value, unit="", color=None, size=34):
+    """数字の箱：小さな見出しと、明朝体の大きな数字"""
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=10", facecolor=(0, 0, 0, 0.22), edgecolor=M["hair"], linewidth=1, zorder=3))
+    ax.text(x + 16, y + 24, label, fontsize=13, color=M["sub"], weight="bold", va="center", zorder=4)
+    size = fit_size(value + unit, w - 30, size, 18)
+    t = ax.text(x + 16, y + h - 38, value, fontsize=size, color=color or M["gold"], weight="bold", va="center", fontfamily=_serif(), zorder=4)
+    if unit:
+        # 単位は、実際に描いた数字のすぐ右に置く（画像は1px＝座標1なので、描いた幅をそのまま使える）
+        value_w = t.get_window_extent(renderer=ax.figure.canvas.get_renderer()).width
+        ax.text(x + 16 + value_w + 6, y + h - 32, unit, fontsize=max(size * 0.5, 13), color=color or M["gold"], weight="bold", va="center", zorder=4)
+
+
+def _yield_total(stock):
+    """利回りの表示（「配当3.2%＋優待1.0%＝4.2%」→ 見出しと「4.2%」）。出せないときは None"""
+    yield_fmt = stock.get("yield_fmt") or ""
+    if not yield_fmt or any(k in yield_fmt for k in ("取得できず", "なし", "不明")):
+        return None
+    label = "利回り（配当＋優待）" if "＝" in yield_fmt else "配当利回り"
+    return label, yield_fmt.split("＝")[-1].replace("配当", "").replace("%", ""), "%"
+
+
+def _midnight_stock_card(path, title, subtitle, stocks, get_history, date_text=""):
+    """3銘柄までの紹介画像（ミッドナイト）"""
+    fig, ax = _m_canvas()
+    _m_header(fig, ax, title, subtitle, date_text)
+    top, gap, panel_h = 240, 18, 336
+    x, w = 40, W - 80
+    for i, s in enumerate(stocks[:3]):
+        y = top + i * (panel_h + gap)
+        _m_panel(ax, x, y, w, panel_h)
+
+        # 1行目：番号・銘柄名（コード）／右に分類と前日比
+        ax.text(x + 22, y + 46, str(i + 1), fontsize=34, color=M["gold"], weight="bold", va="center", fontfamily=_serif(), zorder=4)
+        change = s.get("change")
+        change_text = f"{change:+.1f}%" if change is not None else ""
+        cat = s.get("category", "")
+        rx = x + w - 20
+        if change_text:
+            rx -= _m_chip(ax, rx, y + 26, change_text, 20, _m_change_color(change), align="right") + 10
+        if cat:
+            rx -= _m_chip(ax, rx, y + 30, cat, 14, M["gold"], align="right") + 10
+        name, code_text = s.get("name", ""), f"（{s['code']}）"
+        name_size = fit_size(name, rx - (x + 70) - text_px(code_text, 17) - 16, 28, 17)
+        ax.text(x + 70, y + 46, name, fontsize=name_size, color=M["ink"], weight="bold", va="center", fontfamily=_serif(), zorder=4)
+        ax.text(x + 74 + text_px(name, name_size), y + 49, code_text, fontsize=17, color=M["sub"], va="center", zorder=4)
+        ax.plot([x + 20, x + w - 20], [y + 84, y + 84], color=M["hair"], linewidth=1, zorder=3)
+
+        # 左：株価と利回り（出せないときはテクニカル）
+        body_y = y + 100
+        bx, bw = x + 20, 236
+        if s.get("price"):
+            _m_stat(ax, bx, body_y, bw, 104, "株価（前営業日終値）", f"{s['price']:,.0f}", "円", color=M["ink"])
+        total = _yield_total(s)
+        if total:
+            _m_stat(ax, bx, body_y + 114, bw, 104, *total)
+        else:
+            sig = re.sub(r"^[^\w（]+", "", (s.get("signals") or ["注目材料あり"])[0])
+            ax.add_patch(FancyBboxPatch((bx, body_y + 114), bw, 104, boxstyle="round,pad=0,rounding_size=10", facecolor=(0, 0, 0, 0.22), edgecolor=M["hair"], linewidth=1, zorder=3))
+            ax.text(bx + 16, body_y + 138, "テクニカル", fontsize=13, color=M["sub"], weight="bold", va="center", zorder=4)
+            for j, line in enumerate(wrap_ja(sig, bw - 30, 16, 2)):
+                ax.text(bx + 16, body_y + 172 + j * 26, line, fontsize=16, color=M["gold"], weight="bold", va="center", zorder=4)
+
+        # 中央：理由と、テクニカルの一言
+        tx, tw = x + 280, 336
+        reason = s.get("buy_comment") or s.get("headline") or ""
+        for j, line in enumerate(wrap_ja(reason, tw, 20, 4)):
+            ax.text(tx, body_y + 22 + j * 36, line, fontsize=20, color=M["ink"], weight="bold", va="center", zorder=4)
+        signals = [re.sub(r"^[^\w（]+", "", g).split("（")[0] for g in s.get("signals", [])]
+        if total and signals:
+            _m_chip(ax, tx, body_y + 180, signals[0], 14, M["sub"])
+
+        # 右：3ヶ月チャート
+        try:
+            closes = get_history(s["code"])["Close"].iloc[-60:]
+            _m_sparkline(fig, closes, x + w - 336, body_y + 6, 312, 178)
+            ax.text(x + w - 24, body_y + 206, "3ヶ月チャート", fontsize=13, color=M["sub"], weight="bold", ha="right", va="center", zorder=4)
+        except Exception as e:
+            print(f"チャート描画失敗 ({s['code']}):", e)
+
+    _m_footer(ax, "※株価は前営業日終値ベース")
+    fig.savefig(path, facecolor=M["bg0"])
+    plt.close(fig)
+    return path
+
+
+def render_single_card(path, title, subtitle, stock, stats, notes, get_history, date_text=""):
+    """1銘柄を大きく紹介する画像（今日の1銘柄）。
+    stats: [(見出し, 数字, 単位), ...] 最大4つ / notes: [(見出し, 文章), ...] 最大2つ"""
+    fig, ax = _m_canvas()
+    _m_header(fig, ax, title, subtitle, date_text)
+    x, w = 40, W - 80
+
+    # 銘柄名
+    _m_panel(ax, x, 240, w, 150)
+    code_text = f"（{stock['code']}）"
+    name = stock.get("name", "")
+    change = stock.get("change")
+    rx = x + w - 24
+    if change is not None:
+        rx -= _m_chip(ax, rx, 292, f"前日比 {change:+.1f}%", 18, _m_change_color(change), align="right") + 12
+    size = fit_size(name, rx - (x + 30) - text_px(code_text, 22) - 16, 46, 24)
+    ax.text(x + 28, 316, name, fontsize=size, color=M["ink"], weight="bold", va="center", fontfamily=_serif(), zorder=4)
+    ax.text(x + 34 + text_px(name, size), 322, code_text, fontsize=22, color=M["sub"], va="center", zorder=4)
+
+    # 数字の箱（横に並べる）
+    stats = [s for s in stats if s and s[1]][:4]
+    if stats:
+        gap = 14
+        bw = (w - gap * (len(stats) - 1)) / len(stats)
+        for i, (label, value, unit) in enumerate(stats):
+            _m_stat(ax, x + i * (bw + gap), 410, bw, 132, label, value, unit, size=40)
+
+    # 1年チャート
+    _m_panel(ax, x, 562, w, 372)
+    ax.text(x + 24, 594, "株価の動き（1年）", fontsize=16, color=M["sub"], weight="bold", va="center", zorder=4)
+    try:
+        closes = get_history(stock["code"])["Close"]
+        _m_sparkline(fig, closes, x + 24, 622, w - 48, 286)
+        hi, lo = float(closes.max()), float(closes.min())
+        ax.text(x + w - 24, 594, f"高値 {hi:,.0f}円 ／ 安値 {lo:,.0f}円", fontsize=15, color=M["sub"], ha="right", va="center", zorder=4)
+    except Exception as e:
+        print(f"チャート描画失敗 ({stock['code']}):", e)
+
+    # 優待の中身・気になる点などの文章
+    notes = [n for n in notes if n and n[1]][:2]
+    ny, nh = 954, (H - 954 - 70 - 14 * (len(notes) - 1)) / max(len(notes), 1)
+    for i, (label, text) in enumerate(notes):
+        y = ny + i * (nh + 14)
+        _m_panel(ax, x, y, w, nh)
+        ax.text(x + 24, y + 34, label, fontsize=15, color=M["gold"], weight="bold", va="center", zorder=4)
+        max_lines = max(int((nh - 60) // 36), 1)
+        for j, line in enumerate(wrap_ja(text, w - 48, 21, max_lines)):
+            ax.text(x + 24, y + 76 + j * 36, line, fontsize=21, color=M["ink"], weight="bold", va="center", zorder=4)
+
+    _m_footer(ax, "※株価は前営業日終値ベース・配当は会社予想")
+    fig.savefig(path, facecolor=M["bg0"])
+    plt.close(fig)
+    return path
+
+
+def _midnight_performance_chart(path, rows, avg, ups, title, date_text=""):
+    """買い場候補の1週間後の成績（ミッドナイト）"""
+    fig, ax = _m_canvas()
+    _m_header(fig, ax, title, "配信時の株価から5営業日後までの騰落率", date_text)
+    x, w = 40, W - 80
+    bw = (w - 16) / 2
+    _m_stat(ax, x, 244, bw, 150, "平均騰落率", f"{avg:+.1f}", "%", color=_m_change_color(avg), size=50)
+    _m_stat(ax, x + bw + 16, 244, bw, 150, "上昇した銘柄", f"{ups} / {len(rows)}", "", size=50)
+    _m_panel(ax, x, 416, w, H - 416 - 70)
+    ax.text(x + 24, 452, "銘柄別の成績", fontsize=20, color=M["ink"], weight="bold", va="center", fontfamily=_serif(), zorder=4)
+
+    chart = fig.add_axes([0.38, 0.085, 0.53, 0.55], facecolor="none")
+    labels = [f"{r['name'][:10]}（{r['code']}）" for r in rows]
+    values = [r["change"] for r in rows]
+    chart.barh(range(len(rows)), values, color=[_m_change_color(v) for v in values], height=0.58)
+    chart.axvline(0, color=M["sub"], linewidth=1.2)
+    chart.set_yticks(range(len(rows)))
+    chart.set_yticklabels(labels, fontsize=17, color=M["ink"], fontweight="bold")
+    chart.tick_params(axis="y", length=0)
+    chart.tick_params(axis="x", labelsize=13, colors=M["sub"])
+    for side in ("top", "right", "left"):
+        chart.spines[side].set_visible(False)
+    chart.spines["bottom"].set_color(M["sub"])
+    span = max(abs(v) for v in values) * 1.5 or 1
+    chart.set_xlim(-span if min(values) < 0 else 0, span)
+    for yv, v in enumerate(values):
+        chart.text(v, yv, f" {v:+.1f}% ", va="center", ha="left" if v >= 0 else "right", fontsize=18, color=_m_change_color(v), weight="bold")
+
+    _m_footer(ax, "※配信時の株価は前営業日終値ベース")
+    fig.savefig(path, facecolor=M["bg0"])
     plt.close(fig)
     return path
 
