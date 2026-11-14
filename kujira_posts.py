@@ -310,9 +310,17 @@ def build_one_yutai(tools, client, today, exclude):
             ("必要な金額の目安", f"{p['min_yen'] / 10000:.1f}" if p.get("min_yen") else "", "万円"),
             ("権利確定", f"{month}月", ""),
         ]
-        notes = [("株主優待", p["yutai"]), ("気になる点", cautions[0] if cautions else "優待は会社の判断で変更・廃止されることがある")]
+        last = tools.kenri_last_day(year, month, p.get("kenri_day", 0))
+        table = [
+            ("優待の中身", "", p["yutai"]),
+            ("必要な金額", f"約{p['min_yen'] / 10000:.1f}万円" if p.get("min_yen") else "", f"{p.get('min_shares', 100)}株から優待がもらえる"),
+            ("権利確定", f"{month}月", f"権利付き最終日は{last:%m/%d}（あと{tools.business_days_between(today, last)}営業日）"),
+            ("配当利回り", f"{p['page_yield']:.2f}%", "会社予想の配当から計算") if p.get("page_yield") is not None else ("配当利回り", "", "会社予想が出ていない"),
+            # 配当の行と同じ話を繰り返さないように、気になる点は配当以外のものを優先する
+            ("気になる点", "", next((c for c in cautions if "配当は会社予想" not in c), "優待は会社の判断で変更・廃止されることがある")),
+        ]
         return {
-            "kind": "one_yutai", "stocks": [p], "facts": facts, "fallback": "\n".join(lines), "stats": stats, "notes": notes,
+            "kind": "one_yutai", "stocks": [p], "facts": facts, "fallback": "\n".join(lines), "stats": stats, "table": table, "table_title": "優待を見るときのチェック表",
             "title": "今日の1銘柄", "subtitle": f"{month}月権利の株主優待",
             "rule": "1銘柄だけを紹介する。優待の中身→必要な金額→権利確定の時期→気になる点、の順。気になる点は必ず1行入れる",
         }
@@ -378,12 +386,22 @@ def build_one_haito(tools, client, today, exclude):
             ("1株配当（会社予想）", f"{r['dividend']:g}", "円"),
             ("配当性向", f"{payout * 100:.0f}", "%"),
         ]
-        notes = [
-            ("株主優待", p["yutai"]) if has_yutai(p) else ("過去5年の平均利回り", f"{avg5:.1f}%（いまは{p['page_yield']:.2f}%）" if avg5 else ""),
-            ("気になる点", cautions[0]),
+        per = info.get("trailingPE")
+        if avg5:
+            diff = p["page_yield"] - avg5
+            yield_note = f"過去5年の平均は{avg5:.1f}%（いまは{abs(diff):.1f}ポイント{'高い' if diff > 0 else '低い'}）"
+        else:
+            yield_note = "会社予想の配当から計算"
+        valuation = " ／ ".join(v for v in (f"{pbr:.2f}倍" if pbr else "", f"{per:.1f}倍" if per else "") if v)
+        table = [
+            ("利回りの水準", f"{p['page_yield']:.2f}%", yield_note),
+            ("配当性向", f"{payout * 100:.0f}%", f"利益の約{payout * 10:.0f}割を配当に回している"),
+            ("PBR ／ PER" if pbr and per else "PBR" if pbr else "PER", valuation, "純資産・利益に対する株価の水準"),
+            ("株主優待", "", p["yutai"]) if has_yutai(p) else ("会社の規模", f"{cap / 1e8:,.0f}億円", "時価総額（東証プライム）"),
+            ("気になる点", "", cautions[0]),
         ]
         return {
-            "kind": "one_haito", "stocks": [p], "facts": "\n".join(l for l in facts_lines if l), "fallback": "\n".join(lines), "stats": stats, "notes": notes,
+            "kind": "one_haito", "stocks": [p], "facts": "\n".join(l for l in facts_lines if l), "fallback": "\n".join(lines), "stats": stats, "table": table, "table_title": "配当を見るときのチェック表",
             "title": "今日の1銘柄", "subtitle": "高配当株",
             "rule": "1銘柄だけを紹介する。配当利回り→1株配当→配当性向→気になる点、の順。気になる点は必ず1行入れる。優待があれば一言足す",
         }

@@ -1143,7 +1143,7 @@ def run(today, allow_x=True):
             path = x_media.image_path(today, "kujira")
             if kujira.get("stats"):
                 images["kujira"] = x_media.render_single_card(
-                    path, kujira["title"], kujira["subtitle"], kujira["stocks"][0], kujira["stats"], kujira["notes"], get_history, date_text
+                    path, kujira["title"], kujira["subtitle"], kujira["stocks"][0], kujira["stats"], kujira["table"], get_history, date_text, kujira["table_title"]
                 )
             else:
                 images["kujira"] = x_media.render_stock_card(
