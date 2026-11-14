@@ -18,6 +18,7 @@ import earnings_calendar  # noqa: E402
 import kujira_posts  # noqa: E402
 import news_posts  # noqa: E402
 import note_topics  # noqa: E402
+import ai  # noqa: E402
 import x_media  # noqa: E402
 
 JST = app.JST
@@ -258,7 +259,9 @@ class NoteTopicsTest(unittest.TestCase):
 
     def test_parse_topics(self):
         text = '結果です。\n{"topics": [{"title": "日銀が利上げ", "summary": "銀行株に追い風", "related": "銀行"}, {"title": "", "summary": "x", "related": ""}]}'
-        self.assertEqual(note_topics.parse_topics(text), [{"title": "日銀が利上げ", "summary": "銀行株に追い風", "related": "銀行"}])
+        self.assertEqual(note_topics.parse_topics(text), [{"title": "日銀が利上げ", "summary": "銀行株に追い風", "related": "銀行", "outline": []}])
+        with_outline = '{"topics": [{"title": "A", "summary": "B", "related": "", "outline": ["何が起きたか", "背景", "影響"]}]}'
+        self.assertEqual(note_topics.parse_topics(with_outline)[0]["outline"], ["何が起きたか", "背景", "影響"])
         self.assertEqual(note_topics.parse_topics("JSONなし"), [])
 
     def test_text_after_search_only(self):
@@ -280,6 +283,63 @@ class NoteTopicsTest(unittest.TestCase):
         self.assertIn("11/15の時事ネタ", text)
         self.assertIn("5. ネタ4", text)
         self.assertIn("note：トピック", text)
+
+
+class BudgetTest(unittest.TestCase):
+    """使いすぎ防止（ai.py）"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.old_dir = ai.BUDGET_DIR
+        ai.BUDGET_DIR = ai.Path(self.tmp.name) / "budget"
+
+    def tearDown(self):
+        ai.BUDGET_DIR = self.old_dir
+        self.tmp.cleanup()
+
+    def test_cycle_starts_on_credit_day(self):
+        self.assertEqual(ai.cycle_start(datetime.date(2026, 11, 15)), datetime.date(2026, 11, 9))
+        self.assertEqual(ai.cycle_start(datetime.date(2026, 12, 8)), datetime.date(2026, 11, 9))
+        self.assertEqual(ai.cycle_start(datetime.date(2026, 12, 9)), datetime.date(2026, 12, 9))
+        self.assertEqual(ai.cycle_start(datetime.date(2027, 1, 3)), datetime.date(2026, 12, 9))
+
+    def test_switches_to_saver_over_budget(self):
+        day = datetime.date(2026, 11, 20)
+        self.assertEqual(ai.choose_model(day), ai.PRIMARY_MODEL)
+        ai.record("morning", day, ai.BUDGET_USD - 1)
+        ai.record("topics", day, 0.5)
+        self.assertEqual(ai.choose_model(day), ai.PRIMARY_MODEL)
+        ai.record("evening", day, 0.6)
+        self.assertEqual(ai.choose_model(day), ai.SAVER_MODEL)
+        # 次の期間になったら、また Fable に戻る
+        self.assertEqual(ai.choose_model(datetime.date(2026, 12, 9)), ai.PRIMARY_MODEL)
+
+    def test_cost(self):
+        from types import SimpleNamespace as N
+        usage = N(input_tokens=1_000_000, output_tokens=100_000, server_tool_use=N(web_search_requests=3))
+        self.assertAlmostEqual(ai.cost_of(N(model="claude-fable-5-2", usage=usage)), 8 + 4 + 0.03)
+        self.assertAlmostEqual(ai.cost_of(N(model="claude-sonnet-5-5", usage=usage)), 2 + 1 + 0.03)
+
+    def test_client_falls_back_and_records(self):
+        from types import SimpleNamespace as N
+        calls = []
+
+        class Raw:
+            def __init__(self):
+                self.messages = self
+
+            def create(self, **kw):
+                calls.append((kw["model"], kw["max_tokens"], kw.get("output_config", {}).get("effort")))
+                if kw["model"] == ai.PRIMARY_MODEL:
+                    raise ai.anthropic.APIConnectionError(request=None)
+                return N(model=kw["model"], usage=N(input_tokens=1000, output_tokens=100), content=[N(type="text", text="ok")])
+
+        day = datetime.date(2026, 11, 20)
+        client = ai.Client("morning", day, raw=Raw())
+        res = client.messages.create(model="x", max_tokens=600, messages=[{"role": "user", "content": "hi"}], effort="high")
+        self.assertEqual(ai.text_of(res), "ok")
+        self.assertEqual(calls, [(ai.PRIMARY_MODEL, ai.FABLE_MIN_TOKENS, "high"), (ai.SAVER_MODEL, 8000, None)])
+        self.assertGreater(ai.spent(day), 0)
 
 
 class PostFormatTest(unittest.TestCase):

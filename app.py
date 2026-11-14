@@ -10,12 +10,12 @@ import traceback
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
-import anthropic
 import jpholiday
 import requests
 import yfinance as yf
 from bs4 import BeautifulSoup
 
+import ai
 import earnings_calendar
 import earnings_watch
 import kujira_posts
@@ -30,10 +30,8 @@ logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 LINE_ACCESS_TOKEN = (os.environ.get("LINE_ACCESS_TOKEN") or "").strip()
 USER_ID = (os.environ.get("USER_ID") or "").strip()
 
-MODEL = "claude-haiku-4-5"  # 銘柄選び・優待の読み取り・決算要約など（量が多く、速さと安さを優先）
-# X投稿の文章を書くモデル（くじら枠・株ニュース・夕方の投稿・アンケート）。文章の質を優先して上位モデルにしている。
-# 変えるときは Variables の X_MODEL に入れる（例: claude-haiku-4-5 に戻す）
-X_MODEL = (os.environ.get("X_MODEL") or "claude-sonnet-5-5").strip()
+# モデルは ai.py で決める（ふだんは Fable 5.2、今月の使用額が上限を超えたら Sonnet 5.5。Haiku は使わない）
+MODEL = ai.PRIMARY_MODEL
 JST = ZoneInfo("Asia/Tokyo")
 MIN_PICKS = 5
 MAX_PICKS = 15
@@ -163,15 +161,6 @@ GOOD_WORDS = ["上方修正", "増配", "自社株買い", "自己株式の取�
 ROUTINE_WORDS = ["取得状況", "取得結果", "取得終了", "取得の終了", "買付結果", "買付けの結果", "買付けに関する結果"]
 BAD_WORDS = ["下方修正", "減配", "無配", "赤字", "優待廃止", "特別損失", "減損", "業務停止", "不適切", "上場廃止"]
 
-# 料金の目安（USD／100万トークン：入力, 出力）。表に無いモデルは、いちばん高いものとして数える
-PRICES = {
-    "claude-haiku-4-5": (1.00, 5.00),
-    "claude-sonnet-5-5": (2.00, 10.00),
-    "claude-opus-5-5": (4.00, 20.00),
-    "claude-fable-5-2": (8.00, 40.00),
-}
-WEB_SEARCH_PRICE = 0.01  # Web検索 1回あたり
-
 usage_total = {"input": 0, "output": 0, "usd": 0.0}
 
 
@@ -184,10 +173,7 @@ def track_usage(response):
     tokens_in, tokens_out = usage.input_tokens or 0, usage.output_tokens or 0
     usage_total["input"] += tokens_in
     usage_total["output"] += tokens_out
-    model = str(getattr(response, "model", "") or MODEL)
-    price_in, price_out = next((p for name, p in PRICES.items() if model.startswith(name)), max(PRICES.values()))
-    searches = getattr(getattr(usage, "server_tool_use", None), "web_search_requests", 0) or 0
-    usage_total["usd"] += (tokens_in * price_in + tokens_out * price_out) / 1_000_000 + searches * WEB_SEARCH_PRICE
+    usage_total["usd"] += ai.cost_of(response)
 
 
 def print_cost(usd_jpy=None):
@@ -671,6 +657,7 @@ def pick_with_claude(client, today, market_closed, disclosures, blocked_codes, m
 
     response = client.messages.create(
         model=MODEL,
+        effort="high",  # 毎朝の中身を決める一番大事な判断なので、しっかり考えさせる
         max_tokens=8000,
         output_config={"format": {"type": "json_schema", "schema": PICKS_SCHEMA}},
         messages=[{"role": "user", "content": prompt}],
@@ -1079,7 +1066,7 @@ def run(today, allow_x=True):
     topic_text = ""
     client = None
     try:
-        client = anthropic.Anthropic()
+        client = ai.Client("morning", today)
         market_comment, raw_picks, topic_text = pick_with_claude(client, today, market_closed, disclosures, blocked_codes, market_rows)
         picks = clean_picks(raw_picks, blocked_codes)
     except Exception as e:
@@ -1134,7 +1121,7 @@ def run(today, allow_x=True):
     try:
         state = load_state()
         used = set(x_media.codes_in_post(x_post_news) + x_media.codes_in_post(x_post_buy))
-        kujira = kujira_posts.build(sys.modules[__name__], client, X_MODEL, today, state, exclude=used, held=held)
+        kujira = kujira_posts.build(sys.modules[__name__], client, MODEL, today, state, exclude=used, held=held)
         save_state(state)
     except Exception as e:
         print("くじら枠の作成に失敗:", e)
@@ -1144,7 +1131,7 @@ def run(today, allow_x=True):
     try:
         state = load_state()
         when = "昨日" if (today - start).days == 1 else "先週末から今朝まで"
-        news = news_posts.build(sys.modules[__name__], client, X_MODEL, tdnet_items, today, state, when, held, market_rows)
+        news = news_posts.build(sys.modules[__name__], client, MODEL, tdnet_items, today, state, when, held, market_rows)
         if today.weekday() == 5:
             weekly = news_posts.build_weekly(sys.modules[__name__], fetch_tdnet(news_posts.week_days(today)), today, state)
         save_state(state)
@@ -1466,7 +1453,7 @@ def write_x_posts(client, picks, buy_list, disclosures, topic_text, today):
 {chr(10).join(news_blocks) or "（なし）"}"""
     try:
         response = client.messages.create(
-            model=X_MODEL,
+            model=MODEL,
             max_tokens=4000,
             output_config={"format": {"type": "json_schema", "schema": BUY_REASON_SCHEMA}},
             messages=[{"role": "user", "content": prompt}],
@@ -1758,6 +1745,51 @@ def earnings_tomorrow(codes, tomorrow):
     return found, with_dates
 
 
+MOVER_RESEARCH_COUNT = 10  # Web検索で値動きの理由を調べる銘柄の数（ランキングの上から）
+
+
+def research_movers(client, today, movers):
+    """今日大きく動いた銘柄の理由を、Web検索で調べる。戻り値は {コード: 理由}。失敗したら空"""
+    if client is None or not movers:
+        return {}
+    targets = "\n".join(f"- {name}({code})" for code, name in list(movers.items())[:MOVER_RESEARCH_COUNT])
+    prompt = f"""今日（{today:%Y年%m月%d日}）の東京市場で大きく動いた銘柄です。それぞれ、今日動いた理由をWeb検索で調べてください。
+
+{targets}
+
+## 決まり
+- 今日〜前日の、報道機関や会社の公式発表で確かめられた理由だけを書く。確かめられなければ、その銘柄は出さない
+- 理由は60字以内。何が発表・報道されたかを、数字があれば数字つきで
+- 推測や「〜とみられる」だけの理由は書かない
+
+## 出力
+最後に、次の形のJSONだけを書いてください（前後に説明は書かない）。
+{{"items": [{{"code": "1234", "reason": "…", "source": "日経"}}]}}"""
+    messages = [{"role": "user", "content": prompt}]
+    tools = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 8,
+              "user_location": {"type": "approximate", "country": "JP", "timezone": "Asia/Tokyo"}}]
+    try:
+        for _ in range(3):  # 検索が長いと途中で止まる（pause_turn）ので、続きを頼む
+            response = client.messages.create(model=MODEL, max_tokens=8000, tools=tools, messages=messages)
+            track_usage(response)
+            if response.stop_reason != "pause_turn":
+                break
+            messages = messages + [{"role": "assistant", "content": response.content}]
+        m = re.search(r"\{.*\}", ai.text_of(response), re.S)
+        items = json.loads(m.group(0)).get("items", []) if m else []
+    except Exception as e:
+        print("値動きの理由のWeb検索に失敗（検索なしで続行）:", e)
+        return {}
+    found = {}
+    for item in items:
+        code, reason = str(item.get("code", "")).strip().upper(), str(item.get("reason", "")).strip()
+        if code in movers and reason:
+            source = str(item.get("source", "")).strip()
+            found[code] = reason[:80] + (f"（{source[:20]}）" if source else "")
+    print(f"値動きの理由（Web検索）: {len(found)}/{min(len(movers), MOVER_RESEARCH_COUNT)}銘柄")
+    return found
+
+
 def evening_with_claude(client, today):
     """今日動いた銘柄の理由解説と、明日の決算予告（X下書き付き）"""
     tomorrow = next_business_day(today)
@@ -1774,9 +1806,12 @@ def evening_with_claude(client, today):
     movers = {}
     for name, code in re.findall(r"([^\n<>]{1,40}?) <https://finance\.yahoo\.co\.jp/quote/(\d{3}[0-9A-Z])\.T>", ranking_text):
         movers.setdefault(code, name.strip())
+    researched = research_movers(client, today, movers)
     mover_info = []
     for code, name in list(movers.items())[:40]:
         related = [f"適時開示: {d['title']}" for d in disclosures if d["code"] == code][:3]
+        if code in researched:
+            related.append(f"Web検索で確かめた理由: {researched[code]}")
         if code in morning and morning[code].get("headline"):
             related.append(f"今朝の注目理由: {morning[code]['headline']}")
         if any("決算" in d["title"] for d in disclosures if d["code"] == code):
@@ -1829,7 +1864,7 @@ def evening_with_claude(client, today):
 
 ## 1. movers_post（なぜ動いたか・X下書き）
 - 「理由の手がかりがある値動き銘柄」から、今日大きく動いた銘柄を選び、「なぜ動いたのか」を解説する
-- 理由は、その銘柄に紐づいた適時開示・今朝の注目理由に書いてあることだけを使う
+- 理由は、その銘柄に紐づいた適時開示・今朝の注目理由・Web検索で確かめた理由に書いてあることだけを使う。Web検索の理由を優先する
 - 「今日+15%🚀」のように騰落率を入れ、次の行に理由
 - 「業績データ」がある銘柄は、「営業利益+30%」のように具体的な数字で理由を書く。ただし業績データの四半期が今回の決算と違いそうなら使わない
 - 1行目は必ずフック（例: 「今日爆上げした銘柄、理由はこれ🚀↓↓」）。銘柄名から書き始めない
@@ -1861,7 +1896,7 @@ def evening_with_claude(client, today):
 ## 理由の手がかりがある値動き銘柄
 {chr(10).join(mover_info) or "（なし）"}"""
     response = client.messages.create(
-        model=X_MODEL,
+        model=MODEL,
         max_tokens=4000,
         output_config={"format": {"type": "json_schema", "schema": EVENING_SCHEMA}},
         messages=[{"role": "user", "content": prompt}],
@@ -1913,7 +1948,8 @@ def run_evening(today, allow_x=True):
 
     earnings_text, movers_post, earnings_post = "", "", ""
     try:
-        earnings_text, movers_post, earnings_post = evening_with_claude(anthropic.Anthropic(), today)
+        evening_client = ai.Client("evening", today)
+        earnings_text, movers_post, earnings_post = evening_with_claude(evening_client, today)
     except Exception as e:
         print("夕方のAI処理に失敗:", e)
     if earnings_text:
@@ -1923,11 +1959,11 @@ def run_evening(today, allow_x=True):
     news, news_image = {}, None
     try:
         try:
-            news_client = anthropic.Anthropic()
+            news_client = ai.Client("evening", today)
         except Exception:
             news_client = None
         state = load_state()
-        news = news_posts.build(sys.modules[__name__], news_client, X_MODEL, fetch_tdnet([today]), today, state, "今日", load_held(), fetch_market_data())
+        news = news_posts.build(sys.modules[__name__], news_client, MODEL, fetch_tdnet([today]), today, state, "今日", load_held(), fetch_market_data())
         save_state(state)
         if news.get("stocks"):
             weekday_str = "月火水木金土日"[today.weekday()]

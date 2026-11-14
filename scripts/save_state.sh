@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# 配信履歴（history.json）と実行の記録（state.json / topics_state.json）をリポジトリに保存する
+# 配信履歴（history.json）と実行の記録（state.json / topics_state.json / budget/ の使用額）をリポジトリに保存する
 set -eu
 git config user.name "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-for f in history.json state.json topics_state.json; do
+for f in history.json state.json topics_state.json budget/*.json; do
   [ -f "$f" ] && git add "$f"
 done
 if git diff --cached --quiet; then echo "保存するものはありません"; exit 0; fi

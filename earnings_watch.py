@@ -7,6 +7,7 @@
 スプシへの書き戻しはしない（閲覧のみの共有のため）。
 """
 
+import ai
 import csv
 import io
 import os
@@ -141,7 +142,7 @@ def summarize(client, model, code, info, docs, on_usage=None):
     res = client.messages.create(model=model, max_tokens=600, messages=[{"role": "user", "content": prompt}])
     if on_usage:
         on_usage(res)
-    return res.content[0].text.strip()
+    return ai.text_of(res)
 
 
 # ---------------------------------------------------------------
