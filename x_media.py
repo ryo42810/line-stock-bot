@@ -645,6 +645,36 @@ def render_single_card(path, title, subtitle, stock, stats, table, get_history, 
     return path
 
 
+def render_points_card(path, title, subtitle, points, date_text="", note="※一般的な仕組みの説明です。銘柄ごとの条件は各社の資料で確認を"):
+    """要点を番号つきで並べる画像（水曜の解説）。points: 文章のリスト。最大4つ"""
+    fig, ax = _m_canvas()
+    _m_header(fig, ax, title, subtitle, date_text)
+    points = [p for p in points if p][:4]
+    x, w, top, gap = 40, W - 80, 244, 16
+    ph = (H - 70 - top - gap * (len(points) - 1)) / max(len(points), 1)
+    for i, text in enumerate(points):
+        y = top + i * (ph + gap)
+        _m_panel(ax, x, y, w, ph)
+        # 左：金の四角に明朝体の番号
+        ax.add_patch(FancyBboxPatch((x + 30, y + ph / 2 - 38), 76, 76, boxstyle="round,pad=0,rounding_size=10", facecolor=M["gold"], edgecolor=M["gold_hi"], linewidth=1.5, zorder=3))
+        ax.text(x + 68, y + ph / 2, str(i + 1), fontsize=44, color="#1A1405", weight="bold", ha="center", va="center", fontfamily=_serif(), zorder=4)
+        # 右：要点（明朝体・太字）。長いときは文字を小さくして4行までに収める
+        tx, tw = x + 140, (w - 140 - 30) * 0.92
+        size = 29
+        lines = wrap_ja(text, tw, size, 9)
+        while len(lines) > min(4, int(ph // (size * 100 / 72 + 14))) and size > 20:
+            size -= 1
+            lines = wrap_ja(text, tw, size, 9)
+        step = size * 100 / 72 + 14
+        lines = lines[:4]
+        for k, line in enumerate(lines):
+            ax.text(tx, y + ph / 2 + (k - (len(lines) - 1) / 2) * step, line, fontsize=size, color=M["ink"], weight="bold", va="center", fontfamily=_serif(), zorder=4)
+    _m_footer(ax, note)
+    fig.savefig(path, facecolor=M["bg0"])
+    plt.close(fig)
+    return path
+
+
 def _midnight_performance_chart(path, rows, avg, ups, title, date_text=""):
     """買い場候補の1週間後の成績（ミッドナイト）"""
     fig, ax = _m_canvas()

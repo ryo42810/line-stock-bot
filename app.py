@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup
 import earnings_calendar
 import earnings_watch
 import kujira_posts
+import news_posts
 import x_media
 
 # yfinanceは、ETFなど決算データが無い銘柄で「HTTP Error 404」を表示するので、ログに出さない
@@ -1107,18 +1108,26 @@ def run(today, allow_x=True):
 
     # くじら枠（優待・高配当の投稿。平日の朝に1本）。失敗しても朝の配信は止めない
     kujira = {}
+    held = load_held()
     try:
-        held = set()
-        try:
-            held = {code for code, info in earnings_watch.load_watchlist().items() if info.get("status") == "購入済"}
-        except Exception as e:
-            print("保有銘柄（スプシ）を読めなかったので、「保有中」の表示は付けられません:", e)
         state = load_state()
         used = set(x_media.codes_in_post(x_post_news) + x_media.codes_in_post(x_post_buy))
         kujira = kujira_posts.build(sys.modules[__name__], client, MODEL, today, state, exclude=used, held=held)
         save_state(state)
     except Exception as e:
         print("くじら枠の作成に失敗:", e)
+
+    # 優待・配当ニュース（前の回のあと〜今朝までの会社発表）。土曜は今週のまとめも出す
+    news, weekly = {}, {}
+    try:
+        state = load_state()
+        when = "昨日" if (today - start).days == 1 else "先週末から今朝まで"
+        news = news_posts.build(sys.modules[__name__], client, MODEL, tdnet_items, today, state, when, held)
+        if today.weekday() == 5:
+            weekly = news_posts.build_weekly(sys.modules[__name__], fetch_tdnet(news_posts.week_days(today)), today, state)
+        save_state(state)
+    except Exception as e:
+        print("優待・配当ニュースの作成に失敗:", e)
 
     market_bubble = build_market_bubble(market_rows, market_comment, today) if (market_rows or market_comment) else None
     # X下書きと画像（本文だけ送る。順番はニュース版→買い場候補版→アンケート版）
@@ -1138,10 +1147,12 @@ def run(today, allow_x=True):
                 )
             except Exception as e:
                 print(f"画像の作成に失敗 ({kind}):", e)
-    if kujira.get("stocks"):
+    if kujira.get("stocks") or kujira.get("points"):
         try:
             path = x_media.image_path(today, "kujira")
-            if kujira.get("stats"):
+            if kujira.get("points"):
+                images["kujira"] = x_media.render_points_card(path, kujira["title"], kujira["subtitle"], kujira["points"], date_text)
+            elif kujira.get("stats"):
                 images["kujira"] = x_media.render_single_card(
                     path, kujira["title"], kujira["subtitle"], kujira["stocks"][0], kujira["stats"], kujira["table"], get_history, date_text, kujira["table_title"]
                 )
@@ -1151,10 +1162,24 @@ def run(today, allow_x=True):
                 )
         except Exception as e:
             print("画像の作成に失敗 (kujira):", e)
+    try:
+        if news.get("stocks"):
+            images["yutai_news"] = x_media.render_stock_card(
+                x_media.image_path(today, "yutai-news"), news["title"], news["subtitle"], news["stocks"], x_media.COLORS["gold"], get_history, date_text
+            )
+        if weekly.get("points"):
+            images["weekly"] = x_media.render_points_card(
+                x_media.image_path(today, "weekly"), weekly["title"], weekly["subtitle"], weekly["points"], date_text, "※適時開示のタイトルから集計"
+            )
+    except Exception as e:
+        print("画像の作成に失敗 (優待・配当ニュース):", e)
     urls = x_media.publish_images(list(images.values()), today)
 
     extra = []
-    for kind, post in (("news", x_post_news), ("buy", x_post_buy), ("kujira", kujira.get("post", "")), ("survey", x_post_survey)):
+    for kind, post in (
+        ("news", x_post_news), ("buy", x_post_buy), ("kujira", kujira.get("post", "")),
+        ("yutai_news", news.get("post", "")), ("weekly", weekly.get("post", "")), ("survey", x_post_survey),
+    ):
         if post:
             extra.append({"type": "text", "text": post})
             if images.get(kind) in urls:
@@ -1176,7 +1201,10 @@ def run(today, allow_x=True):
     mark_done("morning", today)
 
     # Xに自動投稿（オンのときだけ）。失敗やスキップがあったときだけLINEで知らせる
-    posts = [(x_post_news, images.get("news")), (x_post_buy, images.get("buy")), (kujira.get("post", ""), images.get("kujira")), (x_post_survey, None)]
+    posts = [
+        (x_post_news, images.get("news")), (x_post_buy, images.get("buy")), (kujira.get("post", ""), images.get("kujira")),
+        (news.get("post", ""), images.get("yutai_news")), (weekly.get("post", ""), images.get("weekly")), (x_post_survey, None),
+    ]
     if not allow_x:
         notice = x_skipped_notice(now_jst(), posts)
         if notice:
@@ -1832,6 +1860,15 @@ def evening_with_claude(client, today):
     return earnings_text, movers, earnings_post
 
 
+def load_held():
+    """自分が保有している銘柄（スプシの状況が「購入済」）。読めなければ空"""
+    try:
+        return {code for code, info in earnings_watch.load_watchlist().items() if info.get("status") == "購入済"}
+    except Exception as e:
+        print("保有銘柄（スプシ）を読めなかったので、「保有中」の表示は付けられません:", e)
+        return set()
+
+
 def run_evening(today, allow_x=True):
     if is_market_holiday(today):
         print(f"{today:%m/%d} は休場日のため振り返りなし")
@@ -1860,6 +1897,25 @@ def run_evening(today, allow_x=True):
     if earnings_text:
         sections.append(earnings_text)
 
+    # 優待・配当ニュース（今日出た会社発表）
+    news, news_image = {}, None
+    try:
+        try:
+            news_client = anthropic.Anthropic()
+        except Exception:
+            news_client = None
+        state = load_state()
+        news = news_posts.build(sys.modules[__name__], news_client, MODEL, fetch_tdnet([today]), today, state, "今日", load_held())
+        save_state(state)
+        if news.get("stocks"):
+            weekday_str = "月火水木金土日"[today.weekday()]
+            news_image = x_media.render_stock_card(
+                x_media.image_path(today, "yutai-news-evening"), news["title"], news["subtitle"], news["stocks"], x_media.COLORS["gold"], get_history,
+                f"{today:%Y.%m.%d}（{weekday_str}）",
+            )
+    except Exception as e:
+        print("優待・配当ニュースの作成に失敗:", e)
+
     # 実績報告（週の最終営業日だけ）は、成績のグラフ画像を付ける
     rows = performance_rows(history, today) if is_week_end else []
     perf_post = x_performance_post(rows)
@@ -1869,13 +1925,13 @@ def run_evening(today, allow_x=True):
             perf_image = x_media.render_performance_chart(x_media.image_path(today, "performance"), rows, "買い場候補の成績", f"{today:%Y.%m.%d}")
         except Exception as e:
             print("成績グラフの作成に失敗:", e)
-    urls = x_media.publish_images([perf_image] if perf_image else [], today)
+    urls = x_media.publish_images([p for p in (perf_image, news_image) if p], today)
 
     messages = []
     if sections:
         messages.append({"type": "text", "text": "\n\n".join(sections)[:4900]})
     # X下書きは本文だけ（そのままコピペできるように）。順番は なぜ動いたか→明日の決算→実績報告（週末のみ）
-    for post, image in ((movers_post, None), (earnings_post, None), (perf_post, perf_image)):
+    for post, image in ((movers_post, None), (earnings_post, None), (news.get("post", ""), news_image), (perf_post, perf_image)):
         if post:
             messages.append({"type": "text", "text": post})
             if image in urls:
@@ -1890,7 +1946,7 @@ def run_evening(today, allow_x=True):
     mark_done("evening", today)
     print_cost()
 
-    posts = [(movers_post, None), (earnings_post, None), (perf_post, perf_image)]
+    posts = [(movers_post, None), (earnings_post, None), (news.get("post", ""), news_image), (perf_post, perf_image)]
     if not allow_x:
         notice = x_skipped_notice(now_jst(), posts)
         if notice:
