@@ -96,7 +96,7 @@ GitHub Actionsの定時実行は、数時間遅れることが多い（2026/11�
 | `assets/whale.png` | 画像右上のクジラのアイコン |
 | `.github/workflows/daily.yml` | 朝の実行（目標 JST 6:43。早めの予約を4回） |
 | `.github/workflows/evening.yml` | 夕方の実行（目標 JST 16:55・月〜金。早めの予約を4回） |
-| `.github/workflows/topics.yml` | 徹底解説のネタ候補（目標 JST 7:00・毎日。早めの予約を3回） |
+| `.github/workflows/topics.yml` | 徹底解説のネタ候補（目標 JST 7:00・毎日。早めの予約を4回） |
 | `.github/workflows/check.yml` | プルリクエストを出したときの動作確認（キーを使わないテストだけ） |
 | `requirements.txt` | ライブラリのバージョン固定 |
 | `scripts/` | 準備（フォント・ライブラリ）、記録の保存、失敗の通知 |
