@@ -290,8 +290,10 @@ class NoteTopicsTest(unittest.TestCase):
         topics = [{"title": f"ネタ{i}", "summary": "サマリ", "related": ""} for i in range(5)]
         text = note_topics.format_message(datetime.date(2026, 11, 16), datetime.date(2026, 11, 15), topics, True)
         self.assertIn("11/15の時事ネタ", text)
-        self.assertIn("5. ネタ4", text)
+        self.assertIn("⑤ ネタ4", text)
         self.assertIn("note：トピック", text)
+        long = [{"title": "長い" * 20, "summary": "あ" * 400, "related": "", "outline": ["構成" * 30] * 3} for _ in range(7)]
+        self.assertLessEqual(len(note_topics.format_message(datetime.date(2026, 11, 16), datetime.date(2026, 11, 15), long, True)), 4900)
 
 
 class BudgetTest(unittest.TestCase):
