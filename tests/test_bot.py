@@ -67,6 +67,15 @@ class ScheduleGateTest(unittest.TestCase):
         self.assertEqual((day, allow_x), (datetime.date(2026, 11, 13), False))
         self.assertFalse(app.is_market_holiday(day))
 
+    def test_latest_done_falls_back_to_local(self):
+        # git が使えないところでは、手元の記録を使う（落ちない）
+        old = app.subprocess.run
+        app.subprocess.run = lambda *a, **k: (_ for _ in ()).throw(OSError("no git"))
+        try:
+            self.assertEqual(app.latest_done("morning"), app.load_state()["done"].get("morning", ""))
+        finally:
+            app.subprocess.run = old
+
     def test_evening_early_waits(self):
         (day, allow_x), waited = self.gate("evening", at(16, 14, 55))
         self.assertEqual((day, allow_x, waited), (datetime.date(2026, 11, 16), True, [2 * 60 * 60]))
@@ -328,11 +337,20 @@ class BudgetTest(unittest.TestCase):
             def __init__(self):
                 self.messages = self
 
-            def create(self, **kw):
+            def stream(self, **kw):
                 calls.append((kw["model"], kw["max_tokens"], kw.get("output_config", {}).get("effort")))
                 if kw["model"] == ai.PRIMARY_MODEL:
                     raise ai.anthropic.APIConnectionError(request=None)
-                return N(model=kw["model"], usage=N(input_tokens=1000, output_tokens=100), content=[N(type="text", text="ok")])
+                message = N(model=kw["model"], usage=N(input_tokens=1000, output_tokens=100), content=[N(type="text", text="ok")])
+
+                class Stream:
+                    def __enter__(self):
+                        return N(get_final_message=lambda: message)
+
+                    def __exit__(self, *a):
+                        return False
+
+                return Stream()
 
         day = datetime.date(2026, 11, 20)
         client = ai.Client("morning", day, raw=Raw())

@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import subprocess
 import sys
 import time
 import traceback
@@ -208,6 +209,19 @@ def mark_done(mode, day):
     state = load_state()
     state["done"][mode] = day.isoformat()
     save_state(state)
+
+
+def latest_done(mode):
+    """GitHub上の最新の記録（state.json、ネタ候補は topics_state.json）から、配信済みの日付を読む。読めなければ手元の記録"""
+    path = note_topics.STATE_FILE if mode == "topics" else STATE_FILE
+    try:
+        subprocess.run(["git", "fetch", "-q", "origin", "main"], check=True, timeout=60)
+        text = subprocess.run(["git", "show", f"origin/main:{path}"], check=True, capture_output=True, text=True, timeout=30).stdout
+        data = json.loads(text)
+        return data.get("done", "") if mode == "topics" else data.get("done", {}).get(mode, "")
+    except Exception as e:
+        print("最新の配信記録を確かめられませんでした（手元の記録で続けます）:", e)
+        return note_topics.load_state()["done"] if mode == "topics" else load_state()["done"].get(mode, "")
 
 
 def target_day(mode, now):
@@ -2024,6 +2038,9 @@ def main():
             day, _ = schedule_gate(mode, now_jst(), scheduled, note_topics.load_state()["done"])
             if day is None:
                 return
+            if scheduled and latest_done(mode) == day.isoformat():
+                print(f"{day:%m/%d} のネタ候補は、待っているあいだに別の回が送信済みでした。この回は何もしません")
+                return
             note_topics.run(sys.modules[__name__], day)
             if scheduled:
                 state = note_topics.load_state()
@@ -2032,6 +2049,10 @@ def main():
             return
         day, allow_x = schedule_gate(mode, now_jst(), scheduled, load_state()["done"].get(mode, ""))
         if day is None:
+            return
+        # 待っているあいだに別の回が配信していたら、何もしない（念のため、最新の記録を取り直して確かめる）
+        if scheduled and latest_done(mode) == day.isoformat():
+            print(f"{day:%m/%d} の分は、待っているあいだに別の回が配信済みでした。この回は何もしません")
             return
         run_evening(day, allow_x) if mode == "evening" else run(day, allow_x)
         if scheduled:

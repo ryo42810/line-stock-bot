@@ -25,6 +25,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          # 定時実行は、予約した時点のコミットを取ってくる（前の回が保存した「配信済み」の記録が入っていない）。
+          # 同じ日に2回配信しないように、いまの最新の main を取ってくる
+          ref: ${{ github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v7
