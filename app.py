@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup
 import ai
 import earnings_calendar
 import earnings_watch
+import week_ahead
 import kujira_posts
 import news_posts
 import note_topics
@@ -2042,6 +2043,11 @@ def main():
                 print(f"{day:%m/%d} のネタ候補は、待っているあいだに別の回が送信済みでした。この回は何もしません")
                 return
             note_topics.run(sys.modules[__name__], day)
+            if day.weekday() == 6:  # 日曜は「来週の予定」も送る（AIは使わない）
+                try:
+                    week_ahead.run(sys.modules[__name__], day)
+                except Exception as e:
+                    print("来週の予定は作れませんでした:", e)
             if scheduled:
                 state = note_topics.load_state()
                 state["done"] = day.isoformat()

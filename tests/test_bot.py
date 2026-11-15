@@ -372,3 +372,15 @@ class PostFormatTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_week_ahead_schedule():
+    import week_ahead
+    sunday = datetime.date(2026, 11, 22)
+    days = week_ahead.next_week(sunday)
+    assert days[0] == datetime.date(2026, 11, 23) and days[-1] == datetime.date(2026, 11, 27)
+    lines = week_ahead.schedule_lines(app, days)
+    assert lines[0].startswith("・11/23（月） 休場")
+    assert any("11月末権利の権利付き最終日" in l for l in lines)
+    sq = week_ahead.schedule_lines(app, week_ahead.next_week(datetime.date(2026, 12, 6)))
+    assert any("メジャーSQ" in l for l in sq)
