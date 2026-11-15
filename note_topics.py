@@ -170,20 +170,40 @@ def fallback_topics(news, limit=MAX_TOPICS):
     ]
 
 
+NUMS = "①②③④⑤⑥⑦⑧⑨⑩"
+RULE = "━━━━━━━━━━━━"
+
+
+def num(i):
+    return NUMS[i - 1] if i <= len(NUMS) else f"{i}."
+
+
+def sentences(text):
+    """要約を「。」ごとに1行にする"""
+    parts = [p.strip() for p in str(text).replace("。", "。\n").split("\n")]
+    return [p for p in parts if p]
+
+
 def format_message(today, yesterday, topics, used_web):
-    lines = [f"📝【{today:%m/%d}】徹底解説のネタ候補（{yesterday:%m/%d}の時事ネタ）", ""]
+    """LINEで読みやすいよう、目次 → 1候補ずつ区切り線で分けて出す"""
+    lines = [f"📝 徹底解説のネタ候補（{today.month}/{today.day}）", f"{yesterday.month}/{yesterday.day}の時事ネタから{len(topics)}本", "", "【目次】"]
+    lines += [f"{num(i)} {t['title']}" for i, t in enumerate(topics, 1)]
     for i, t in enumerate(topics, 1):
-        lines.append(f"{i}. {t['title']}")
-        lines.append(t["summary"])
-        if t.get("related"):
-            lines.append(f"関連：{t['related']}")
+        lines += ["", RULE, f"{num(i)} {t['title']}", RULE, ""]
+        lines += sentences(t["summary"])
+        related = [r.strip() for r in str(t.get("related", "")).split("、") if r.strip()]
+        if related:
+            lines += ["", "🔗 関連：" + "／".join(related)]
         if t.get("outline"):
-            lines.append("構成案：" + " → ".join(t["outline"]))
-        lines.append("")
+            lines += ["", "🧭 構成案", *[f"{k}. {o}" for k, o in enumerate(t["outline"], 1)]]
+    lines += ["", RULE]
     if not used_web:
         lines.append("※今朝はWeb検索が使えなかったので、適時開示だけから選んでいます")
-    lines.append("書くときは、Claudeで「note：トピック」と送ってください")
-    return "\n".join(lines).strip()[:4900]
+    lines.append("✍️ 書くときは、Claudeで「note：トピック」と送ってください")
+    text = "\n".join(lines).strip()
+    if len(text) > 4900:  # LINEの上限（5000字）を超えるときは、構成案を省いて作り直す
+        return format_message(today, yesterday, [{**t, "outline": []} for t in topics], used_web)[:4900]
+    return text
 
 
 def run(tools, today):
