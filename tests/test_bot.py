@@ -337,11 +337,20 @@ class BudgetTest(unittest.TestCase):
             def __init__(self):
                 self.messages = self
 
-            def create(self, **kw):
+            def stream(self, **kw):
                 calls.append((kw["model"], kw["max_tokens"], kw.get("output_config", {}).get("effort")))
                 if kw["model"] == ai.PRIMARY_MODEL:
                     raise ai.anthropic.APIConnectionError(request=None)
-                return N(model=kw["model"], usage=N(input_tokens=1000, output_tokens=100), content=[N(type="text", text="ok")])
+                message = N(model=kw["model"], usage=N(input_tokens=1000, output_tokens=100), content=[N(type="text", text="ok")])
+
+                class Stream:
+                    def __enter__(self):
+                        return N(get_final_message=lambda: message)
+
+                    def __exit__(self, *a):
+                        return False
+
+                return Stream()
 
         day = datetime.date(2026, 11, 20)
         client = ai.Client("morning", day, raw=Raw())

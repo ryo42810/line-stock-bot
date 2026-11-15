@@ -109,7 +109,10 @@ class Client:
         model = self.model
         for attempt in range(2):
             try:
-                response = self.raw.messages.create(**self._params(model, kwargs, effort))
+                # 出力の上限が大きいと、ふつうの呼び方は「10分を超えるかもしれないのでストリーミングで」と断られる。
+                # いつもストリーミングで呼び、最後にまとめて受け取る
+                with self.raw.messages.stream(**self._params(model, kwargs, effort)) as stream:
+                    response = stream.get_final_message()
                 break
             except (anthropic.BadRequestError, anthropic.NotFoundError, anthropic.PermissionDeniedError,
                     anthropic.InternalServerError, anthropic.RateLimitError, anthropic.APIConnectionError) as e:
