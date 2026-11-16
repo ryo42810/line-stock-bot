@@ -23,6 +23,7 @@ import week_ahead
 import kujira_posts
 import news_posts
 import note_topics
+import notion_log
 import x_media
 
 # yfinanceは、ETFなど決算データが無い銘柄で「HTTP Error 404」を表示するので、ログに出さない
@@ -1031,6 +1032,7 @@ def push_line(messages):
         if res.status_code != 200:
             print("レスポンス:", res.text)
             raise RuntimeError(f"LINE送信失敗: {res.status_code}")
+    notion_log.log_messages(messages)  # 送った内容をNotionにも転記（失敗してもbotは止めない）
 
 
 def send_line_flex_message(stocks, market_bubble, today, market_closed, extra_messages=()):
@@ -2032,6 +2034,7 @@ def run_evening(today, allow_x=True):
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in ("evening", "topics") else "morning"
+    notion_log.set_kind({"evening": "夕方の配信", "topics": "ネタ候補"}.get(mode, "朝の配信"))
     try:
         scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
         if mode == "topics":
@@ -2044,6 +2047,7 @@ def main():
                 return
             note_topics.run(sys.modules[__name__], day)
             if day.weekday() == 6:  # 日曜は「来週の予定」も送る（AIは使わない）
+                notion_log.set_kind("来週の予定")
                 try:
                     week_ahead.run(sys.modules[__name__], day)
                 except Exception as e:
