@@ -92,10 +92,16 @@ GitHub Actionsの定時実行は、数時間遅れることが多い（2026/11�
 - 夕方の回が日付をまたいで起動したら、前の日の分として動く（以前は翌日の扱いになり、金曜の振り返りが「休場日」として消えていた）
 - 手動実行（Run workflow）は、待たずにすぐ動く。Xにも投稿する
 
+### Notionへの転記（`notion_log.py`）
+- LINEに送った内容を、Notionの「LINE株botログ」DBにも1通＝1行で転記する（種類：朝の配信／夕方の配信／ネタ候補／来週の予定／通知）
+- カードは中の文字を、画像は直前の行に付ける。DBは `NOTION_PAGE_ID` のページの中に初回に自動で作る
+- `NOTION_TOKEN` と `NOTION_PAGE_ID` が無いときは何もしない。転記に失敗してもLINEの送信やbotは止めない
+
 ## ファイル
 | ファイル | 役割 |
 |---|---|
 | `app.py` | 本体。銘柄選定・買い場候補・LINE送信・夕方の振り返り |
+| `notion_log.py` | LINEに送った内容をNotionにも転記する |
 | `x_media.py` | X用の画像づくり（matplotlib）とXへの投稿 |
 | `kujira_posts.py` | くじら枠（優待・高配当の投稿。月〜木の朝に1本） |
 | `news_posts.py` | 株ニュース（朝と夕方に1本ずつ）と、土曜の朝の週まとめ |
@@ -127,6 +133,8 @@ GitHub Actionsの定時実行は、数時間遅れることが多い（2026/11�
 | `ANTHROPIC_API_KEY` | Claude API（Haiku 4.5） |
 | `X_API_KEY` / `X_API_SECRET` | X のコンシューマーキー（OAuth 1.0a） |
 | `X_ACCESS_TOKEN` / `X_ACCESS_TOKEN_SECRET` | X のアクセストークン（Read and write で発行したもの） |
+| `NOTION_TOKEN` | Notionの連携（インテグレーション）のトークン（任意） |
+| `NOTION_PAGE_ID` | 転記先のNotionページのURLかID。連携をこのページに接続しておく（任意） |
 
 ### Variables（同じ画面の Variables タブ）
 | 名前 | 用途 |

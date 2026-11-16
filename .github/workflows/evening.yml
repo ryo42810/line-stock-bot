@@ -43,6 +43,8 @@ jobs:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
           USER_ID: ${{ secrets.USER_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID }}
           # Xの自動投稿（Variables の X_AUTO_POST=on と、4つのキーが揃ったときだけ投稿）
           X_AUTO_POST: ${{ vars.X_AUTO_POST }}
           X_API_KEY: ${{ secrets.X_API_KEY }}

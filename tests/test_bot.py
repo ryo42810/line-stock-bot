@@ -386,3 +386,55 @@ def test_week_ahead_schedule():
     assert any("11月末権利の権利付き最終日" in l for l in lines)
     sq = week_ahead.schedule_lines(app, week_ahead.next_week(datetime.date(2026, 12, 6)))
     assert any("メジャーSQ" in l for l in sq)
+
+
+class NotionLogTest(unittest.TestCase):
+    def test_page_id_from_url(self):
+        import notion_log
+        url = "https://www.notion.so/LINE-bot-0123456789abcdef0123456789abcdef?pvs=4"
+        self.assertEqual(notion_log.page_id_from(url), "0123456789abcdef0123456789abcdef")
+        self.assertEqual(notion_log.page_id_from("01234567-89ab-cdef-0123-456789abcdef"), "0123456789abcdef0123456789abcdef")
+        self.assertEqual(notion_log.page_id_from(""), "")
+
+    def test_to_entries(self):
+        import notion_log
+        flex = {
+            "type": "flex",
+            "altText": "【11/16(月)】今日の注目株 1銘柄",
+            "contents": {"type": "carousel", "contents": [
+                {"type": "bubble", "body": {"type": "box", "layout": "vertical", "contents": [
+                    {"type": "text", "text": "楽天 (4755)"},
+                    {"type": "box", "layout": "vertical", "contents": [{"type": "text", "text": "利回り: 1.0%"}]},
+                ]}},
+            ]},
+        }
+        messages = [
+            flex,
+            {"type": "text", "text": "X下書き1行目\n本文"},
+            {"type": "image", "originalContentUrl": "https://example.com/a.png", "previewImageUrl": "https://example.com/a.png"},
+            {"type": "text", "text": "⚠️ エラーが起きました"},
+        ]
+        entries = notion_log.to_entries(messages, "朝の配信")
+        self.assertEqual(len(entries), 3)
+        self.assertEqual(entries[0]["title"], "【11/16(月)】今日の注目株 1銘柄")
+        self.assertIn("楽天 (4755)", entries[0]["text"])
+        self.assertIn("利回り: 1.0%", entries[0]["text"])
+        self.assertEqual(entries[1]["images"], ["https://example.com/a.png"])
+        self.assertEqual(entries[2]["kind"], "通知")
+
+    def test_body_blocks_split_long_text(self):
+        import notion_log
+        entry = {"text": "あ" * 4500 + "\n\n二段落目", "images": ["https://example.com/a.png"]}
+        blocks = notion_log.body_blocks(entry)
+        self.assertEqual([b["type"] for b in blocks], ["paragraph"] * 4 + ["image"])
+        self.assertTrue(all(len(b["paragraph"]["rich_text"][0]["text"]["content"]) <= 2000 for b in blocks[:4]))
+
+    def test_no_keys_does_nothing(self):
+        import notion_log
+        old = {k: os.environ.pop(k, None) for k in ("NOTION_TOKEN", "NOTION_PAGE_ID")}
+        try:
+            notion_log.log_messages([{"type": "text", "text": "test"}])  # 通信せずに終わる
+        finally:
+            for k, v in old.items():
+                if v is not None:
+                    os.environ[k] = v
