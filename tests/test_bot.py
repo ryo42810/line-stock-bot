@@ -124,6 +124,20 @@ class RankingParseTest(unittest.TestCase):
         self.assertEqual(kujira_posts.everyday_compare(300, day), "")
         self.assertIn("じゃ、見ていこう🐳", kujira_posts.ONE_STOCK_STYLE)
 
+    def test_post_entry_and_go(self):
+        # 合図はどこでも同じ言い回し。投稿の種類ごとに入り方を指定している
+        self.assertEqual(app.X_GO, kujira_posts.X_GO)
+        self.assertEqual(app.X_GO, news_posts.X_GO)
+        self.assertIn(app.X_GO, app.X_POST_STYLE)
+        for kind in ("matome", "kaisetsu", "news", "movers", "earnings", "buy"):
+            self.assertIn(kind, app.X_ENTRY)
+        self.assertNotIn("↓↓", app.X_EXAMPLE_NEWS + app.X_EXAMPLE_BUY)
+        # 1行目に銘柄名が入っていても、問いかけなら補わない／銘柄名だけなら補う
+        self.assertEqual(app.ensure_x_format("今日+15%の〇〇(1234)、なんで上がった？🚀\n本文", "H"), "今日+15%の〇〇(1234)、なんで上がった？🚀\n本文")
+        self.assertTrue(app.ensure_x_format("①カネコ種苗(1376)\n本文", "H").startswith("H\n"))
+        lines = kujira_posts.build_kaisetsu(datetime.date(2026, 11, 18))["fallback"].splitlines()
+        self.assertEqual(lines[1], app.X_GO)
+
     def test_kaisetsu_has_no_stock_codes(self):
         for topic in kujira_posts.KAISETSU_TOPICS:
             self.assertFalse(x_media.codes_in_post(" ".join(topic["facts"])))

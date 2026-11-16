@@ -29,6 +29,7 @@ HAITO_YIELD_RANGE = (3.5, 5.5)  # 高すぎる利回りは減配や株価急落�
 HAITO_MIN_MARKET_CAP = 100_000_000_000  # 時価総額1,000億円以上
 HAITO_PAYOUT_RANGE = (0.1, 0.7)  # 配当性向10〜70%（無理のない配当かの目安）
 HAITO_MAX_TRIES = 12
+X_GO = "じゃ、見ていこう🐳"  # 合図（app.X_GO と同じ。AIが使えない日の決まった型の文章でも使う）
 
 # 「今日の1銘柄」（優待・高配当）の書き方。サトウ/投資家さんの流れを標準語にした型（2026/11/16に決定）
 ONE_STOCK_STYLE = """### 「今日の1銘柄」の書き方（共通の書き方より優先する）
@@ -296,7 +297,7 @@ def build_matome(tools, client, today, exclude):
     last = tools.kenri_last_day(year, month)
     facts = f"テーマ: {month}月に権利確定の人気優待（優待ページの閲覧数ランキングの上位）\n月末権利の権利付き最終日: {last:%m/%d}\n\n"
     facts += "\n\n".join(yutai_facts(tools, p, year, month, today) for p in picks)
-    blocks = [f"{month}月権利の人気優待、まとめた🎁↓↓"]
+    blocks = [f"{month}月権利の人気優待、この{len(picks)}つならどれを取る？🎁\n{X_GO}"]
     for i, p in enumerate(picks):
         block = [f"{'①②③'[i]}{p['name']}({p['code']})", p["yutai"][:40]]
         if p.get("min_yen"):
@@ -455,7 +456,7 @@ def build_one_haito(tools, client, today, exclude):
 def build_kaisetsu(today):
     topic = KAISETSU_TOPICS[(today.toordinal() // 7) % len(KAISETSU_TOPICS)]
     facts = f"テーマ: {topic['title']}\n" + "\n".join(f"- {f}" for f in topic["facts"])
-    lines = [f"{topic['title']}、3行でまとめた📝↓↓", ""] + [f"・{f}" for f in topic["facts"][:3]]
+    lines = [f"{topic['title']}、知ってた？📝", X_GO, ""] + [f"・{f}" for f in topic["facts"][:3]]
     return {
         "kind": "kaisetsu", "stocks": [], "facts": facts, "fallback": "\n".join(lines),
         "points": topic["facts"], "title": topic["title"], "subtitle": "配当・優待の見方",
@@ -488,8 +489,8 @@ def write_post(tools, client, model, item, today):
     """材料（facts）をもとに、アカウントの口調で投稿文を書く。失敗したら決まった型の文章を返す"""
     if client is None:
         return item["fallback"]
-    # 「今日の1銘柄」は書き出しの型が決まっているので、日替わりのフックは使わない
-    hook = "" if item.get("style") else f"- 1行目のフックの型: {tools.X_HOOK_TYPES[(today.toordinal() + 2) % len(tools.X_HOOK_TYPES)]}"
+    # 「今日の1銘柄」は書き出しの型が決まっているので、入り方の指定は使わない
+    hook = "" if item.get("style") else f"- この投稿の入り方: {tools.X_ENTRY[item['kind']]}"
     prompt = f"""株主優待・高配当を発信しているXアカウントの投稿を1本書きます。
 下の「材料」に書いてある事実と数字だけを使ってください。材料に無い数字・ニュース・評価は書かないでください。
 
