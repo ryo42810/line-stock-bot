@@ -111,6 +111,19 @@ class RankingParseTest(unittest.TestCase):
         self.assertTrue(kujira_posts.numbers_ok("利回り4.81%💰\n1株配当は155円", facts))
         self.assertFalse(kujira_posts.numbers_ok("利回り6.2%で過去最高", facts))
 
+    def test_everyday_compare(self):
+        import datetime
+        day = datetime.date(2026, 11, 19)
+        line = kujira_posts.everyday_compare(15500, day)
+        self.assertTrue(line.startswith("身近なものに置きかえると: "))
+        self.assertRegex(line, r"約\d+(回分|杯分)$")
+        # 置きかえの数字は材料に入るので、AIの文章にそのまま使える
+        times = line.rsplit("約", 1)[1].rstrip("回分杯")
+        self.assertTrue(kujira_posts.numbers_ok(f"年間の配当で約{times}回分", line))
+        self.assertEqual(kujira_posts.everyday_compare(0, day), "")
+        self.assertEqual(kujira_posts.everyday_compare(300, day), "")
+        self.assertIn("じゃ、見ていこう🐳", kujira_posts.ONE_STOCK_STYLE)
+
     def test_kaisetsu_has_no_stock_codes(self):
         for topic in kujira_posts.KAISETSU_TOPICS:
             self.assertFalse(x_media.codes_in_post(" ".join(topic["facts"])))
