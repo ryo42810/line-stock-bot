@@ -30,6 +30,39 @@ HAITO_MIN_MARKET_CAP = 100_000_000_000  # 時価総額1,000億円以上
 HAITO_PAYOUT_RANGE = (0.1, 0.7)  # 配当性向10〜70%（無理のない配当かの目安）
 HAITO_MAX_TRIES = 12
 
+# 「今日の1銘柄」（優待・高配当）の書き方。サトウ/投資家さんの流れを標準語にした型（2026/11/16に決定）
+ONE_STOCK_STYLE = """### 「今日の1銘柄」の書き方（共通の書き方より優先する）
+- 流れ：①意外な事実で始める → ②「今の株価なら100株で約〇〇万円」 → ③年間の配当を身近なものに置きかえる → ④「買い場」か「まだ早い」かの二択で問いかける → ⑤「じゃ、見ていこう🐳」 → ⑥中身（決まった順番）
+- ①は「〇〇なのに△△」のように、材料の中のちょっとしたズレや意外さを1行で書く（例:「利回り4%台なのに、配当性向は3割台の〇〇(XXXX)」）。材料に無い出来事は作らない
+- ②は「今の株価なら100株で約〇〇万円」の言い方で書く。「月〇万円ずつ貯めれば」のような積み立ての話は書かない
+- ③は材料の「身近なものに置きかえると」をそのまま使う（例:「年間の配当で、ちょっといいディナー2回分くらい」）。置きかえる物や回数は材料から変えない
+- ④⑤は続けて書く（例:「今が『買い場』か『まだ早い』か。じゃ、見ていこう🐳」）。合図は必ず「じゃ、見ていこう🐳」で、言い回しを変えない
+- 口調はくだけた話し言葉（「〜だけど」「〜かも」「どっちだろう？」）。関西弁は使わない。くじら・海のたとえは使わない
+- 「買い場」「まだ早い」は問いかけとしてだけ使い、どちらかに決めつけない
+- 長さは260字程度まで"""
+
+# 配当を置きかえる身近なもの（金額はざっくりの目安。日替わりで使い分ける）
+EVERYDAY_ITEMS = [
+    ("ランチ", 1_000, "1回", "回分"),
+    ("ちょっといいディナー", 5_000, "1回", "回分"),
+    ("カフェのラテ", 500, "1杯", "杯分"),
+    ("映画館の映画", 2_000, "1回", "回分"),
+    ("動画サブスク", 1_000, "月", "か月分"),
+    ("焼肉の食べ放題", 4_000, "1回", "回分"),
+]
+
+
+def everyday_compare(annual_yen, today):
+    """年間の配当（円）を身近なものに置きかえた1行（材料用）。1回分に満たないときは別の物を探す"""
+    if not annual_yen or annual_yen <= 0:
+        return ""
+    start = today.toordinal() % len(EVERYDAY_ITEMS)
+    for name, price, per, unit in EVERYDAY_ITEMS[start:] + EVERYDAY_ITEMS[:start]:
+        times = int(annual_yen // price)
+        if times >= 1:
+            return f"身近なものに置きかえると: {name}（{per}{price:,}円の目安）約{times}{unit}"
+    return ""
+
 # 金曜の夕方にLINEへ送る、実体験の投稿の型（自分で埋めて投稿する）
 DIARY_TEMPLATE = """📝 今週の記録（自分で書く投稿）
 自分の売買・配当の話はbotでは作れないので、下の型を埋めてXに投稿してください。自動投稿はしません。
@@ -297,10 +330,16 @@ def build_one_yutai(tools, client, today, exclude):
             cautions.append(f"株価は{gap}")
         p["headline"] = p["yutai"]
         facts = yutai_facts(tools, p, year, month, today)
+        if p.get("min_yen") and p.get("page_yield"):
+            annual = p["min_yen"] * p["page_yield"] / 100
+            facts += f"\n{p.get('min_shares', 100)}株の年間配当の目安（会社予想・税引き前）: 約{annual:,.0f}円"
+            compare = everyday_compare(annual, today)
+            facts += f"\n{compare}（配当だけで。優待は別）" if compare else ""
         facts += "\n気になる点: " + (" / ".join(cautions) if cautions else "優待は会社の判断で変更・廃止されることがある")
-        lines = [f"今日の1銘柄は{p['name']}({p['code']})🎁", "", f"優待：{p['yutai'][:50]}", f"権利確定：{month}月"]
+        lines = [f"今日の1銘柄は{p['name']}({p['code']})🎁", ""]
         if p.get("min_yen"):
-            lines.append(f"必要な金額：約{p['min_yen'] / 10000:.1f}万円（{p.get('min_shares', 100)}株）")
+            lines.append(f"今の株価なら{p.get('min_shares', 100)}株で約{p['min_yen'] / 10000:.1f}万円")
+        lines += ["じゃ、見ていこう🐳", "", f"優待：{p['yutai'][:50]}", f"権利確定：{month}月"]
         if cautions:
             lines += ["", f"気になる点は、{cautions[0]}⚠️"]
         total = p["yield_fmt"].split("＝")[-1].replace("配当", "").replace("%", "") if "%" in p.get("yield_fmt", "") else ""
@@ -322,7 +361,8 @@ def build_one_yutai(tools, client, today, exclude):
         return {
             "kind": "one_yutai", "stocks": [p], "facts": facts, "fallback": "\n".join(lines), "stats": stats, "table": table, "table_title": "優待を見るときのチェック表",
             "title": "今日の1銘柄", "subtitle": f"{month}月権利の株主優待",
-            "rule": "1銘柄だけを紹介する。優待の中身→必要な金額→権利確定の時期→気になる点、の順。気になる点は必ず1行入れる",
+            "rule": "1銘柄だけを紹介する。「今日の1銘柄」の書き方の⑥の中身は、優待の中身→権利確定の時期→気になる点、の順。気になる点は必ず1行入れる。②の「100株で」は、材料の最低株数が100株でなければその株数で書く。配当の置きかえが材料に無ければ③は省き、優待の中身で身近さを出す",
+            "style": ONE_STOCK_STYLE,
         }
     return {}
 
@@ -371,12 +411,15 @@ def build_one_haito(tools, client, today, exclude):
             f"配当性向: {payout * 100:.0f}%",
             f"過去5年の平均利回り: {avg5:.1f}%" if avg5 else "",
             f"PBR: {pbr:.2f}倍" if pbr else "",
-            f"100株の金額の目安: 約{p['price'] * 100 / 10000:.1f}万円",
+            f"今の株価なら100株で: 約{p['price'] * 100 / 10000:.1f}万円",
+            f"100株の年間配当（会社予想・税引き前）: {r['dividend'] * 100:,.0f}円",
+            everyday_compare(r["dividend"] * 100, today),
             f"優待: {p['yutai']}" if has_yutai(p) else "優待: なし",
             "気になる点: " + " / ".join(cautions),
         ]
         lines = [
             f"今日の1銘柄は{p['name']}({p['code']})💰", "",
+            f"今の株価なら100株で約{p['price'] * 100 / 10000:.1f}万円", "じゃ、見ていこう🐳", "",
             f"配当利回り{p['page_yield']:.2f}%（会社予想）", f"1株配当は{r['dividend']:g}円", f"配当性向{payout * 100:.0f}%",
             "", f"気になる点は、{cautions[0]}⚠️",
         ]
@@ -403,7 +446,8 @@ def build_one_haito(tools, client, today, exclude):
         return {
             "kind": "one_haito", "stocks": [p], "facts": "\n".join(l for l in facts_lines if l), "fallback": "\n".join(lines), "stats": stats, "table": table, "table_title": "配当を見るときのチェック表",
             "title": "今日の1銘柄", "subtitle": "高配当株",
-            "rule": "1銘柄だけを紹介する。配当利回り→1株配当→配当性向→気になる点、の順。気になる点は必ず1行入れる。優待があれば一言足す",
+            "rule": "1銘柄だけを紹介する。「今日の1銘柄」の書き方の⑥の中身は、配当利回り→1株配当→配当性向→気になる点、の順。気になる点は必ず1行入れる。優待があれば一言足す",
+            "style": ONE_STOCK_STYLE,
         }
     return {}
 
@@ -444,6 +488,8 @@ def write_post(tools, client, model, item, today):
     """材料（facts）をもとに、アカウントの口調で投稿文を書く。失敗したら決まった型の文章を返す"""
     if client is None:
         return item["fallback"]
+    # 「今日の1銘柄」は書き出しの型が決まっているので、日替わりのフックは使わない
+    hook = "" if item.get("style") else f"- 1行目のフックの型: {tools.X_HOOK_TYPES[(today.toordinal() + 2) % len(tools.X_HOOK_TYPES)]}"
     prompt = f"""株主優待・高配当を発信しているXアカウントの投稿を1本書きます。
 下の「材料」に書いてある事実と数字だけを使ってください。材料に無い数字・ニュース・評価は書かないでください。
 
@@ -455,7 +501,8 @@ def write_post(tools, client, model, item, today):
 
 ### この投稿だけの決まり
 - 上の「銘柄は3つ」の決まりより、「この投稿の型」を優先する
-- 1行目のフックの型: {tools.X_HOOK_TYPES[(today.toordinal() + 2) % len(tools.X_HOOK_TYPES)]}
+{hook}
+{item.get('style', '')}
 
 ## 材料
 {item['facts']}"""
