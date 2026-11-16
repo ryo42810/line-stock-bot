@@ -116,9 +116,9 @@ class RankingParseTest(unittest.TestCase):
         day = datetime.date(2026, 11, 19)
         line = kujira_posts.everyday_compare(15500, day)
         self.assertTrue(line.startswith("身近なものに置きかえると: "))
-        self.assertRegex(line, r"約\d+(回分|杯分|か月分)$")
+        self.assertRegex(line, r"約\d+(回分|杯分)$")
         # 置きかえの数字は材料に入るので、AIの文章にそのまま使える
-        times = line.rsplit("約", 1)[1].rstrip("回分杯か月")
+        times = line.rsplit("約", 1)[1].rstrip("回分杯")
         self.assertTrue(kujira_posts.numbers_ok(f"年間の配当で約{times}回分", line))
         self.assertEqual(kujira_posts.everyday_compare(0, day), "")
         self.assertEqual(kujira_posts.everyday_compare(300, day), "")
