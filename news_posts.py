@@ -19,6 +19,7 @@ import earnings_watch
 
 HASHTAGS = "#株主優待 #高配当株 #日本株 #株クラ #NISA"
 MAX_STOCKS = 3  # 1本の投稿で紹介する数
+X_GO = "じゃ、見ていこう🐳"  # 合図（app.X_GO と同じ）
 # 知られた会社かどうかの目安に使う、時価総額ランキング（上位300社）
 CAP_RANK_URL = "https://finance.yahoo.co.jp/stocks/ranking/marketCapitalHigh?market=all&page={page}"
 CAP_RANK_PAGES = 6
@@ -187,7 +188,7 @@ def numbers_ok(text, source):
 
 
 def fallback_post(picked, when, market_rows=()):
-    blocks = [f"{when}の株ニュース📰↓↓"]
+    blocks = [f"{when}の株ニュース、気になる発表はどれ？📰\n{X_GO}"]
     if market_line(market_rows):
         blocks.append(market_line(market_rows))
     for i, d in enumerate(picked):
@@ -220,15 +221,15 @@ def write_news(tools, client, model, picked, when, today, market_rows=()):
 - 資料から読み取れないときは「{picked[0]['kind']}を発表」のように、種類だけを書く
 
 ## 2. post（X投稿）
-- 1行目は「{when}の株ニュース」だとわかるフックにする
+- 1〜2行目で「{when}の株ニュース」だとわかるようにしつつ、入り方の型で書く（例:「増配なのに株価は下がった会社も。{when}の株ニュース📰」）
 - 「相場の動き」があれば、日経平均の動きを1行で入れる（数字は相場の動きに書いてあるとおりに）
 - 資料の会社を①②③で並べ、それぞれ何が変わったかを数字つきで書く
 - 「買い」「おすすめ」のような売買のすすめは書かない。株価がどう動くかの予想も書かない。減配・下方修正・優待廃止も、事実として淡々と書く
 
 {tools.X_POST_STYLE}
 
-### 今日のフックの型
-- {tools.X_HOOK_TYPES[(today.toordinal() + 5) % len(tools.X_HOOK_TYPES)]}
+### この投稿の入り方
+- {tools.X_ENTRY["news"]}
 
 ## 相場の動き
 {market or "（取得できず。相場の行は書かない）"}
@@ -351,7 +352,7 @@ def build_weekly(tools, tdnet_items, today, state):
         ("TOB・MBO／株式分割", group("TOB・MBO", "株式分割")),
     ]
     points = [f"{label}：{len(rows)}社（{names_text(rows)}）" for label, rows in merged if rows][:6]
-    lines = [f"今週（{span}）の株ニュース、まとめた📝↓↓", ""]
+    lines = [f"今週（{span}）の株ニュース、いちばん気になったのはどれ？📝", X_GO, ""]
     lines += [f"・{label} {len(rows)}社" for label, rows in groups]
     top = groups[0]
     lines += ["", f"{top[0]}は{names_text(top[1])}👀"]

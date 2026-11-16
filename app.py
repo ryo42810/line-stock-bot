@@ -63,15 +63,21 @@ CATEGORY_STYLE = {
 }
 # X投稿の書き方（朝の通常版・買い場候補版で共通）
 X_POST_STYLE = """## X投稿の書き方（共通）
-### フック（1行目）
+### 入り方（1〜3行目）
 - 1行目で指を止めさせる。地合いの説明から始めない
-- 指定された「今日のフックの型」を使う。中身と合わないフックにはしない（好材料と懸念材料が混ざるなら、混ざる前提のフックにする）
-- 1行目の最後に「↓↓」を付けて、続きを読ませてもよい
+- 指定された「この投稿の入り方」を使う。中身と合わない入り方にはしない（好材料と懸念材料が混ざるなら、混ざる前提で書く）
+- 入り方の問いかけのすぐあとに、合図「じゃ、見ていこう🐳」を1行で入れて、そこから中身に入る。合図の言い回しは変えない
+- 「↓↓」は使わない（合図で続きを読ませる）
+
+### 口調
+- くだけた話し言葉で、一緒に見ていく距離感にする（「〜だけど」「〜かも」「どっちだろう？」）
+- 関西弁は使わない。くじら・海のたとえも使わない（🐳は合図にだけ付ける）
+- 「買い場」「まだ早い」のような言葉は問いかけとしてだけ使い、決めつけない
 
 ### 中身
 - 銘柄は3つ（足りなければあるだけ）。①②③で番号を付け、銘柄名(コード)の次の行から説明を書く
 - 具体的な数字を必ず入れる（増益率、出来高○倍、前日比、優待の年間○円分など）
-- 口語でテンポよく。体言止めや「控えめに言って強い」「異次元の増益」のような強めのリアクションもOK（事実に対してだけ）
+- テンポよく。体言止めや「控えめに言って強い」「異次元の増益」のような強めのリアクションもOK（事実に対してだけ）
 - 「自社株買い」など略さずに伝わる言葉を使う。「アナリスト好評価」のようなあいまいな表現は避け、何が起きたかを書く
 
 ### 見た目
@@ -79,7 +85,7 @@ X_POST_STYLE = """## X投稿の書き方（共通）
 - 「。」で終わる文や、絵文字で終わる文のあとは必ず改行する（1行に1文）
 - 絵文字は多めに使う（1行に1つ程度）。必ず言葉の後に付け、行頭には置かない（例: 「好材料📈」「出来高急増🔥」）
 - ハッシュタグは書かない（プログラムで最後に付ける）。免責文も書かない
-- 長さは200字程度まで
+- 長さは220字程度まで
 
 ### 人が書いた文に見せる
 - 同じ言い回しを続けない（「注目です」「期待です」を何度も使わない）。3銘柄とも同じ文の形にしない
@@ -97,15 +103,16 @@ X_POST_STYLE = """## X投稿の書き方（共通）
 X_HASHTAGS_MORNING = "#朝活 #株クラ #日本株 #NISA #投資家さんと繋がりたい"
 X_HASHTAGS_EVENING = "#株クラ #日本株 #NISA #投資家さんと繋がりたい"
 
-# フックの型（日替わりで使い分けて、毎日同じ書き出しにならないようにする）
-X_HOOK_TYPES = [
-    "ぶっちゃけ型（例: 「ぶっちゃけ、今朝いちばん気になったのはこれ」）",
-    "タメ型（例: 1行目「はい。」2行目「これが今朝の激アツ決算です。」）",
-    "言い切り型（例: 「この3銘柄は見逃し厳禁」）※株価の断定はしない",
-    "リアクション型（例: 「控えめに言って、この増益は異次元」）",
-    "問いかけ型（例: 「この3つ、どれが一番伸びると思う？👀」）",
-    "親近感型（例: 「みんな大好き〇〇に好材料」）※実在の銘柄名で",
-]
+# 投稿の種類ごとの入り方（口調と合図はそろえつつ、入り方だけ作り分ける。2026/11/16に決定）
+X_GO = "じゃ、見ていこう🐳"
+X_ENTRY = {
+    "matome": "まとめ型：「この3つ、どれを取る？」のように、読む人に選ばせる問いから入る",
+    "kaisetsu": "解説型：「〜って知ってた？」のように、知識を問う問いから入る",
+    "news": "ニュース型：「〇〇なのに△△」のように、資料の中のちょっとしたズレや意外な事実から入る（資料に無い出来事は作らない）",
+    "movers": "値動き型：「なんで上がった？」「なんで下がった？」から入る",
+    "earnings": "決算予告型：「明日決算の3社、どこを見る？」のように、明日決算だとわかる問いから入る",
+    "buy": "買い場候補型：「〇〇なのに、株価はまだ動いていない」のように、意外な事実から入る",
+}
 
 # アンケート版（日曜の朝だけ）のテーマ。週ごとに順番に使う
 SURVEY_DAY = 6  # 日曜
@@ -125,7 +132,9 @@ X_EXAMPLE_SURVEY = """株主優待で「これは神！」って思った銘柄�
 実際にもらった人の声が聞きたい！"""
 
 # 買い場候補版のお手本（雰囲気・形の参考。内容はそのまま使わない）
-X_EXAMPLE_BUY = """ぶっちゃけ、上がる前に仕込みたいのはこの3つ👀↓↓
+X_EXAMPLE_BUY = """好材料が出たのに、株価はまだ静かな3銘柄👀
+上がる前なのか、それとも材料が弱いのか。
+じゃ、見ていこう🐳
 
 ①ハイデイ日高(7611)
 自社株買い＋増配のダブル発表✨
@@ -140,8 +149,9 @@ X_EXAMPLE_BUY = """ぶっちゃけ、上がる前に仕込みたいのはこの3
 値動きの前ぶれかも"""
 
 # ニュース版のお手本（雰囲気・形の参考。内容はそのまま使わない）
-X_EXAMPLE_NEWS = """はい。
-今朝の決算、明暗くっきりです📰↓↓
+X_EXAMPLE_NEWS = """増収なのに減益の会社と、売却益で大幅増益の会社📰
+今朝の決算、明暗くっきりだけど中身はどうだろう？
+じゃ、見ていこう🐳
 
 ①カネコ種苗(1376)
 最終利益77.5%増で控えめに言って強い💪
@@ -1452,9 +1462,9 @@ def write_x_posts(client, picks, buy_list, disclosures, topic_text, today):
 
 {X_POST_STYLE}
 
-### 今日のフックの型
-- 買い場候補版: {X_HOOK_TYPES[today.toordinal() % len(X_HOOK_TYPES)]}
-- ニュース版: {X_HOOK_TYPES[(today.toordinal() + 3) % len(X_HOOK_TYPES)]}
+### この投稿の入り方
+- 買い場候補版: {X_ENTRY["buy"]}
+- ニュース版: {X_ENTRY["news"]}
 
 ### 買い場候補版のお手本（形・雰囲気の参考。内容は使わない）
 {X_EXAMPLE_BUY}
@@ -1669,7 +1679,7 @@ def x_performance_post(rows):
     ups = sum(1 for r in rows if r["change"] > 0)
     best = max(rows, key=lambda r: r["change"])
     lines = [
-        "買い場候補の1週間後の成績、公開します📊↓↓",
+        "買い場候補の1週間後の成績、どうだった？📊", X_GO,
         "",
         f"平均{avg:+.1f}%{'📈' if avg >= 0 else '📉'}",
         f"上がったのは{len(rows)}銘柄中{ups}銘柄{'✨' if ups * 2 >= len(rows) else '💦'}",
@@ -1740,7 +1750,7 @@ def ensure_x_format(post, default_hook):
     if not post:
         return ""
     lines = post.strip().splitlines()
-    if re.search(r"\(\d{3}[0-9A-Z]\)", lines[0]):  # 1行目からいきなり銘柄が始まっている
+    if re.fullmatch(r"[①-⑩]?\s*\S+\(\d{3}[0-9A-Z]\)\S{0,3}", lines[0].strip()):  # 1行目がいきなり銘柄名だけ
         lines = [default_hook, ""] + lines
     return "\n".join(lines)
 
@@ -1884,7 +1894,7 @@ def evening_with_claude(client, today):
 - 理由は、その銘柄に紐づいた適時開示・今朝の注目理由・Web検索で確かめた理由に書いてあることだけを使う。Web検索の理由を優先する
 - 「今日+15%🚀」のように騰落率を入れ、次の行に理由
 - 「業績データ」がある銘柄は、「営業利益+30%」のように具体的な数字で理由を書く。ただし業績データの四半期が今回の決算と違いそうなら使わない
-- 1行目は必ずフック（例: 「今日爆上げした銘柄、理由はこれ🚀↓↓」）。銘柄名から書き始めない
+- 1行目は必ず入り方の問いかけ（例: 「今日+15%の〇〇、なんで上がった？🚀」）。銘柄名だけで書き始めない
 - 理由がわかる銘柄が1つもなければ空文字
 
 ## 2. earnings（明日の決算予告・LINE用）
@@ -1900,9 +1910,9 @@ def evening_with_claude(client, today):
 
 {X_POST_STYLE}
 
-### 今日のフックの型
-- movers_post: {X_HOOK_TYPES[(today.toordinal() + 1) % len(X_HOOK_TYPES)]}
-- earnings_post: {X_HOOK_TYPES[(today.toordinal() + 4) % len(X_HOOK_TYPES)]}
+### この投稿の入り方
+- movers_post: {X_ENTRY["movers"]}
+- earnings_post: {X_ENTRY["earnings"]}
 
 ### お手本（形・雰囲気の参考。内容は使わない）
 {X_EXAMPLE_NEWS}
@@ -1929,8 +1939,8 @@ def evening_with_claude(client, today):
         lines = [f"📊 明日（{tomorrow:%m/%d}）決算の注目銘柄"]
         lines += [f"・{e['name']}({e['code']}) {e['note']}" for e in data["earnings"]]
         earnings_text = "\n".join(lines)
-    movers = add_hashtags(format_x_post(ensure_x_format(data["movers_post"], "今日大きく動いた銘柄、理由はこれ🚀↓↓")), X_HASHTAGS_EVENING) if data["movers_post"] else ""
-    earnings_post = add_hashtags(format_x_post(ensure_x_format(data["earnings_post"], "明日決算の注目銘柄📊↓↓")), X_HASHTAGS_EVENING) if data["earnings_post"] else ""
+    movers = add_hashtags(format_x_post(ensure_x_format(data["movers_post"], "今日大きく動いた銘柄、なんで動いた？🚀\n" + X_GO)), X_HASHTAGS_EVENING) if data["movers_post"] else ""
+    earnings_post = add_hashtags(format_x_post(ensure_x_format(data["earnings_post"], "明日決算の3社、どこを見る？📊\n" + X_GO)), X_HASHTAGS_EVENING) if data["earnings_post"] else ""
     return earnings_text, movers, earnings_post
 
 
