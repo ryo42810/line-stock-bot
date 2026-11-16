@@ -410,24 +410,36 @@ class NotionLogTest(unittest.TestCase):
         }
         messages = [
             flex,
-            {"type": "text", "text": "X下書き1行目\n本文"},
+            {"type": "text", "text": "ぶっちゃけ優待が強い👀\n\n①楽天\n\n#株クラ #NISA"},
             {"type": "image", "originalContentUrl": "https://example.com/a.png", "previewImageUrl": "https://example.com/a.png"},
+            {"type": "text", "text": "📝 ネタ候補\n・NVIDIAの決算\n・円安"},
             {"type": "text", "text": "⚠️ エラーが起きました"},
         ]
         entries = notion_log.to_entries(messages, "朝の配信")
-        self.assertEqual(len(entries), 3)
+        self.assertEqual(len(entries), 4)
         self.assertEqual(entries[0]["title"], "【11/16(月)】今日の注目株 1銘柄")
-        self.assertIn("楽天 (4755)", entries[0]["text"])
-        self.assertIn("利回り: 1.0%", entries[0]["text"])
+        self.assertEqual(entries[0]["lines"], ["楽天 (4755)", "利回り: 1.0%"])
+        self.assertTrue(entries[1]["x_draft"])
         self.assertEqual(entries[1]["images"], ["https://example.com/a.png"])
-        self.assertEqual(entries[2]["kind"], "通知")
+        self.assertEqual(entries[3]["kind"], "通知")
 
-    def test_body_blocks_split_long_text(self):
+        now = datetime.datetime(2026, 11, 17, 6, 45, tzinfo=JST)
+        card = notion_log.toggle_block(entries[0], now)
+        self.assertEqual(card["toggle"]["rich_text"][0]["text"]["content"], "06:45 朝｜【11/16(月)】今日の注目株 1銘柄")
+        self.assertEqual([b["type"] for b in card["toggle"]["children"]], ["bulleted_list_item"] * 2)
+        x = notion_log.toggle_block(entries[1], now)
+        self.assertTrue(x["toggle"]["rich_text"][0]["text"]["content"].startswith("06:45 朝｜X下書き："))
+        self.assertEqual([b["type"] for b in x["toggle"]["children"]], ["paragraph", "image"])
+        topics = notion_log.toggle_children(entries[2])
+        self.assertEqual([b["bulleted_list_item"]["rich_text"][0]["text"]["content"] for b in topics], ["NVIDIAの決算", "円安"])
+        self.assertEqual(notion_log.day_title(now.date()), "11/17(火)の配信")
+
+    def test_long_line_is_split(self):
         import notion_log
-        entry = {"text": "あ" * 4500 + "\n\n二段落目", "images": ["https://example.com/a.png"]}
-        blocks = notion_log.body_blocks(entry)
-        self.assertEqual([b["type"] for b in blocks], ["paragraph"] * 4 + ["image"])
-        self.assertTrue(all(len(b["paragraph"]["rich_text"][0]["text"]["content"]) <= 2000 for b in blocks[:4]))
+        entry = {"title": "t", "kind": "朝の配信", "lines": ["あ" * 4500], "x_draft": False, "images": []}
+        blocks = notion_log.toggle_children(entry)
+        self.assertEqual(len(blocks), 3)
+        self.assertTrue(all(len(b["bulleted_list_item"]["rich_text"][0]["text"]["content"]) <= 2000 for b in blocks))
 
     def test_no_keys_does_nothing(self):
         import notion_log
