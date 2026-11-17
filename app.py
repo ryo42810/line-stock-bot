@@ -2043,10 +2043,16 @@ def run_evening(today, allow_x=True):
 
 
 def main():
-    mode = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in ("evening", "topics") else "morning"
-    notion_log.set_kind({"evening": "夕方の配信", "topics": "ネタ候補"}.get(mode, "朝の配信"))
+    mode = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in ("evening", "topics", "replies") else "morning"
+    notion_log.set_kind({"evening": "夕方の配信", "topics": "ネタ候補", "replies": "リプ案"}.get(mode, "朝の配信"))
     try:
         scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+        if mode == "replies":
+            # Xのリプ案（平日10:00・13:00・18:00）。記録は replies_state.json に分けて持つ
+            import x_replies
+
+            x_replies.main(sys.modules[__name__], now_jst(), scheduled)
+            return
         if mode == "topics":
             # 徹底解説のネタ候補（毎朝7時）。記録は topics_state.json に分けて持つ
             day, _ = schedule_gate(mode, now_jst(), scheduled, note_topics.load_state()["done"])
