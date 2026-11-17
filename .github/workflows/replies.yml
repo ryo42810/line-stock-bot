@@ -1,0 +1,72 @@
+name: X Replies
+
+# Xのリプ案（自分あてのリプ＋絡む候補）を、平日の10:00・13:00・18:00（JST）にLINEへ送る（x_replies.py）
+# Xには何も投稿しない。LINEのカードの「返信する」から、本人が確かめて送る
+on:
+  workflow_dispatch: # 手動実行用ボタン（押した時点の分を、すぐ作る）
+  schedule:
+    # 定時実行は数時間遅れることが多いので、各回の前に起動の予約を入れておく。
+    # 早く起動した回は次の回の時刻まで待ってから動く（4時間より早ければ何もしないで終わる）。
+    # 遅れて起動して過ぎた回が2つ以上あるときは、新しい回だけ動かす。土日・祝日は何もしない（x_replies.plan）
+    - cron: '3 21 * * *'  # JST 06:03
+    - cron: '3 23 * * *'  # JST 08:03
+    - cron: '58 0 * * *'  # JST 09:58
+    - cron: '3 2 * * *'   # JST 11:03
+    - cron: '58 3 * * *'  # JST 12:58
+    - cron: '3 5 * * *'   # JST 14:03
+    - cron: '3 7 * * *'   # JST 16:03
+    - cron: '58 8 * * *'  # JST 17:58
+
+permissions:
+  contents: write # 記録（replies_state.json・budget/replies.json）を保存するため
+
+concurrency:
+  group: x-replies
+  cancel-in-progress: false
+
+jobs:
+  run-replies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: ./scripts/setup.sh
+
+      - name: Run replies
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          # X APIの読み取りの月の上限（空なら40ドル）。超えそうならその月は止めてLINEで知らせる
+          X_BUDGET_USD: ${{ vars.X_BUDGET_USD }}
+          # AIのモデルと使いすぎ防止（ai.py）。空なら Opus 5.5、今月の使用額が上限を超えたら Sonnet 5.5
+          AI_MODEL: ${{ vars.AI_MODEL }}
+          BUDGET_USD: ${{ vars.BUDGET_USD }}
+        run: python app.py replies
+
+      - name: Save state
+        if: always()
+        run: ./scripts/save_state.sh
+
+      - name: Notify failure
+        if: failure() && hashFiles('notified.flag') == ''
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+        run: ./scripts/notify_failure.sh "⚠️ Xのリプ案の配信が失敗しました。ログを確認してください。"

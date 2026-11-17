@@ -21,7 +21,7 @@ API = "https://api.notion.com/v1"
 NOTION_VERSION = "2022-06-28"
 DB_TITLE = "LINE株botログ"
 PROPERTIES = {"日付": {"date": {}}, "件数": {"number": {}}}
-LABELS = {"朝の配信": "朝", "夕方の配信": "夕方", "ネタ候補": "ネタ候補", "来週の予定": "来週の予定", "通知": "⚠️ 通知"}
+LABELS = {"朝の配信": "朝", "夕方の配信": "夕方", "ネタ候補": "ネタ候補", "来週の予定": "来週の予定", "リプ案": "リプ案", "通知": "⚠️ 通知"}
 JST = datetime.timezone(datetime.timedelta(hours=9))
 TEXT_LIMIT = 2000  # Notionの1つのテキストの上限
 CHILD_LIMIT = 100  # 1つのブロックの下に一度に入れられる数
