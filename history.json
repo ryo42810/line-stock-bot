@@ -6812,5 +6812,190 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-11-17": [
+  {
+   "code": "8253",
+   "name": "クレディセゾン",
+   "category": "好材料",
+   "price": 4857.0,
+   "buy": false,
+   "headline": "今期最終19%上方修正で最高益予想を上乗せ、配当も15円増額",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6317",
+   "name": "北川鉄工所",
+   "category": "好材料",
+   "price": 2785.0,
+   "buy": false,
+   "headline": "27年3月期業績・配当予想を引き上げ、前日ストップ高",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6794",
+   "name": "フォスター電機",
+   "category": "好材料",
+   "price": 4385.0,
+   "buy": false,
+   "headline": "2Q経常44%増益、今期配当を130円増額修正",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4027",
+   "name": "テイカ",
+   "category": "好材料",
+   "price": 2412.0,
+   "buy": false,
+   "headline": "今期経常を28%上方修正、配当も30円増額",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6890",
+   "name": "フェローテック",
+   "category": "好材料",
+   "price": 6629.0,
+   "buy": false,
+   "headline": "配当予想を修正し増配を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7906",
+   "name": "ヨネックス",
+   "category": "好材料",
+   "price": 2395.0,
+   "buy": true,
+   "headline": "ToSTNeT-3による自社株買いと自己株式の消却を発表",
+   "yutai": "400株以上で自社製品購入クーポン5,000円分（3年以上継続保有で10,000円）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6538",
+   "name": "ディスラプターズ",
+   "category": "好材料",
+   "price": 269.0,
+   "buy": false,
+   "headline": "株主優待制度を導入しデジタルギフト贈呈、前日急騰",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3962",
+   "name": "チェンジホールディングス",
+   "category": "懸念材料",
+   "price": 774.0,
+   "buy": true,
+   "headline": "今期最終を赤字に下方修正、配当26円を未定に変更",
+   "yutai": "300株以上でデジタルギフト等7,500円分（継続保有で最大10,000円）",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4480",
+   "name": "メドレー",
+   "category": "懸念材料",
+   "price": 2007.0,
+   "buy": false,
+   "headline": "7-9月期が営業赤字となりストップ安",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "634A",
+   "name": "レイヤード",
+   "category": "懸念材料",
+   "price": 1572.0,
+   "buy": false,
+   "headline": "1Q営業益12%減でストップ安売り気配、人件費増が響く",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6706",
+   "name": "電気興",
+   "category": "懸念材料",
+   "price": 3155.0,
+   "buy": false,
+   "headline": "中間配当を無配とし、期末配当予想も未定に修正",
+   "yutai": "100株以上で飲食料品・日用品等2,000円相当（3年以上継続保有で3,000円相当）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4651",
+   "name": "サニックスＨＤ",
+   "category": "懸念材料",
+   "price": 233.0,
+   "buy": false,
+   "headline": "特別損失を計上し通期業績予想を修正、中間も計画と差異",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6481",
+   "name": "ＴＨＫ",
+   "category": "懸念材料",
+   "price": 4684.0,
+   "buy": false,
+   "headline": "上方修正もサプライズ限定的で出尽くし感、大幅続落",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4172",
+   "name": "Ｈｉクラテス",
+   "category": "買い場候補",
+   "price": 2174.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1401",
+   "name": "Ｇ－エムビーエス",
+   "category": "買い場候補",
+   "price": 1372.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7283",
+   "name": "愛三工",
+   "category": "買い場候補",
+   "price": 2163.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  }
  ]
 }
