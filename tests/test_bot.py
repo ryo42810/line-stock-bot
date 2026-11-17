@@ -115,11 +115,13 @@ class RankingParseTest(unittest.TestCase):
         import datetime
         day = datetime.date(2026, 11, 19)
         line = kujira_posts.everyday_compare(15500, day)
-        self.assertTrue(line.startswith("身近なものに置きかえると: "))
-        self.assertRegex(line, r"約\d+(回分|杯分)$")
-        # 置きかえの数字は材料に入るので、AIの文章にそのまま使える
-        times = line.rsplit("約", 1)[1].rstrip("回分杯")
-        self.assertTrue(kujira_posts.numbers_ok(f"年間の配当で約{times}回分", line))
+        self.assertEqual(line, "身近なものに置きかえると: 2人でちょっといいディナー1回分くらい")
+        # 置きかえの言葉は材料に入るので、AIの文章にそのまま使える
+        self.assertTrue(kujira_posts.numbers_ok("年間の配当で、2人でちょっといいディナー1回分くらい", line))
+        # 金額ごとの区切り（100株の年間配当）
+        for yen, label in [(1500, "ランチ1回分"), (4000, "ランチ数回分"), (8000, "1人のディナー1回分"),
+                           (17500, "2人でちょっといいディナー1回分"), (30000, "温泉宿の1泊分"), (60000, "国内旅行1回分")]:
+            self.assertEqual(kujira_posts.everyday_compare(yen, day), f"身近なものに置きかえると: {label}くらい")
         self.assertEqual(kujira_posts.everyday_compare(0, day), "")
         self.assertEqual(kujira_posts.everyday_compare(300, day), "")
         self.assertIn("じゃ、見ていこう🐳", kujira_posts.ONE_STOCK_STYLE)
