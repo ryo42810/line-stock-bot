@@ -6997,5 +6997,173 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-11-18": [
+  {
+   "code": "5838",
+   "name": "楽天銀行",
+   "category": "好材料",
+   "price": 5291.0,
+   "buy": false,
+   "headline": "金融事業再編で通期純利益予想を1150億円に上方修正",
+   "yutai": "円定期預金の金利優遇、外貨定期500円・住宅ローン手数料等のキャッシュバック",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "5714",
+   "name": "DOWAホールディングス",
+   "category": "好材料",
+   "price": 7949.0,
+   "buy": false,
+   "headline": "業績・配当を上方修正、160億円の自社株買いも発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3496",
+   "name": "アズーム",
+   "category": "好材料",
+   "price": 3710.0,
+   "buy": false,
+   "headline": "今期経常31%増で8期連続最高益見通し、14円増配へ",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6570",
+   "name": "共和コーポレーション",
+   "category": "好材料",
+   "price": 3185.0,
+   "buy": false,
+   "headline": "27年3月期2Qは経常利益150.2%増と大幅増益",
+   "yutai": "自社アミューズメント施設優待券2,000円分（1年以上保有でギフトカード1,000円追加）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4222",
+   "name": "児玉化学工業",
+   "category": "好材料",
+   "price": 587.0,
+   "buy": false,
+   "headline": "27年3月期2Qは経常利益46.2%増の増益決算",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5129",
+   "name": "FIXER",
+   "category": "好材料",
+   "price": 222.0,
+   "buy": false,
+   "headline": "NVIDIA Partner NetworkにSolution Advisorとして参画",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3625",
+   "name": "テックファームホールディングス",
+   "category": "好材料",
+   "price": 664.0,
+   "buy": false,
+   "headline": "株主優待制度を新設、デジタルギフトを贈呈",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4088",
+   "name": "エア・ウォーター",
+   "category": "懸念材料",
+   "price": 2950.0,
+   "buy": false,
+   "headline": "今期最終を50%下方修正、配当は75円で実施",
+   "yutai": "1,500円相当の自社製品（保有株数に応じ増額、寄付も選択可）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2134",
+   "name": "北浜キャピタルパートナーズ",
+   "category": "懸念材料",
+   "price": 13.0,
+   "buy": false,
+   "headline": "2Qは赤字拡大、経常損益は15億3400万円の赤字",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3659",
+   "name": "ネクソン",
+   "category": "懸念材料",
+   "price": 3124.0,
+   "buy": false,
+   "headline": "日系中堅証券がレーティングを中立に下げ、目標株価3200円に",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3003",
+   "name": "ヒューリック",
+   "category": "優待",
+   "price": 1983.0,
+   "buy": true,
+   "headline": "12月末に権利確定する人気優待（飲食料品）、配当利回り3.53%",
+   "yutai": "300株以上・2年以上保有で6,000円相当（3,000円相当カタログから2点）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3197",
+   "name": "すかいらーくホールディングス",
+   "category": "優待",
+   "price": 3777.0,
+   "buy": false,
+   "headline": "12月末に権利確定する食事券優待で、人気上位",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2702",
+   "name": "日本マクドナルドホールディングス",
+   "category": "優待",
+   "price": 9710.0,
+   "buy": true,
+   "headline": "12月末に権利確定する食事券優待で、根強い人気",
+   "yutai": "1年以上継続保有でバーガー・サイド・ドリンク引換券6枚ずつの冊子1冊",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2391",
+   "name": "(株)プラネット",
+   "category": "買い場候補",
+   "price": 1163.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  }
  ]
 }
