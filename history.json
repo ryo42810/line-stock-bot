@@ -7165,5 +7165,199 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-11-19": [
+  {
+   "code": "1853",
+   "name": "森組",
+   "category": "好材料",
+   "price": 561.0,
+   "buy": true,
+   "headline": "旭化成ホームズが最大128億円でTOB、完全子会社化へ",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3864",
+   "name": "三菱製紙",
+   "category": "好材料",
+   "price": 1246.0,
+   "buy": false,
+   "headline": "今期最終を2.2倍に上方修正し37期ぶり最高益、配当も実質増額",
+   "yutai": "500株以上・1年以上継続保有でナクレのティッシュ・トイレットペーパー等から1点",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3490",
+   "name": "アズ企画設計",
+   "category": "好材料",
+   "price": 3060.0,
+   "buy": true,
+   "headline": "株式分割と配当予想の修正、株主優待制度の拡充を発表",
+   "yutai": "半年以上継続保有でQUOカード4,000円分（100株）～15,000円分（300株）年2回",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "9265",
+   "name": "ヤマシタヘルスケアHD",
+   "category": "好材料",
+   "price": 3860.0,
+   "buy": false,
+   "headline": "自己株式の取得とToSTNeT-3での自社株買付けを発表",
+   "yutai": "保有株数・継続期間に応じ500円～4,500円分（買い物券・プリペイドカード等）",
+   "kenri_months": [
+    5
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4483",
+   "name": "JMDC",
+   "category": "好材料",
+   "price": 3410.0,
+   "buy": true,
+   "headline": "順天堂大学と医療・ヘルスケア領域で包括連携協定を締結",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2693",
+   "name": "YKT",
+   "category": "好材料",
+   "price": 261.0,
+   "buy": false,
+   "headline": "26年12月期3Qは黒字転換、経常利益4億7900万円",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5724",
+   "name": "アサカ理研",
+   "category": "好材料",
+   "price": 1807.0,
+   "buy": false,
+   "headline": "26年9月期は増益、経常利益は178.7%増",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2810",
+   "name": "ハウス食品グループ本社",
+   "category": "好材料",
+   "price": 4831.0,
+   "buy": false,
+   "headline": "壱番屋の売却でKKRに優先交渉権、1700億円規模と報道",
+   "yutai": "半年以上継続保有で飲食料品等1,000円相当（100株）～3,000円相当（1,000株）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4165",
+   "name": "プレイド",
+   "category": "懸念材料",
+   "price": 449.0,
+   "buy": false,
+   "headline": "不正アクセスによる情報漏えいを嫌気し、ストップ安売り気配",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3496",
+   "name": "アズーム",
+   "category": "懸念材料",
+   "price": 3665.0,
+   "buy": true,
+   "headline": "今期ガイダンスがマイナス視され、ストップ安",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4586",
+   "name": "メドレックス",
+   "category": "懸念材料",
+   "price": 47.0,
+   "buy": false,
+   "headline": "26年12月期3Qは赤字拡大、経常損益は8億2200万円の赤字",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8766",
+   "name": "東京海上ホールディングス",
+   "category": "決算",
+   "price": 581.2999877929688,
+   "buy": false,
+   "headline": "本日、第2四半期決算を発表予定。損保大手の業績に注目",
+   "yutai": "3年以上継続保有で初回7,500円相当、翌年以降2,500円（買い物券・プリペイドカード）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8725",
+   "name": "MS&ADインシュアランスグループHD",
+   "category": "決算",
+   "price": 5161.0,
+   "buy": false,
+   "headline": "本日、第2四半期決算を発表予定。損保大手の一角",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8630",
+   "name": "SOMPOホールディングス",
+   "category": "決算",
+   "price": 7057.0,
+   "buy": false,
+   "headline": "本日、第2四半期決算を発表予定。損保3社の決算が出そろう",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1419",
+   "name": "タマホーム",
+   "category": "優待",
+   "price": 2390.0,
+   "buy": false,
+   "headline": "11月末が権利確定。優待が人気で、配当利回りも5.44%",
+   "yutai": "100株以上で2,000円分（3年以上保有で4,000円分）の買い物券・プリペイドカード等",
+   "kenri_months": [
+    11
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6630",
+   "name": "ヤーマン(株) 6630 東証PRM 501 --- ( --- % )",
+   "category": "買い場候補",
+   "price": 501.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "保有株数・期間に応じ5,000円～23,000円分の優待（日用品・家電）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  }
  ]
 }
