@@ -1,8 +1,8 @@
-"""徹底解説（note）の記事用のトピック候補を、毎朝7時にLINEへ送る
+"""徹底解説（note）の記事用のトピック候補を、毎日17:30にLINEへ送る
 
-前日の時事ネタを5個以上拾い、トピックと簡単なサマリを付ける。
-- 材料1：Claude APIのWeb検索（前日の株・経済ニュース）
-- 材料2：前日の適時開示のうち、株価に関わりそうな発表（news_posts と同じ判定）と、相場の動き
+その日の時事ネタを5個以上拾い、トピックと簡単なサマリを付ける（2026/11/19に朝7時・前日分から変更。当日の引け後の開示まで入れて、新鮮なネタで書くため）。
+- 材料1：Claude APIのWeb検索（その日の株・経済ニュース）
+- 材料2：前日17:30以降〜その日の適時開示のうち、株価に関わりそうな発表（news_posts と同じ判定）と、相場の動き
 Web検索が使えないときは、材料2だけで候補を作る（それも無理なら開示の一覧だけ送る）。
 
 記録は topics_state.json に分けて持つ（朝の配信の state.json と同時に書き換えて、保存がぶつからないように）。
@@ -19,6 +19,7 @@ MIN_TOPICS = 5
 MAX_TOPICS = 8
 WEB_SEARCH_MAX_USES = 8
 KEEP_DAYS = 14  # 同じネタを何日さかのぼって避けるか
+SINCE_TIME = datetime.time(17, 30)  # 前の日のこの時刻より後の開示を拾う（前の回のあとに出た分）
 MAX_TOKENS = 24000  # Fable は考える分（thinking）も出力の上限に数えるので、多めに取る（モデルは ai.py で決める）
 
 def load_state():
@@ -49,9 +50,9 @@ def remember(state, topics, today):
     ]
 
 
-def disclosure_text(tools, tdnet_items, limit=25):
-    """前日の開示から、株価に関わりそうなものを知られた会社の順に並べた材料"""
-    news = news_posts.pick_news(tdnet_items)
+def disclosure_text(tools, tdnet_items, limit=25, since=None):
+    """前の回のあと〜今日の開示から、株価に関わりそうなものを知られた会社の順に並べた材料"""
+    news = news_posts.pick_news(tdnet_items, since=since)
     rank = news_posts.cap_rank(tools)
     unknown = len(rank) + 1
     news.sort(key=lambda d: (rank.get(d["code"], unknown), news_posts.KIND_ORDER.index(d["kind"])))
@@ -84,11 +85,11 @@ def parse_topics(text):
     return topics
 
 
-def ask_claude(tools, client, model, yesterday, market, disclosures, avoid, use_web=True):
-    """トピック候補を作る。use_web=True のときはWeb検索で前日のニュースを調べる"""
+def ask_claude(tools, client, model, news_day, market, disclosures, avoid, use_web=True):
+    """トピック候補を作る。use_web=True のときはWeb検索でその日のニュースを調べる"""
     avoid_text = "\n".join(f"- {t}" for t in avoid) or "（なし）"
     source_rule = (
-        f"Web検索で、{yesterday:%Y年%m月%d日}（前日）の日本の株式市場・経済のニュースを調べてください。"
+        f"Web検索で、{news_day:%Y年%m月%d日}（今日）の日本の株式市場・経済のニュースを調べてください。前日の夕方以降に出て、今日の相場で話題になったニュースも含めます。"
         "日経・ロイター・ブルームバーグ・NHK・株探など、報道機関や公式の発表を優先してください。"
         "検索で確かめられなかったことは書かないでください。"
         if use_web
@@ -101,7 +102,7 @@ def ask_claude(tools, client, model, yesterday, market, disclosures, avoid, use_
 {source_rule}
 
 ## 選ぶ基準
-- 前日（{yesterday:%m/%d}）に起きた・発表された・話題になったことに限る。前日が土日なら、その週末に話題になったことでよい
+- 今日（{news_day:%m/%d}）に起きた・発表された・話題になったことに限る（前日の夕方以降に出て、今日話題になったことは入れてよい）。今日が土日・祝日なら、その休みのあいだに話題になったことでよい
 - 株価や個人投資家に関わりがあるもの（金利・為替・政策・税制・NISA、業界の動き、大きな会社の発表、優待・配当・株主還元の動き など）
 - 1本の記事として、背景から深く書けるもの。単なる株価の上げ下げだけのものは選ばない
 - 少なくとも1つは、優待・配当・株主還元に関わるものを入れる
@@ -119,10 +120,10 @@ def ask_claude(tools, client, model, yesterday, market, disclosures, avoid, use_
 最後に、次の形のJSONだけを書いてください（前後に説明は書かない）。
 {{"topics": [{{"title": "…", "summary": "…", "related": "…", "outline": ["…", "…", "…"]}}]}}
 
-## 材料：相場の動き（前日の終値）
+## 材料：相場の動き（直近の終値）
 {market or "（取得できず）"}
 
-## 材料：前日の適時開示（株価に関わりそうなもの・知られた会社の順）
+## 材料：前日の夕方以降〜今日の適時開示（株価に関わりそうなもの・知られた会社の順）
 {disclosures or "（なし）"}
 
 ## 最近の候補（避ける）
@@ -157,7 +158,7 @@ def ask_claude(tools, client, model, yesterday, market, disclosures, avoid, use_
 
 
 def fallback_topics(news, limit=MAX_TOPICS):
-    """AIが使えないときの候補：前日の開示を並べる。同じ種類ばかりにならないように、まず種類ごとに1社ずつ選ぶ"""
+    """AIが使えないときの候補：その日の開示を並べる。同じ種類ばかりにならないように、まず種類ごとに1社ずつ選ぶ"""
     picked, kinds = [], set()
     for d in news:
         if d["kind"] not in kinds:
@@ -184,9 +185,9 @@ def sentences(text):
     return [p for p in parts if p]
 
 
-def format_message(today, yesterday, topics, used_web):
+def format_message(today, news_day, topics, used_web):
     """LINEで読みやすいよう、目次 → 1候補ずつ区切り線で分けて出す"""
-    lines = [f"📝 徹底解説のネタ候補（{today.month}/{today.day}）", f"{yesterday.month}/{yesterday.day}の時事ネタから{len(topics)}本", "", "【目次】"]
+    lines = [f"📝 徹底解説のネタ候補（{today.month}/{today.day}）", f"{news_day.month}/{news_day.day}の時事ネタから{len(topics)}本", "", "【目次】"]
     lines += [f"{num(i)} {t['title']}" for i, t in enumerate(topics, 1)]
     for i, t in enumerate(topics, 1):
         lines += ["", RULE, f"{num(i)} {t['title']}", RULE, ""]
@@ -198,20 +199,22 @@ def format_message(today, yesterday, topics, used_web):
             lines += ["", "🧭 構成案", *[f"{k}. {o}" for k, o in enumerate(t["outline"], 1)]]
     lines += ["", RULE]
     if not used_web:
-        lines.append("※今朝はWeb検索が使えなかったので、適時開示だけから選んでいます")
+        lines.append("※今回はWeb検索が使えなかったので、適時開示だけから選んでいます")
     lines.append("✍️ 書くときは、Claudeで「note：トピック」と送ってください")
     text = "\n".join(lines).strip()
     if len(text) > 4900:  # LINEの上限（5000字）を超えるときは、構成案を省いて作り直す
-        return format_message(today, yesterday, [{**t, "outline": []} for t in topics], used_web)[:4900]
+        return format_message(today, news_day, [{**t, "outline": []} for t in topics], used_web)[:4900]
     return text
 
 
 def run(tools, today):
-    """7時の配信の本体。送った候補の数を返す"""
+    """17:30の配信の本体。送った候補の数を返す"""
     yesterday = today - datetime.timedelta(days=1)
     state = load_state()
     market = news_posts.market_text(tools.fetch_market_data())
-    disclosures, news = disclosure_text(tools, tools.fetch_tdnet([yesterday]))
+    # 前の回（前日17:30）のあとに出た開示から、今日の分まで
+    since = f"{datetime.datetime.combine(yesterday, SINCE_TIME):%Y-%m-%d %H:%M:%S}"
+    disclosures, news = disclosure_text(tools, tools.fetch_tdnet([yesterday, today]), since=since)
     print(f"ネタ候補の材料: 開示 {len(news)}社")
     avoid = recent_titles(state, today)
 
@@ -224,7 +227,7 @@ def run(tools, today):
         for use_web in (True, False):
             used_web = use_web
             try:
-                topics = ask_claude(tools, client, model, yesterday, market, disclosures, avoid, use_web)
+                topics = ask_claude(tools, client, model, today, market, disclosures, avoid, use_web)
             except Exception as e:
                 print(f"ネタ候補づくりに失敗（{model}・Web検索{'あり' if use_web else 'なし'}）:", e)
                 topics = []
@@ -239,13 +242,13 @@ def run(tools, today):
         topics = (topics + fallback_topics(news))[:MAX_TOPICS]
     topics = topics[:MAX_TOPICS]
     if not topics:
-        tools.send_line_text(f"📝【{today:%m/%d}】徹底解説のネタ候補\n今朝は材料が集められませんでした（Web検索・適時開示とも取得できず）。")
+        tools.send_line_text(f"📝【{today:%m/%d}】徹底解説のネタ候補\n今回は材料が集められませんでした（Web検索・適時開示とも取得できず）。")
         return 0
 
-    tools.send_line_text(format_message(today, yesterday, topics, used_web))
+    tools.send_line_text(format_message(today, today, topics, used_web))
     remember(state, topics, today)
     # kujira-note（徹底解説の自動下書き）が、ここから1位のネタを読む
-    state["latest"] = {"date": today.isoformat(), "news_date": yesterday.isoformat(), "used_web": used_web, "topics": topics}
+    state["latest"] = {"date": today.isoformat(), "news_date": today.isoformat(), "used_web": used_web, "topics": topics}
     state["done"] = today.isoformat()
     save_state(state)
     tools.print_cost()
