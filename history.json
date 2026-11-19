@@ -7359,5 +7359,178 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-20": [
+  {
+   "code": "4307",
+   "name": "ＮＲＩ",
+   "category": "好材料",
+   "price": 6025.0,
+   "buy": false,
+   "headline": "ToSTNeT-3による自社株買いと自己株式消却を決定",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9065",
+   "name": "山九",
+   "category": "好材料",
+   "price": 1670.0,
+   "buy": true,
+   "headline": "新規の自己株式取得と自己株式消却を決定",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9347",
+   "name": "日本管財ＨＤ",
+   "category": "好材料",
+   "price": 3110.0,
+   "buy": true,
+   "headline": "ToSTNeT-3による自己株式取得を発表",
+   "yutai": "100株以上で2,000円相当の優待品（その他）、3年以上継続保有で3,000円相当",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "9837",
+   "name": "モリト",
+   "category": "好材料",
+   "price": 1801.0,
+   "buy": true,
+   "headline": "2026年11月期の期末配当予想を増額修正",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8986",
+   "name": "大和証券リビング投資法人",
+   "category": "好材料",
+   "price": 80900.0,
+   "buy": true,
+   "headline": "27年3月期の運用状況・分配金予想を上方修正",
+   "yutai": "1口以上で保有ヘルスケア施設のオペレーターが提供するサービスの体験",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4704",
+   "name": "トレンドマイクロ",
+   "category": "好材料",
+   "price": 7506.0,
+   "buy": false,
+   "headline": "日系大手証券が目標株価8000円に引上げ、サイバー需要も追い風",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9697",
+   "name": "カプコン",
+   "category": "好材料",
+   "price": 4656.0,
+   "buy": false,
+   "headline": "SBIが投資判断引き上げ、毎期10%以上営業増益の確度高まる",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8766",
+   "name": "東京海上ホールディングス",
+   "category": "好材料",
+   "price": 566.0,
+   "buy": false,
+   "headline": "中間決算で税引前利益12.3%増、保険収益も拡大",
+   "yutai": "100株以上・3年以上継続保有で買物券等 初回7,500円相当、翌年以降2,500円",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8725",
+   "name": "ＭＳ＆ＡＤインシュアランスＧＨＤ",
+   "category": "懸念材料",
+   "price": 5061.0,
+   "buy": false,
+   "headline": "中間決算で税引前利益18.3%減、最終益も17.3%減",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8630",
+   "name": "ＳＯＭＰＯホールディングス",
+   "category": "懸念材料",
+   "price": 6856.0,
+   "buy": false,
+   "headline": "中間決算で税引前利益39.0%減、投資損益が大幅減少",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6706",
+   "name": "電気興業",
+   "category": "懸念材料",
+   "price": 2960.0,
+   "buy": false,
+   "headline": "中間無配・期末配当予想を未定に修正、補足開示",
+   "yutai": "100株以上で飲食料品・日用品等2,000円相当、3年以上継続保有で3,000円相当",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2702",
+   "name": "日本マクドナルドホールディングス",
+   "category": "優待",
+   "price": 9930.0,
+   "buy": false,
+   "headline": "12月末権利の食事券優待、食事券カテゴリーで人気上位",
+   "yutai": "1年以上継続保有・100株以上で商品引換券（バーガー・サイド・ドリンク各6枚）1冊",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "1430",
+   "name": "ファーストコーポレーション",
+   "category": "優待",
+   "price": 1102.0,
+   "buy": false,
+   "headline": "11月末権利の買い物券優待、配当利回り4.63%",
+   "yutai": "100株以上でQUOカード1,000円分（株数・継続保有で最大10,000円分）",
+   "kenri_months": [
+    11
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3416",
+   "name": "5 ピクスタ -15.44 %",
+   "category": "買い場候補",
+   "price": 816.0,
+   "buy": true,
+   "headline": "",
+   "yutai": "100株以上で1枚、株数に応じ最大10枚（内容詳細は不明）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  }
  ]
 }
