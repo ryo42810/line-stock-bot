@@ -287,15 +287,15 @@ class NewsPostsTest(unittest.TestCase):
 
 
 class NoteTopicsTest(unittest.TestCase):
-    """徹底解説のネタ候補（毎日17:30）"""
+    """徹底解説のネタ候補（毎日16:00）"""
 
-    def test_gate_targets_1730(self):
+    def test_gate_targets_1600(self):
         waited = []
-        day, _ = app.schedule_gate("topics", at(16, 15, 33), True, "", sleep=waited.append)
-        self.assertEqual((day, waited), (datetime.date(2026, 11, 16), [(27 + 90) * 60]))
+        day, _ = app.schedule_gate("topics", at(16, 14, 3), True, "", sleep=waited.append)
+        self.assertEqual((day, waited), (datetime.date(2026, 11, 16), [(57 + 60) * 60]))
         self.assertIsNone(app.schedule_gate("topics", at(16, 18, 0), True, "2026-11-16")[0])
-        # 5時間以上早い回は何もしない。日付をまたいで起動した回は、前の日の分として動く
-        self.assertIsNone(app.schedule_gate("topics", at(16, 11, 33), True, "")[0])
+        # 4時間より早い回は何もしない。日付をまたいで起動した回は、前の日の分として動く
+        self.assertIsNone(app.schedule_gate("topics", at(16, 10, 3), True, "")[0])
         self.assertEqual(app.schedule_gate("topics", at(17, 0, 40), True, "")[0], datetime.date(2026, 11, 16))
 
     def test_parse_topics(self):

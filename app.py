@@ -48,7 +48,7 @@ NOTIFIED_FLAG = "notified.flag"  # エラー通知済みの目印（ワークフ
 # 定時実行のずれ対策。GitHub Actionsの定時実行は数時間遅れることが多いので、
 # 早めの時刻にも起動の予約を入れておき、早く起動できた回はここで目標の時刻まで待つ
 STATE_FILE = "state.json"  # 朝・夕方をその日に配信済みかどうかと、くじら枠で紹介した銘柄の記録
-TARGET_TIME = {"morning": datetime.time(6, 43), "evening": datetime.time(16, 55), "topics": datetime.time(17, 30)}
+TARGET_TIME = {"morning": datetime.time(6, 43), "evening": datetime.time(16, 55), "topics": datetime.time(16, 0)}
 EARLY_LIMIT_MIN = 240  # 目標よりこれ以上早く起動した回は、何もしないで終わる（あとの予約に任せる）
 # これより遅く起動した回は、LINEには送るがXには自動投稿しない（昼に「今朝の〜」が出るのを防ぐ）
 X_DEADLINE = {"morning": datetime.time(8, 55), "evening": datetime.time(22, 0), "topics": datetime.time(23, 59)}  # topics はXに投稿しない
@@ -2054,7 +2054,7 @@ def main():
             x_replies.main(sys.modules[__name__], now_jst(), scheduled)
             return
         if mode == "topics":
-            # 徹底解説のネタ候補（毎日17:30）。記録は topics_state.json に分けて持つ
+            # 徹底解説のネタ候補（毎日16:00）。記録は topics_state.json に分けて持つ
             day, _ = schedule_gate(mode, now_jst(), scheduled, note_topics.load_state()["done"])
             if day is None:
                 return
