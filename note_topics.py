@@ -1,8 +1,8 @@
-"""徹底解説（note）の記事用のトピック候補を、毎日17:30にLINEへ送る
+"""徹底解説（note）の記事用のトピック候補を、毎日16:00にLINEへ送る
 
-その日の時事ネタを5個以上拾い、トピックと簡単なサマリを付ける（2026/11/19に朝7時・前日分から変更。当日の引け後の開示まで入れて、新鮮なネタで書くため）。
+その日の時事ネタを5個以上拾い、トピックと簡単なサマリを付ける（2026/11/19に朝7時・前日分から変更。新鮮なネタで書くため。徹底解説の下書きをバッチで作り、当日の勤務時間内にnoteへ入稿できるよう16:00にした）。
 - 材料1：Claude APIのWeb検索（その日の株・経済ニュース）
-- 材料2：前日17:30以降〜その日の適時開示のうち、株価に関わりそうな発表（news_posts と同じ判定）と、相場の動き
+- 材料2：前日16:00以降〜その日の適時開示のうち、株価に関わりそうな発表（news_posts と同じ判定）と、相場の動き
 Web検索が使えないときは、材料2だけで候補を作る（それも無理なら開示の一覧だけ送る）。
 
 記録は topics_state.json に分けて持つ（朝の配信の state.json と同時に書き換えて、保存がぶつからないように）。
@@ -19,7 +19,7 @@ MIN_TOPICS = 5
 MAX_TOPICS = 8
 WEB_SEARCH_MAX_USES = 8
 KEEP_DAYS = 14  # 同じネタを何日さかのぼって避けるか
-SINCE_TIME = datetime.time(17, 30)  # 前の日のこの時刻より後の開示を拾う（前の回のあとに出た分）
+SINCE_TIME = datetime.time(16, 0)  # 前の日のこの時刻より後の開示を拾う（前の回のあとに出た分）
 MAX_TOKENS = 24000  # Fable は考える分（thinking）も出力の上限に数えるので、多めに取る（モデルは ai.py で決める）
 
 def load_state():
@@ -208,11 +208,11 @@ def format_message(today, news_day, topics, used_web):
 
 
 def run(tools, today):
-    """17:30の配信の本体。送った候補の数を返す"""
+    """16:00の配信の本体。送った候補の数を返す"""
     yesterday = today - datetime.timedelta(days=1)
     state = load_state()
     market = news_posts.market_text(tools.fetch_market_data())
-    # 前の回（前日17:30）のあとに出た開示から、今日の分まで
+    # 前の回（前日16:00）のあとに出た開示から、今日の分まで
     since = f"{datetime.datetime.combine(yesterday, SINCE_TIME):%Y-%m-%d %H:%M:%S}"
     disclosures, news = disclosure_text(tools, tools.fetch_tdnet([yesterday, today]), since=since)
     print(f"ネタ候補の材料: 開示 {len(news)}社")
