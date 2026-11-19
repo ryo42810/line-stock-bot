@@ -20,6 +20,7 @@ import news_posts  # noqa: E402
 import note_topics  # noqa: E402
 import ai  # noqa: E402
 import x_media  # noqa: E402
+import x_queue  # noqa: E402
 
 JST = app.JST
 
@@ -79,6 +80,93 @@ class ScheduleGateTest(unittest.TestCase):
     def test_evening_early_waits(self):
         (day, allow_x), waited = self.gate("evening", at(16, 14, 55))
         self.assertEqual((day, allow_x, waited), (datetime.date(2026, 11, 16), True, [2 * 60 * 60]))
+
+
+class XQueueTest(unittest.TestCase):
+    """Xの予約投稿：株ニュースは朝6:50、くじら枠は昼11:50、夕方は17:00から1時間おき"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.old = x_queue.QUEUE_FILE
+        x_queue.QUEUE_FILE = os.path.join(self.tmp.name, "x_queue.json")
+        self.posted, self.lines, self.now = [], [], at(17, 7, 50)
+
+    def tearDown(self):
+        x_queue.QUEUE_FILE = self.old
+        self.tmp.cleanup()
+
+    def run_queue(self, start):
+        self.now = start
+
+        def sleep(sec):
+            self.now += datetime.timedelta(seconds=sec)
+
+        def post(posts):
+            self.posted.append((f"{self.now:%H:%M}", posts[0][0], posts[0][1]))
+            return ""
+
+        x_queue.run(lambda: self.now, post, self.lines.append, sleep=sleep)
+
+    def test_first_post_waits_until_its_time(self):
+        waited = []
+        self.assertEqual(app.wait_for_first_post_time("morning", at(16, 6, 46), sleep=waited.append), 4 * 60)
+        self.assertEqual(app.wait_for_first_post_time("evening", at(16, 16, 57), sleep=waited.append), 3 * 60)
+        # 時刻を過ぎていたら待たない。ずっと前（手動実行など）も待たない
+        self.assertEqual(app.wait_for_first_post_time("morning", at(16, 6, 55), sleep=waited.append), 0)
+        self.assertEqual(app.wait_for_first_post_time("morning", at(16, 3, 0), sleep=waited.append), 0)
+        self.assertEqual(waited, [4 * 60, 3 * 60])
+
+    def test_midday_post_goes_out_at_1150(self):
+        today = datetime.date(2026, 11, 17)
+        x_queue.enqueue(today, [(x_queue.MIDDAY_TIME, "今日の1銘柄", os.path.join(self.tmp.name, "none.png"))], x_queue.MIDDAY_UNTIL)
+        self.run_queue(at(17, 7, 50))  # 4時間前に起動 → 11:50まで待って出す（画像が無ければ文章だけ）
+        self.assertEqual(self.posted, [("11:50", "今日の1銘柄", None)])
+        self.run_queue(at(17, 12, 0))  # 出したあとの回は何もしない（夕方の18:00は5時間より先）
+        self.assertEqual(len(self.posted), 1)
+
+    def test_waits_for_posts_that_arrive_later(self):
+        # 13:20に起動した回は、まだ何も並んでいなくても18:00まで待つ。そのあいだに夕方の回が並べる
+        today = datetime.date(2026, 11, 17)
+        old_sync = x_queue.sync
+        def arrive():
+            if self.now >= at(17, 17, 0) and not x_queue.load():
+                x_queue.sync = old_sync
+                x_queue.enqueue(today, [("18:00", "明日の決算", None), ("19:00", "株ニュース", None)], x_queue.EVENING_UNTIL)
+
+        x_queue.sync = arrive
+        try:
+            self.run_queue(at(17, 13, 20))
+        finally:
+            x_queue.sync = old_sync
+        # 19:00の分は、1回の起動の長さ（320分）を超えるので次の回に任せる
+        self.assertEqual(self.posted, [("18:00", "明日の決算", None)])
+        self.run_queue(at(17, 18, 2))
+        self.assertEqual([p[:2] for p in self.posted], [("18:00", "明日の決算"), ("19:00", "株ニュース")])
+
+    def test_too_early_and_too_late(self):
+        today = datetime.date(2026, 11, 17)
+        x_queue.enqueue(today, [(x_queue.MIDDAY_TIME, "今日の1銘柄", None)], x_queue.MIDDAY_UNTIL)
+        self.run_queue(at(17, 6, 0))  # 5時間より前 → 何もしない
+        self.assertEqual(self.posted, [])
+        self.run_queue(at(17, 14, 0))  # 13:30より後 → Xは見送ってLINEで知らせる
+        self.assertEqual(self.posted, [])
+        self.assertEqual(len(self.lines), 1)
+        self.assertEqual(x_queue.load()[0]["status"], "skipped")
+
+    def test_late_posts_keep_a_gap(self):
+        # 夕方の回が遅れて、18:00と19:00の分がどちらも過ぎていたら、30分あけて出す
+        today = datetime.date(2026, 11, 17)
+        x_queue.enqueue(today, [("18:00", "A", None), ("19:00", "B", None)], x_queue.EVENING_UNTIL)
+        self.run_queue(at(17, 20, 10))
+        self.assertEqual([p[:2] for p in self.posted], [("20:10", "A"), ("20:40", "B")])
+
+    def test_morning_booking_from_the_evening_before(self):
+        # 朝の回の予約は前の日の18:43から入っている。その回は次の日の分として扱い、早すぎるので何もしない
+        self.assertEqual(app.target_day("morning", at(16, 18, 43)), datetime.date(2026, 11, 17))
+        self.assertIsNone(app.schedule_gate("morning", at(16, 18, 43), True, "2026-11-16")[0])
+        waited = []
+        self.assertEqual(app.schedule_gate("morning", at(17, 1, 43), True, "2026-11-16", sleep=waited.append), (datetime.date(2026, 11, 17), True))
+        self.assertEqual(waited, [5 * 60 * 60])
 
 
 class RankingParseTest(unittest.TestCase):
