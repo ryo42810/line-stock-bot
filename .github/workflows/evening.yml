@@ -4,12 +4,12 @@ on:
   workflow_dispatch: # 手動実行用ボタン
   schedule:
     # 目標は日本時間(JST)の 16:55（月〜金。祝日はスクリプト側でスキップ）。
-    # 定時実行は数時間遅れることが多いので、早めの時刻にも起動の予約を入れておく。
-    # 早く起動できた回は 16:55 まで待ってから動き、その日すでに配信済みなら何もしないで終わる（app.py の schedule_gate）
-    - cron: '55 1 * * 1-5' # JST 10:55
-    - cron: '55 3 * * 1-5' # JST 12:55
-    - cron: '55 5 * * 1-5' # JST 14:55
-    - cron: '55 7 * * 1-5' # JST 16:55
+    # 定時実行は5〜9時間遅れることが多い（2026/11の実績）ので、12時間前から1時間おきに起動の予約を入れておく。
+    # 5時間前より早く起動した回は何もしないで終わり、5時間前以内に起動できた回が 16:55 まで待ってから動く。
+    # その日すでに配信済みなら何もしないで終わる（app.py の schedule_gate）
+    # Xには1本目を17:00に出し、2本目からは18:00・19:00…の予約に回す（x_queue.yml の回が出す）
+    - cron: '55 19-23 * * 0-4' # JST 04:55〜08:55（月〜金。1時間おき）
+    - cron: '55 0-7 * * 1-5'   # JST 09:55〜16:55（月〜金。1時間おき）
 
 permissions:
   contents: write # X用の画像と実行の記録をリポジトリに置くため
@@ -21,7 +21,7 @@ concurrency:
 jobs:
   run-review:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 355
     steps:
       - name: Check out repository
         uses: actions/checkout@v7

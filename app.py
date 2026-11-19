@@ -22,6 +22,7 @@ import earnings_watch
 import week_ahead
 import kujira_posts
 import news_posts
+import x_queue
 import note_topics
 import notion_log
 import x_media
@@ -49,9 +50,14 @@ NOTIFIED_FLAG = "notified.flag"  # エラー通知済みの目印（ワークフ
 # 早めの時刻にも起動の予約を入れておき、早く起動できた回はここで目標の時刻まで待つ
 STATE_FILE = "state.json"  # 朝・夕方をその日に配信済みかどうかと、くじら枠で紹介した銘柄の記録
 TARGET_TIME = {"morning": datetime.time(6, 43), "evening": datetime.time(16, 55), "topics": datetime.time(16, 0)}
-EARLY_LIMIT_MIN = 240  # 目標よりこれ以上早く起動した回は、何もしないで終わる（あとの予約に任せる）
+# その回の1本目をXに出す時刻。先に作り終えたら、ここまで待ってから投稿する（朝＝株ニュース、夕方＝なぜ動いたか）。
+# くじら枠（昼11:50）と夕方の2本目以降（18:00・19:00…）は、時刻を付けて x_queue.py の予約に回す
+FIRST_POST_TIME = {"morning": datetime.time(6, 50), "evening": datetime.time(17, 0)}
+FIRST_POST_WAIT_MAX_MIN = 15  # これより前に作り終えた回（手動実行など）は待たない
+EARLY_LIMIT_MIN = 300  # 目標よりこれ以上早く起動した回は、何もしないで終わる（あとの予約に任せる。1回の起動は6時間までなので、待てるのは5時間）
 # これより遅く起動した回は、LINEには送るがXには自動投稿しない（昼に「今朝の〜」が出るのを防ぐ）
 X_DEADLINE = {"morning": datetime.time(8, 55), "evening": datetime.time(22, 0), "topics": datetime.time(23, 59)}  # topics はXに投稿しない
+MORNING_EARLY_HOUR = 18  # 朝の回がこの時刻より後に起動したら、次の日の分として扱う（早すぎるので何もしないで終わる）
 EVENING_ROLLOVER_HOUR = 9  # 夕方の回・ネタ候補の回が翌日のこの時刻より前に起動したら、前の日の分として動かす
 
 CATEGORY_STYLE = {
@@ -241,6 +247,8 @@ def target_day(mode, now):
     day = now.date()
     if mode in ("evening", "topics") and now.hour < EVENING_ROLLOVER_HOUR:
         day -= datetime.timedelta(days=1)
+    if mode == "morning" and now.hour >= MORNING_EARLY_HOUR:
+        day += datetime.timedelta(days=1)  # 朝の回の予約は前の日の夕方から入れてある。その回は次の日の分
     return day
 
 
@@ -267,6 +275,17 @@ def schedule_gate(mode, now, scheduled, done_day="", sleep=time.sleep):
         print(f"起動が{now:%m/%d %H:%M}まで遅れたため、Xの自動投稿は見送ります（LINEには送ります）")
         return day, False
     return day, True
+
+
+def wait_for_first_post_time(mode, now, sleep=time.sleep):
+    """その回の1本目を決まった時刻（朝6:50・夕方17:00）に出すため、少し早く作り終えたらその時刻まで待つ。待った秒数を返す"""
+    target = datetime.datetime.combine(now.date(), FIRST_POST_TIME[mode], tzinfo=JST)
+    wait_sec = (target - now).total_seconds()
+    if 0 < wait_sec <= FIRST_POST_WAIT_MAX_MIN * 60:
+        print(f"Xへの投稿は{target:%H:%M}まで{wait_sec:.0f}秒待ちます")
+        sleep(wait_sec)
+        return wait_sec
+    return 0
 
 
 def x_skipped_notice(now, posts):
@@ -1236,16 +1255,22 @@ def run(today, allow_x=True):
 
     mark_done("morning", today)
 
-    # Xに自動投稿（オンのときだけ）。失敗やスキップがあったときだけLINEで知らせる
+    # Xに自動投稿（オンのときだけ）。失敗やスキップがあったときだけLINEで知らせる。株ニュースを先頭にして 6:50 に出す
     posts = [
-        (x_post_news, images.get("news")), (x_post_buy, images.get("buy")), (kujira.get("post", ""), images.get("kujira")),
-        (news.get("post", ""), images.get("yutai_news")), (weekly.get("post", ""), images.get("weekly")), (x_post_survey, None),
+        (news.get("post", ""), images.get("yutai_news")), (x_post_news, images.get("news")), (x_post_buy, images.get("buy")),
+        (weekly.get("post", ""), images.get("weekly")), (x_post_survey, None),
     ]
+    # くじら枠はXには昼11:50に出す（x_queue.yml の回。朝の回が遅れた日も、昼に間に合えば出す）
+    if today == now_jst().date():
+        x_queue.enqueue(today, [(x_queue.MIDDAY_TIME, kujira.get("post", ""), images.get("kujira"))], x_queue.MIDDAY_UNTIL)
     if not allow_x:
         notice = x_skipped_notice(now_jst(), posts)
         if notice:
             send_line_text(notice)
         return
+    # 朝は株ニュースを 6:50 に出す
+    if x_media.x_enabled() and news.get("post"):
+        wait_for_first_post_time("morning", now_jst())
     x_result = x_media.post_all_to_x(posts)
     if "⚠️" in x_result or "⏭" in x_result:
         send_line_text(x_result)
@@ -2037,14 +2062,19 @@ def run_evening(today, allow_x=True):
         if notice:
             send_line_text(notice)
         return
-    x_result = x_media.post_all_to_x(posts)
+    # 夕方は1時間おきに出す。1本目は17:00、2本目からは18:00・19:00…の予約に回す（x_queue.yml の回が出す）
+    posts = [p for p in posts if p[0]]
+    x_queue.enqueue(today, [(t, post, image) for t, (post, image) in zip(x_queue.EVENING_TIMES, posts[1:])], x_queue.EVENING_UNTIL)
+    if x_media.x_enabled() and posts:
+        wait_for_first_post_time("evening", now_jst())
+    x_result = x_media.post_all_to_x(posts[:1])
     if "⚠️" in x_result or "⏭" in x_result:
         send_line_text(x_result)
 
 
 def main():
-    mode = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in ("evening", "topics", "replies") else "morning"
-    notion_log.set_kind({"evening": "夕方の配信", "topics": "ネタ候補", "replies": "リプ案"}.get(mode, "朝の配信"))
+    mode = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in ("xqueue", "evening", "topics", "replies") else "morning"
+    notion_log.set_kind({"xqueue": "Xの予約投稿", "evening": "夕方の配信", "topics": "ネタ候補", "replies": "リプ案"}.get(mode, "朝の配信"))
     try:
         scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
         if mode == "replies":
@@ -2052,6 +2082,10 @@ def main():
             import x_replies
 
             x_replies.main(sys.modules[__name__], now_jst(), scheduled)
+            return
+        if mode == "xqueue":
+            # Xの予約投稿（昼11:50のくじら枠、夕方18:00・19:00…）。記録は x_queue.json に分けて持つ
+            x_queue.run(now_jst, x_media.post_all_to_x, send_line_text, x_media.x_enabled(), EARLY_LIMIT_MIN)
             return
         if mode == "topics":
             # 徹底解説のネタ候補（毎日16:00）。記録は topics_state.json に分けて持つ

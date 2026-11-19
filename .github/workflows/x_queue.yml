@@ -1,0 +1,62 @@
+name: X Scheduled Posts
+
+# 朝・夕方の回が作って時刻を付けた投稿（x_queue.json）を、その時刻にXへ出す（x_queue.py。AIは使わない）
+# - 昼 11:50：くじら枠（火・木：今日の1銘柄／月：整理／水：解説）
+# - 夕方 18:00・19:00（週の最終営業日は 20:00 も）：夕方の2本目以降
+on:
+  workflow_dispatch: # 手動実行用ボタン
+  schedule:
+    # 定時実行は5〜9時間遅れることが多いので、1時間おきに予約しておく。
+    # 起動できた回が、次に出す時刻まで待つ（待てるのは5時間まで）。出すものが無ければすぐ終わる
+    - cron: '20 * * * *'
+
+permissions:
+  contents: write # 予約投稿の記録（x_queue.json）を保存するため
+
+concurrency:
+  group: x-scheduled-posts
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          # 定時実行は、予約した時点のコミットを取ってくる。朝・夕方の回が保存した文章・画像を使うので、いまの最新の main を取ってくる
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: ./scripts/setup.sh
+
+      - name: Post to X
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID }}
+          # Xの自動投稿（Variables の X_AUTO_POST=on と、4つのキーが揃ったときだけ投稿）
+          X_AUTO_POST: ${{ vars.X_AUTO_POST }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: python app.py xqueue
+
+      - name: Save state
+        if: always()
+        run: ./scripts/save_state.sh
+
+      - name: Notify failure
+        if: failure() && hashFiles('notified.flag') == ''
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+        run: ./scripts/notify_failure.sh "⚠️ 注目株botのXの予約投稿が失敗しました。ログを確認してください。"

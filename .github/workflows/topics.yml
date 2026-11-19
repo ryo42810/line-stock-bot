@@ -5,13 +5,12 @@ on:
   workflow_dispatch: # 手動実行用ボタン
   schedule:
     # 目標は日本時間(JST)の 16:00（土日も）。2026/11/19に朝7:00から変更（当日のネタで書き、徹底解説を当日の勤務時間内に入稿するため）
-    # 定時実行は数時間遅れることが多いので、早めの時刻にも起動の予約を入れておく。
-    # 早く起動できた回は 16:00 まで待ってから動き、その日すでに送っていれば何もしないで終わる（app.py の schedule_gate）
-    # 目標より4時間以上早く起動した回は何もしない。6時間前の予約は、遅れたときの保険
-    - cron: '3 1 * * *'  # JST 10:03
-    - cron: '3 3 * * *'  # JST 12:03
-    - cron: '3 5 * * *'  # JST 14:03
-    - cron: '58 6 * * *' # JST 15:58
+    # 定時実行は5〜9時間遅れることが多い（2026/11の実績）ので、12時間前から1時間おきに起動の予約を入れておく。
+    # 5時間前より早く起動した回は何もしないで終わり、5時間前以内に起動できた回が 16:00 まで待ってから動く。
+    # その日すでに送っていれば何もしないで終わる（app.py の schedule_gate）
+    - cron: '3 19-23 * * *' # JST 04:03〜08:03（1時間おき）
+    - cron: '3 0-6 * * *'   # JST 09:03〜15:03（1時間おき）
+    - cron: '58 6 * * *'    # JST 15:58
 
 permissions:
   contents: write # 送った候補の記録（topics_state.json）を保存するため
@@ -23,7 +22,7 @@ concurrency:
 jobs:
   run-topics:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 355
     steps:
       - name: Check out repository
         uses: actions/checkout@v7

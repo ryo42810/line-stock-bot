@@ -4,12 +4,10 @@ on:
   workflow_dispatch: # 手動実行用ボタンを残す
   schedule:
     # 目標は日本時間(JST)の朝 06:43。
-    # GitHub Actionsの定時実行は数時間遅れることが多いので、早めの時刻にも起動の予約を入れておく。
-    # 早く起動できた回は 06:43 まで待ってから動き、その日すでに配信済みなら何もしないで終わる（app.py の schedule_gate）
-    - cron: '43 15 * * *' # JST 00:43
-    - cron: '43 17 * * *' # JST 02:43
-    - cron: '43 19 * * *' # JST 04:43
-    - cron: '43 21 * * *' # JST 06:43
+    # GitHub Actionsの定時実行は5〜9時間遅れることが多い（2026/11の実績）ので、12時間前から1時間おきに起動の予約を入れておく。
+    # 5時間前より早く起動した回は何もしないで終わり、5時間前以内に起動できた回が 06:43 まで待ってから動く。
+    # その日すでに配信済みなら何もしないで終わる（app.py の schedule_gate）
+    - cron: '43 9-21 * * *' # JST 前日18:43〜当日06:43（1時間おき）
 
 permissions:
   contents: write # 配信履歴（history.json）を保存するため
@@ -22,7 +20,7 @@ concurrency:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 355
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
