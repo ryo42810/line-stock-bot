@@ -287,13 +287,16 @@ class NewsPostsTest(unittest.TestCase):
 
 
 class NoteTopicsTest(unittest.TestCase):
-    """徹底解説のネタ候補（毎朝7時）"""
+    """徹底解説のネタ候補（毎日17:30）"""
 
-    def test_gate_targets_seven(self):
+    def test_gate_targets_1730(self):
         waited = []
-        day, _ = app.schedule_gate("topics", at(16, 5, 3), True, "", sleep=waited.append)
-        self.assertEqual((day, waited), (datetime.date(2026, 11, 16), [(60 - 3 + 60) * 60]))
-        self.assertIsNone(app.schedule_gate("topics", at(16, 7, 30), True, "2026-11-16")[0])
+        day, _ = app.schedule_gate("topics", at(16, 15, 33), True, "", sleep=waited.append)
+        self.assertEqual((day, waited), (datetime.date(2026, 11, 16), [(27 + 90) * 60]))
+        self.assertIsNone(app.schedule_gate("topics", at(16, 18, 0), True, "2026-11-16")[0])
+        # 5時間以上早い回は何もしない。日付をまたいで起動した回は、前の日の分として動く
+        self.assertIsNone(app.schedule_gate("topics", at(16, 11, 33), True, "")[0])
+        self.assertEqual(app.schedule_gate("topics", at(17, 0, 40), True, "")[0], datetime.date(2026, 11, 16))
 
     def test_parse_topics(self):
         text = '結果です。\n{"topics": [{"title": "日銀が利上げ", "summary": "銀行株に追い風", "related": "銀行"}, {"title": "", "summary": "x", "related": ""}]}'
@@ -317,8 +320,8 @@ class NoteTopicsTest(unittest.TestCase):
 
     def test_message(self):
         topics = [{"title": f"ネタ{i}", "summary": "サマリ", "related": ""} for i in range(5)]
-        text = note_topics.format_message(datetime.date(2026, 11, 16), datetime.date(2026, 11, 15), topics, True)
-        self.assertIn("11/15の時事ネタ", text)
+        text = note_topics.format_message(datetime.date(2026, 11, 16), datetime.date(2026, 11, 16), topics, True)
+        self.assertIn("11/16の時事ネタ", text)
         self.assertIn("⑤ ネタ4", text)
         self.assertIn("note：トピック", text)
         long = [{"title": "長い" * 20, "summary": "あ" * 400, "related": "", "outline": ["構成" * 30] * 3} for _ in range(7)]
