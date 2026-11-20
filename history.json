@@ -7532,5 +7532,186 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-21": [
+  {
+   "code": "2413",
+   "name": "エムスリー",
+   "category": "好材料",
+   "price": 1681.0,
+   "buy": false,
+   "headline": "自己株式の公開買付けを発表、取得枠も拡大し株主還元を強化",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5078",
+   "name": "セレコーポレーション",
+   "category": "好材料",
+   "price": 4395.0,
+   "buy": true,
+   "headline": "ToSTNeT-3による自社株買いに加え株式分割と配当予想修正を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5038",
+   "name": "eWeLL",
+   "category": "好材料",
+   "price": 2020.0,
+   "buy": true,
+   "headline": "自己株式取得を決定、需給改善と株主還元に期待",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4124",
+   "name": "大阪油化工業",
+   "category": "好材料",
+   "price": 2842.0,
+   "buy": true,
+   "headline": "株式分割と配当予想の修正を発表、投資単位引き下げで流動性向上へ",
+   "yutai": "半年以上継続保有で買い物券・プリペイドカード5,000円分（100株以上）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6036",
+   "name": "KeePer技研",
+   "category": "好材料",
+   "price": 1605.0,
+   "buy": true,
+   "headline": "出光が株式13%を取得し出資、資本提携で事業連携に期待",
+   "yutai": "半年以上継続保有で①20%OFF ②30,000円（200株以上、株数に応じ割引率最大37%）",
+   "kenri_months": [
+    6
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6727",
+   "name": "ワコム",
+   "category": "懸念材料",
+   "price": 665.0,
+   "buy": false,
+   "headline": "2027年3月期の期末配当予想を無配に修正",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4933",
+   "name": "I-ne",
+   "category": "懸念材料",
+   "price": 2466.0,
+   "buy": true,
+   "headline": "今期配当を無配に修正、株主優待制度も廃止を発表",
+   "yutai": "デジタルギフト5,000円分（100株以上）、500株以上で10,000円分",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "406A",
+   "name": "環境のミカタHD",
+   "category": "懸念材料",
+   "price": 5450.0,
+   "buy": false,
+   "headline": "剰余金の配当を無配とすると発表",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3355",
+   "name": "クリヤマHD",
+   "category": "懸念材料",
+   "price": 1612.0,
+   "buy": false,
+   "headline": "海外孫会社の株式譲渡に伴い特別損失の計上見込みを発表",
+   "yutai": "1年以上継続保有で買い物券・プリペイドカード1,000円分（200株以上）、3年以上で2,000円分",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3133",
+   "name": "海帆",
+   "category": "懸念材料",
+   "price": 21.0,
+   "buy": false,
+   "headline": "第三者割当増資と新株予約権発行を発表、希薄化懸念で12.5%安",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9984",
+   "name": "ソフトバンクグループ",
+   "category": "懸念材料",
+   "price": 3025.0,
+   "buy": false,
+   "headline": "AI関連売りの直撃を受け14%超の急落、売買も膨らむ",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6525",
+   "name": "KOKUSAI ELECTRIC",
+   "category": "懸念材料",
+   "price": 4897.0,
+   "buy": false,
+   "headline": "半導体・製造装置株の下落連鎖で11%安、AI不安の逆風続く",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1419",
+   "name": "タマホーム",
+   "category": "優待",
+   "price": 2290.0,
+   "buy": false,
+   "headline": "11月末権利の人気優待、配当利回り5.68%と高水準",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1430",
+   "name": "ファーストコーポレーション",
+   "category": "優待",
+   "price": 1098.0,
+   "buy": false,
+   "headline": "11月末権利、買い物券系優待に配当利回り4.64%",
+   "yutai": "QUOカード1,000円分（100株以上）、株数・継続保有期間に応じ最大10,000円分",
+   "kenri_months": [
+    11
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4755",
+   "name": "楽天グループ",
+   "category": "優待",
+   "price": 554.7000122070312,
+   "buy": false,
+   "headline": "12月末権利の人気優待、最低投資金額5.54万円と手頃",
+   "yutai": "6ヵ月間無料（継続特典要件を満たせば追加6ヵ月無料）（100株以上）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  }
  ]
 }
