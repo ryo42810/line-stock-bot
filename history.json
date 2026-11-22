@@ -7898,5 +7898,117 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-23": [
+  {
+   "code": "6317",
+   "name": "北川鉄工所",
+   "category": "好材料",
+   "price": 2532.0,
+   "buy": false,
+   "headline": "今期経常を7%上方修正、配当も25円増額と株主還元強化",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2212",
+   "name": "山崎製パン",
+   "category": "好材料",
+   "price": 4322.0,
+   "buy": true,
+   "headline": "欧州系大手証券がレーティング強気に引上げ、目標株価5,100円",
+   "yutai": "1,000株以上で3,000円相当の飲食料品",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6525",
+   "name": "KOKUSAI ELECTRIC",
+   "category": "懸念材料",
+   "price": 4897.0,
+   "buy": false,
+   "headline": "半導体・製造装置株の下落連鎖で11%安、影響銘柄に名前",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "285A",
+   "name": "キオクシアHD",
+   "category": "懸念材料",
+   "price": 7307.0,
+   "buy": false,
+   "headline": "11.66%安で出来高・掲示板ランキング上位、市場の注目集中",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5803",
+   "name": "フジクラ",
+   "category": "懸念材料",
+   "price": 2252.0,
+   "buy": false,
+   "headline": "12%超の大幅安で掲示板投稿数ランキング上位に浮上",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4755",
+   "name": "楽天グループ",
+   "category": "優待",
+   "price": 554.7000122070312,
+   "buy": true,
+   "headline": "12月末権利の優待人気3位、掲示板ランキングでも上位",
+   "yutai": "100株以上でサービス6ヵ月間無料（継続保有要件を満たせば追加6ヵ月無料）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3197",
+   "name": "すかいらーくHD",
+   "category": "優待",
+   "price": 3702.0,
+   "buy": true,
+   "headline": "12月末権利、食事券優待で人気ランキング上位の定番銘柄",
+   "yutai": "半年以上継続保有で自社グループ店舗の食事割引券2,000円分（100株）、ポイント付与率加算",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "7272",
+   "name": "ヤマハ発動機",
+   "category": "優待",
+   "price": 1726.0,
+   "buy": true,
+   "headline": "12月末権利、多彩な優待と配当利回り3.48%が魅力",
+   "yutai": "1年以上保有で優待ポイント1,000pt（100株）、名産品・観戦チケット等と交換",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "1605",
+   "name": "INPEX",
+   "category": "優待",
+   "price": 3312.0,
+   "buy": true,
+   "headline": "12月末権利、配当利回り3.38%に加え優待も人気",
+   "yutai": "400株以上・1年以上継続保有でオリジナルQUOカード1,000円分（保有期間で増額）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  }
  ]
 }
