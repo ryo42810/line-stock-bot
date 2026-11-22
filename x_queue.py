@@ -4,6 +4,7 @@
 この回はそれを時刻どおりにXへ出すだけ（AIは使わない）。
 - 昼 11:50：くじら枠（火・木：今日の1銘柄／月：整理／水：解説）
 - 夕方 18:00・19:00（週の最終営業日は 20:00 も）：夕方の2本目以降
+- 毎日 7:21・18:39：共感ポスト（kyokan_posts.py。ストックからこの回が並べる）
 
 GitHub Actionsの定時実行は数時間遅れることが多いので、この回は1時間おきに予約してあり、
 起動できた回が次の時刻まで待つ（待てるのは5時間まで）。出すものが無ければ何もしないで終わる。
@@ -53,18 +54,19 @@ def sync():
         print("最新の記録を取り込めませんでした（手元の記録で続けます）:", e)
 
 
-def push(message):
-    """x_queue.json をすぐGitHubに保存する（ほかの回と記録がずれないように）"""
+def push(message, files=(QUEUE_FILE,)):
+    """x_queue.json（と files に渡したもの）をすぐGitHubに保存する（ほかの回と記録がずれないように）"""
     if not os.environ.get("GITHUB_ACTIONS"):
         return
     branch = os.environ.get("GITHUB_REF_NAME", "main")
     try:
         _git("config", "user.name", "github-actions[bot]")
         _git("config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com")
-        _git("add", QUEUE_FILE)
-        if subprocess.run(["git", "diff", "--cached", "--quiet", "--", QUEUE_FILE]).returncode == 0:
+        files = [f for f in dict.fromkeys((QUEUE_FILE, *files)) if os.path.exists(f)]
+        _git("add", *files)
+        if subprocess.run(["git", "diff", "--cached", "--quiet", "--", *files]).returncode == 0:
             return
-        _git("commit", "-q", "-m", message, "--", QUEUE_FILE)
+        _git("commit", "-q", "-m", message, "--", *files)
         for i in (1, 2, 3):
             try:
                 _git("pull", "-q", "--rebase", "--autostash", "origin", branch)
@@ -105,11 +107,17 @@ def next_item(items, now):
     return min(pending, key=lambda i: i["time"]) if pending else None
 
 
-def run(now_fn, post_fn, notify, enabled=True, early_limit_min=300, sleep=time.sleep, weekday_only=True):
-    """予約を時刻どおりに出す。now_fn: いまの時刻（JST）/ post_fn: [(文章, 画像)] を投稿して結果の文言を返す / notify: LINEに知らせる"""
+def run(now_fn, post_fn, notify, enabled=True, early_limit_min=300, sleep=time.sleep, weekday_only=True, prepare=None):
+    """予約を時刻どおりに出す。now_fn: いまの時刻（JST）/ post_fn: [(文章, 画像)] を投稿して結果の文言を返す / notify: LINEに知らせる
+    prepare: 最初に1回呼ぶ（共感ポストの今日の2本を予約に並べる。kyokan_posts.prepare）"""
     if not enabled:
         print("Xの自動投稿はオフなので、予約投稿は出しません")
         return
+    if prepare:
+        try:
+            prepare(now_fn())
+        except Exception as e:  # 共感ポストで失敗しても、ほかの予約は出す
+            print("共感ポストの準備に失敗:", type(e).__name__, str(e)[:200])
     started = now_fn()
     tz = started.tzinfo
     last_posted = None

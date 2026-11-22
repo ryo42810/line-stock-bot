@@ -1,8 +1,9 @@
 name: X Scheduled Posts
 
-# 朝・夕方の回が作って時刻を付けた投稿（x_queue.json）を、その時刻にXへ出す（x_queue.py。AIは使わない）
+# 朝・夕方の回が作って時刻を付けた投稿（x_queue.json）を、その時刻にXへ出す（x_queue.py。AIは共感ポストの作り足しだけ）
 # - 昼 11:50：くじら枠（火・木：今日の1銘柄／月：整理／水：解説）
 # - 夕方 18:00・19:00（週の最終営業日は 20:00 も）：夕方の2本目以降
+# - 毎日 7:21・18:39：共感ポスト（kyokan_stock.json のストックから並べる。少なくなったらAIで作り足す）
 on:
   workflow_dispatch: # 手動実行用ボタン
   schedule:
@@ -11,7 +12,7 @@ on:
     - cron: '20 * * * *'
 
 permissions:
-  contents: write # 予約投稿の記録（x_queue.json）を保存するため
+  contents: write # 予約投稿の記録（x_queue.json・kyokan_stock.json）を保存するため
 
 concurrency:
   group: x-scheduled-posts
@@ -42,6 +43,10 @@ jobs:
           USER_ID: ${{ secrets.USER_ID }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID }}
+          # 共感ポストの作り足し（ai.py。空なら Opus 5.5、今月の使用額が上限を超えたら Sonnet 5.5）
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AI_MODEL: ${{ vars.AI_MODEL }}
+          BUDGET_USD: ${{ vars.BUDGET_USD }}
           # Xの自動投稿（Variables の X_AUTO_POST=on と、4つのキーが揃ったときだけ投稿）
           X_AUTO_POST: ${{ vars.X_AUTO_POST }}
           X_API_KEY: ${{ secrets.X_API_KEY }}

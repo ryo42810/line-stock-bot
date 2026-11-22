@@ -23,6 +23,7 @@ import week_ahead
 import kujira_posts
 import news_posts
 import x_queue
+import kyokan_posts
 import note_topics
 import notion_log
 import x_media
@@ -2084,8 +2085,10 @@ def main():
             x_replies.main(sys.modules[__name__], now_jst(), scheduled)
             return
         if mode == "xqueue":
-            # Xの予約投稿（昼11:50のくじら枠、夕方18:00・19:00…）。記録は x_queue.json に分けて持つ
-            x_queue.run(now_jst, x_media.post_all_to_x, send_line_text, x_media.x_enabled(), EARLY_LIMIT_MIN)
+            # Xの予約投稿（昼11:50のくじら枠、夕方18:00・19:00…、共感ポスト7:21・18:39）。記録は x_queue.json に分けて持つ
+            # 共感ポスト（毎日7:21・18:39）は、この回の最初にストックから今日の2本を並べる
+            prepare = lambda now: kyokan_posts.prepare(now, lambda: ai.Client("kyokan", now.date()), send_line_text)  # noqa: E731
+            x_queue.run(now_jst, x_media.post_all_to_x, send_line_text, x_media.x_enabled(), EARLY_LIMIT_MIN, prepare=prepare)
             return
         if mode == "topics":
             # 徹底解説のネタ候補（毎日16:00）。記録は topics_state.json に分けて持つ
