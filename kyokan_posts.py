@@ -5,6 +5,7 @@
 - ストックが少なくなったら、AI（ai.py の Opus）がまとめて作り足し、LINEに一覧を送る
 - 型は5種類（TYPES）。続けて同じ型が出ないように並べる
 - 過去に作った投稿（出したもの・ストック中のもの）と似ている投稿は、作り足すときにはじく
+- 投稿の最後には、かならず HASHTAGS（#株 #株クラ）を付ける。ストックには本文だけを持つ
 - チャットのスキル「投稿文作成」で作った投稿も、このファイルに source="chat" で入れれば同じように出る
 
 ストックの1件： {"id", "type", "theme", "post", "source", "created", "status", "date", "time"}
@@ -23,7 +24,8 @@ SLOTS = (("07:21", "09:30"), ("18:39", "21:30"))  # （出す時刻, これよ�
 MIN_STOCK = 6  # これより少なくなったら作り足す（3日分）
 BATCH = 12  # 1回に作り足す本数
 SIMILAR = 0.6  # これ以上似ていたら同じ内容とみなす（0〜1）
-MAX_CHARS = 140  # 全角で数えた長さの上限（Xの無料枠の上限）
+HASHTAGS = "#株 #株クラ"  # すべての投稿の最後に付ける（AIには書かせず、予約に並べるときにプログラムで付ける）
+MAX_CHARS = 130  # 本文の長さの上限（全角で数える。ハッシュタグを付けても140字に収まるように）
 NG_WORDS = ("絶対上がる", "必ず上がる", "今すぐ買え", "買うべき", "儲かる", "爆益確定")
 
 # 伸びている株クラの投稿（2026/11 にXで調査）を参考にした5つの型
@@ -66,7 +68,7 @@ PROMPT = """あなたはXで「くじら@20代|株主優待🐳」という、�
 - テーマは、優待・高配当・配当金・NISA・株主総会・権利確定日・株クラの空気など、優待・高配当の投資家に身近なもの
 - 1本は全角{max_chars}文字以内。短い行で改行し、意味のかたまりごとに空行を入れる
 - タメ口のやわらかい話し言葉（関西弁は使わない）。「〜だよね」「〜ってない？」など
-- 絵文字は使わないか、最後に1つまで。ハッシュタグ・URL・@は入れない
+- 絵文字は使わないか、最後に1つまで。ハッシュタグ・URL・@は入れない（ハッシュタグはあとでプログラムが付ける）
 - 「じゃ、見ていこう🐳」は使わない（別の投稿の合図なので）。くじらの比喩も使わない
 
 # やってはいけないこと
@@ -170,6 +172,11 @@ def add(items, candidates, source, today):
     return added
 
 
+def with_tags(post):
+    """本文の最後に、決まったハッシュタグを付ける"""
+    return f"{post.rstrip()}\n\n{HASHTAGS}"
+
+
 def parse(text):
     match = re.search(r"\[.*\]", text or "", re.S)
     if not match:
@@ -222,11 +229,11 @@ def pick(items, last_type):
 
 def reconcile(items, queue, today):
     """予約の結果をストックに写す。出せたら posted、見送り・行方不明なら出番待ちに戻す"""
-    status = {(q.get("date"), q.get("time"), q.get("post")): q.get("status") for q in queue}
+    status = {(q.get("date"), q.get("time")): q.get("status") for q in queue}
     for item in items:
         if item.get("status") != "queued":
             continue
-        result = status.get((item.get("date"), item.get("time"), item.get("post")))
+        result = status.get((item.get("date"), item.get("time")))
         if result == "posted":
             item["status"] = "posted"
         elif result == "skipped" or (result is None and item.get("date", "") < today.isoformat()):
@@ -259,7 +266,7 @@ def prepare(now, client_fn, notify):
             print("共感ポストのストックがありません")
             break
         item.update(status="queued", date=today.isoformat(), time=hhmm)
-        entries.append((hhmm, until, item["post"]))
+        entries.append((hhmm, until, with_tags(item["post"])))
     save(items)
     for hhmm, until, post in entries:
         x_queue.enqueue(today, [(hhmm, post, None)], until)

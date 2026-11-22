@@ -80,7 +80,9 @@ class KyokanTest(unittest.TestCase):
         self.assertIn("共感ポストのストックを7本作り足しました", self.lines[0])
         queue = x_queue.load()
         self.assertEqual([q["time"] for q in queue], ["07:21", "18:39"])
-        types = {i["post"]: i["type"] for i in stock}
+        # どの投稿も最後に #株 #株クラ が付く
+        self.assertTrue(all(q["post"].endswith("\n\n#株 #株クラ") for q in queue))
+        types = {k.with_tags(i["post"]): i["type"] for i in stock}
         self.assertNotEqual(types[queue[0]["post"]], types[queue[1]["post"]])
         # 同じ日にもう一度起動しても、二重には並べない（ストックは十分なので作り足さない）
         k.prepare(at(22, 7, 0), lambda: client, self.lines.append)
@@ -94,7 +96,7 @@ class KyokanTest(unittest.TestCase):
         queue[0]["status"], queue[1]["status"] = "posted", "skipped"
         x_queue.save(queue, datetime.date(2026, 11, 22))
         k.prepare(at(23, 6, 0), lambda: client, self.lines.append)
-        stock = {i["post"]: i for i in k.load()}
+        stock = {k.with_tags(i["post"]): i for i in k.load()}
         self.assertEqual(stock[queue[0]["post"]]["status"], "posted")
         self.assertNotEqual(stock[queue[1]["post"]]["status"], "skipped")
         self.assertIn(stock[queue[1]["post"]]["status"], ("pending", "queued"))
