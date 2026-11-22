@@ -18,7 +18,7 @@ import unicodedata
 import yfinance as yf
 
 PLAN = {0: "matome", 1: "one_yutai", 2: "kaisetsu", 3: "one_haito"}
-HASHTAGS = "#株主優待 #高配当株 #株クラ #NISA #投資家さんと繋がりたい"
+HASHTAGS = "#株 #株クラ"  # すべての投稿で、この2つにそろえる（2026/11/22に決定）
 FEATURE_COOLDOWN_DAYS = 45  # 同じ銘柄を「今日の1銘柄」に出すのは、この日数あけてから
 FEATURE_KEEP_DAYS = 120
 

@@ -2,14 +2,18 @@
 
 朝・夕方の回は、文章と画像を作ってLINEに送り、Xに出す時刻を付けて x_queue.json に並べる。
 この回はそれを時刻どおりにXへ出すだけ（AIは使わない）。
-- 昼 11:50：くじら枠（火・木：今日の1銘柄／月：整理／水：解説）
-- 夕方 18:00・19:00（週の最終営業日は 20:00 も）：夕方の2本目以降
-- 毎日 7:21・18:39：共感ポスト（kyokan_posts.py。ストックからこの回が並べる）
+- 昼 11:50ごろ：くじら枠（火・木：今日の1銘柄／月：整理／水：解説）
+- 夕方 18:05ごろ・19:10ごろ（週の最終営業日は 20:05ごろも）：夕方の2本目以降
+- 毎日 7:21ごろ・12:34ごろ・18:39ごろ：共感ポスト（kyokan_posts.py。ストックからこの回が並べる）
+- 毎日 8:26ごろ・21:13ごろ：「〇万円あったら」、平日 16時すぎ：大型株の値動き（quick_posts.py。AIは使わない）
+
+時刻はきりのいい分（:00・:05・:10…）だと予約っぽく見えるので、半端な分にしたうえで、日ごとに数分ずらす（slot_time）。
 
 GitHub Actionsの定時実行は数時間遅れることが多いので、この回は1時間おきに予約してあり、
 起動できた回が次の時刻まで待つ（待てるのは5時間まで）。出すものが無ければ何もしないで終わる。
 """
 import datetime
+import hashlib
 import json
 import os
 import subprocess
@@ -20,9 +24,29 @@ KEEP_DAYS = 7
 MIN_GAP_MIN = 30  # 遅れて2本が重なったときも、これだけ間隔をあける
 MAX_RUN_MIN = 320  # 1回の起動で動ける長さ（GitHub Actionsは1回6時間まで）
 # まだ投稿が並んでいなくても、この時刻に向けて待つ（朝・夕方の回が、待っているあいだに並べる）
-ANCHORS = {"midday": datetime.time(11, 50), "evening": datetime.time(18, 0)}
-MIDDAY_TIME, MIDDAY_UNTIL = "11:50", "13:30"
-EVENING_TIMES, EVENING_UNTIL = ("18:00", "19:00", "20:00"), "22:00"
+ANCHORS = {"midday": datetime.time(11, 47), "close": datetime.time(15, 58), "evening": datetime.time(18, 4)}
+JITTER_MIN = 8  # 日ごとにずらす幅（0〜この分だけ後ろへ）
+MIDDAY_BASE, MIDDAY_UNTIL = "11:47", "13:30"
+EVENING_BASES, EVENING_UNTIL = ("18:04", "19:08", "20:03"), "22:00"
+
+
+def slot_time(day, base):
+    """その日に出す時刻（"HH:MM"）。base から0〜JITTER_MIN分だけ後ろへずらす（日付と枠で決まるので、同じ日なら何度呼んでも同じ）。
+    毎日同じ分・きりのいい分に出ると予約っぽく見えるので、5分きざみの分（:00・:05・:10…）は必ず避ける"""
+    h, m = map(int, base.split(":"))
+    shift = int(hashlib.sha256(f"{day.isoformat()}|{base}".encode()).hexdigest(), 16) % (JITTER_MIN + 1)
+    total = h * 60 + m + shift
+    if total % 5 == 0:
+        total += 1
+    return f"{total // 60:02d}:{total % 60:02d}"
+
+
+def midday_time(day):
+    return slot_time(day, MIDDAY_BASE)
+
+
+def evening_times(day):
+    return tuple(slot_time(day, b) for b in EVENING_BASES)
 
 
 def load():
@@ -107,9 +131,10 @@ def next_item(items, now):
     return min(pending, key=lambda i: i["time"]) if pending else None
 
 
-def run(now_fn, post_fn, notify, enabled=True, early_limit_min=300, sleep=time.sleep, weekday_only=True, prepare=None):
+def run(now_fn, post_fn, notify, enabled=True, early_limit_min=300, sleep=time.sleep, weekday_only=True, prepare=None, refresh=None):
     """予約を時刻どおりに出す。now_fn: いまの時刻（JST）/ post_fn: [(文章, 画像)] を投稿して結果の文言を返す / notify: LINEに知らせる
-    prepare: 最初に1回呼ぶ（共感ポストの今日の2本を予約に並べる。kyokan_posts.prepare）"""
+    prepare: 最初に1回呼ぶ（共感ポストの今日の分を予約に並べる。kyokan_posts.prepare）
+    refresh: 待ちから戻るたびに呼ぶ（その時刻にならないと作れない投稿を並べる。quick_posts.prepare）"""
     if not enabled:
         print("Xの自動投稿はオフなので、予約投稿は出しません")
         return
@@ -124,6 +149,11 @@ def run(now_fn, post_fn, notify, enabled=True, early_limit_min=300, sleep=time.s
     waited_anchors = set()
     while True:
         sync()
+        if refresh:
+            try:
+                refresh(now_fn())
+            except Exception as e:  # ここで失敗しても、ほかの予約は出す
+                print("追加の投稿の準備に失敗:", type(e).__name__, str(e)[:200])
         now = now_fn()
         items = load()
         item = next_item(items, now)

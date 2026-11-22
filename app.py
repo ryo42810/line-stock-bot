@@ -24,6 +24,7 @@ import kujira_posts
 import news_posts
 import x_queue
 import kyokan_posts
+import quick_posts
 import note_topics
 import notion_log
 import x_media
@@ -52,8 +53,9 @@ NOTIFIED_FLAG = "notified.flag"  # エラー通知済みの目印（ワークフ
 STATE_FILE = "state.json"  # 朝・夕方をその日に配信済みかどうかと、くじら枠で紹介した銘柄の記録
 TARGET_TIME = {"morning": datetime.time(6, 43), "evening": datetime.time(16, 55), "topics": datetime.time(16, 0)}
 # その回の1本目をXに出す時刻。先に作り終えたら、ここまで待ってから投稿する（朝＝株ニュース、夕方＝なぜ動いたか）。
-# くじら枠（昼11:50）と夕方の2本目以降（18:00・19:00…）は、時刻を付けて x_queue.py の予約に回す
-FIRST_POST_TIME = {"morning": datetime.time(6, 50), "evening": datetime.time(17, 0)}
+# くじら枠（昼11:50ごろ）と夕方の2本目以降（18:05ごろ・19:10ごろ…）は、時刻を付けて x_queue.py の予約に回す
+# きりのいい時刻は予約っぽく見えるので、半端な分にして、日ごとに数分ずらす（x_queue.slot_time）
+FIRST_POST_BASE = {"morning": "06:46", "evening": "17:03"}
 FIRST_POST_WAIT_MAX_MIN = 15  # これより前に作り終えた回（手動実行など）は待たない
 EARLY_LIMIT_MIN = 300  # 目標よりこれ以上早く起動した回は、何もしないで終わる（あとの予約に任せる。1回の起動は6時間までなので、待てるのは5時間）
 # これより遅く起動した回は、LINEには送るがXには自動投稿しない（昼に「今朝の〜」が出るのを防ぐ）
@@ -72,8 +74,10 @@ CATEGORY_STYLE = {
 X_POST_STYLE = """## X投稿の書き方（共通）
 ### 入り方（1〜3行目）
 - 1行目で指を止めさせる。地合いの説明から始めない
+- 1行目には、会社名か具体的な数字を必ず入れる（タイムラインでは最初の数行しか見えないので、何の話かが1行目でわかるように）
 - 指定された「この投稿の入り方」を使う。中身と合わない入り方にはしない（好材料と懸念材料が混ざるなら、混ざる前提で書く）
-- 入り方の問いかけのすぐあとに、合図「じゃ、見ていこう🐳」を1行で入れて、そこから中身に入る。合図の言い回しは変えない
+- 1行目のすぐあと（2行目）に、合図「じゃ、見ていこう🐳」を1行で入れて、そこから中身に入る。合図の言い回しは変えない
+- 前置きの行を重ねない。「今日の株ニュース📰」のような題だけの行や、1行目を言いかえただけの問いかけの行は書かない（合図までは1行だけ）
 - 「↓↓」は使わない（合図で続きを読ませる）
 
 ### 口調
@@ -106,18 +110,18 @@ X_POST_STYLE = """## X投稿の書き方（共通）
 - 実在の人物の発言や口コミを作らない
 - 「絶対上がる」「今すぐ買え」など、株価の断定や売買の指示はしない。強い言い切りは、事実や注目度についてだけ使う"""
 
-# Xのハッシュタグ（AIには書かせず、プログラムで最後の行に付ける。夕方は #朝活 を外す）
-X_HASHTAGS_MORNING = "#朝活 #株クラ #日本株 #NISA #投資家さんと繋がりたい"
-X_HASHTAGS_EVENING = "#株クラ #日本株 #NISA #投資家さんと繋がりたい"
+# Xのハッシュタグ（AIには書かせず、プログラムで最後の行に付ける）。すべての投稿で「#株 #株クラ」の2つにそろえる（2026/11/22に決定）
+X_HASHTAGS_MORNING = "#株 #株クラ"
+X_HASHTAGS_EVENING = "#株 #株クラ"
 
 # 投稿の種類ごとの入り方（口調と合図はそろえつつ、入り方だけ作り分ける。2026/11/16に決定）
 X_GO = "じゃ、見ていこう🐳"
 X_ENTRY = {
-    "matome": "まとめ型：「この3つ、どれを取る？」のように、読む人に選ばせる問いから入る",
+    "matome": "まとめ型：「12月の優待、この3つならどれを取る？」のように、月や数字を入れて、読む人に選ばせる問いから入る",
     "kaisetsu": "解説型：「〜って知ってた？」のように、知識を問う問いから入る",
-    "news": "ニュース型：「〇〇なのに△△」のように、資料の中のちょっとしたズレや意外な事実から入る（資料に無い出来事は作らない）",
-    "movers": "値動き型：「なんで上がった？」「なんで下がった？」から入る",
-    "earnings": "決算予告型：「明日決算の3社、どこを見る？」のように、明日決算だとわかる問いから入る",
+    "news": "ニュース型：1行目に会社名(コード)と、何がどう変わったかを数字つきで書く（例:「〇〇(1234)、年間配当を60円→70円に増配」）。資料に無い出来事は作らない",
+    "movers": "値動き型：1行目に会社名と今日の騰落率を入れて「今日+15%の〇〇、なんで上がった？」「〇〇が-8%、なんで下がった？」から入る",
+    "earnings": "決算予告型：1行目に会社名を1つ以上入れて「明日決算の〇〇と△△、どこを見る？」のように、明日決算だとわかる問いから入る",
     "buy": "買い場候補型：「〇〇なのに、株価はまだ動いていない」のように、意外な事実から入る",
 }
 
@@ -133,14 +137,13 @@ X_SURVEY_THEMES = [
 ]
 
 # アンケート版のお手本（雰囲気・形の参考。内容はそのまま使わない）
-X_EXAMPLE_SURVEY = """株主優待で「これは神！」って思った銘柄は？🎁
+X_EXAMPLE_SURVEY = """株主優待で「これは神！」って思った銘柄、みんなは何だろう？🎁
 
-1位＋理由を教えてください👀
-実際にもらった人の声が聞きたい！"""
+僕は、使い道に困らない優待がいちばん強いと思ってる。
+金額より「毎年ちゃんと使い切れるか」で選ぶ派👀"""
 
 # 買い場候補版のお手本（雰囲気・形の参考。内容はそのまま使わない）
-X_EXAMPLE_BUY = """好材料が出たのに、株価はまだ静かな3銘柄👀
-上がる前なのか、それとも材料が弱いのか。
+X_EXAMPLE_BUY = """自社株買い＋増配のハイデイ日高(7611)、なのに株価はまだ静か👀
 じゃ、見ていこう🐳
 
 ①ハイデイ日高(7611)
@@ -156,8 +159,7 @@ X_EXAMPLE_BUY = """好材料が出たのに、株価はまだ静かな3銘柄�
 値動きの前ぶれかも"""
 
 # ニュース版のお手本（雰囲気・形の参考。内容はそのまま使わない）
-X_EXAMPLE_NEWS = """増収なのに減益の会社と、売却益で大幅増益の会社📰
-今朝の決算、明暗くっきりだけど中身はどうだろう？
+X_EXAMPLE_NEWS = """最終利益77.5%増のカネコ種苗(1376)と、減損で減益のあみやき亭(2753)📰
 じゃ、見ていこう🐳
 
 ①カネコ種苗(1376)
@@ -279,8 +281,9 @@ def schedule_gate(mode, now, scheduled, done_day="", sleep=time.sleep):
 
 
 def wait_for_first_post_time(mode, now, sleep=time.sleep):
-    """その回の1本目を決まった時刻（朝6:50・夕方17:00）に出すため、少し早く作り終えたらその時刻まで待つ。待った秒数を返す"""
-    target = datetime.datetime.combine(now.date(), FIRST_POST_TIME[mode], tzinfo=JST)
+    """その回の1本目を決まった時刻（朝6:50ごろ・夕方17:05ごろ。日ごとに数分ずらす）に出すため、少し早く作り終えたらその時刻まで待つ。待った秒数を返す"""
+    hour, minute = map(int, x_queue.slot_time(now.date(), FIRST_POST_BASE[mode]).split(":"))
+    target = datetime.datetime.combine(now.date(), datetime.time(hour, minute), tzinfo=JST)
     wait_sec = (target - now).total_seconds()
     if 0 < wait_sec <= FIRST_POST_WAIT_MAX_MIN * 60:
         print(f"Xへの投稿は{target:%H:%M}まで{wait_sec:.0f}秒待ちます")
@@ -1219,7 +1222,7 @@ def run(today, allow_x=True):
         except Exception as e:
             print("画像の作成に失敗 (kujira):", e)
     try:
-        if news.get("stocks"):
+        if news.get("stocks") and news_posts.WITH_IMAGE:
             images["yutai_news"] = x_media.render_stock_card(
                 x_media.image_path(today, "yutai-news"), news["title"], news["subtitle"], news["stocks"], x_media.COLORS["gold"], get_history, date_text
             )
@@ -1261,15 +1264,15 @@ def run(today, allow_x=True):
         (news.get("post", ""), images.get("yutai_news")), (x_post_news, images.get("news")), (x_post_buy, images.get("buy")),
         (weekly.get("post", ""), images.get("weekly")), (x_post_survey, None),
     ]
-    # くじら枠はXには昼11:50に出す（x_queue.yml の回。朝の回が遅れた日も、昼に間に合えば出す）
+    # くじら枠はXには昼11:50ごろに出す（x_queue.yml の回。朝の回が遅れた日も、昼に間に合えば出す）
     if today == now_jst().date():
-        x_queue.enqueue(today, [(x_queue.MIDDAY_TIME, kujira.get("post", ""), images.get("kujira"))], x_queue.MIDDAY_UNTIL)
+        x_queue.enqueue(today, [(x_queue.midday_time(today), kujira.get("post", ""), images.get("kujira"))], x_queue.MIDDAY_UNTIL)
     if not allow_x:
         notice = x_skipped_notice(now_jst(), posts)
         if notice:
             send_line_text(notice)
         return
-    # 朝は株ニュースを 6:50 に出す
+    # 朝は株ニュースを 6:50ごろに出す
     if x_media.x_enabled() and news.get("post"):
         wait_for_first_post_time("morning", now_jst())
     x_result = x_media.post_all_to_x(posts)
@@ -1455,9 +1458,9 @@ def write_x_posts(client, picks, buy_list, disclosures, topic_text, today):
         theme = X_SURVEY_THEMES[(today.toordinal() // 7) % len(X_SURVEY_THEMES)].format(next_month=next_month)
         survey_rule = f"""### x_post_survey（アンケート版・日曜だけ）
 - 今週のテーマ: {theme}
-- フォロワーにリプで答えてもらう問いかけ投稿にする。銘柄の紹介はしない
-- 1行目はテーマを問いかけで（最後に絵文字）。続けて「1位＋理由を教えてください」のように答え方を具体的に書く
-- 「〇〇な人の声が聞きたい！」のように、答えたくなる一言で締める
+- 読んだ人が自分の答えを言いたくなる問いかけ投稿にする。銘柄の紹介はしない
+- 1行目はテーマを問いかけで（最後に絵文字）。続けて、自分の考え（選ぶときの基準など）を1〜2行で書く。保有・売買・受け取りの体験談は書かない
+- 「教えてください」「リプで教えて」「聞かせて」「いいねして」のように、反応をお願いする言い方は書かない（Xの収益化のルールで、反応を繰り返し頼むことが禁じられているため）。問いかけと自分の考えだけで終える
 - 書き方は共通ルールに従う。短く、100字程度まで
 
 ### アンケート版のお手本（形・雰囲気の参考。内容は使わない）
@@ -1918,6 +1921,7 @@ def evening_with_claude(client, today):
 ## 1. movers_post（なぜ動いたか・X下書き）
 - 「理由の手がかりがある値動き銘柄」から、今日大きく動いた銘柄を選び、「なぜ動いたのか」を解説する
 - 理由は、その銘柄に紐づいた適時開示・今朝の注目理由・Web検索で確かめた理由に書いてあることだけを使う。Web検索の理由を優先する
+- 個人投資家によく知られた会社（時価総額の大きい会社、優待や配当で人気の会社）を先に選ぶ。知らない人が多い小さな会社ばかりにしない
 - 「今日+15%🚀」のように騰落率を入れ、次の行に理由
 - 「業績データ」がある銘柄は、「営業利益+30%」のように具体的な数字で理由を書く。ただし業績データの四半期が今回の決算と違いそうなら使わない
 - 1行目は必ず入り方の問いかけ（例: 「今日+15%の〇〇、なんで上がった？🚀」）。銘柄名だけで書き始めない
@@ -2018,7 +2022,7 @@ def run_evening(today, allow_x=True):
         state = load_state()
         news = news_posts.build(sys.modules[__name__], news_client, MODEL, fetch_tdnet([today]), today, state, "今日", load_held(), fetch_market_data())
         save_state(state)
-        if news.get("stocks"):
+        if news.get("stocks") and news_posts.WITH_IMAGE:
             weekday_str = "月火水木金土日"[today.weekday()]
             news_image = x_media.render_stock_card(
                 x_media.image_path(today, "yutai-news-evening"), news["title"], news["subtitle"], news["stocks"], x_media.COLORS["gold"], get_history,
@@ -2063,9 +2067,9 @@ def run_evening(today, allow_x=True):
         if notice:
             send_line_text(notice)
         return
-    # 夕方は1時間おきに出す。1本目は17:00、2本目からは18:00・19:00…の予約に回す（x_queue.yml の回が出す）
+    # 夕方は1時間おきに出す。1本目は17:05ごろ、2本目からは18:05ごろ・19:10ごろ…の予約に回す（x_queue.yml の回が出す）
     posts = [p for p in posts if p[0]]
-    x_queue.enqueue(today, [(t, post, image) for t, (post, image) in zip(x_queue.EVENING_TIMES, posts[1:])], x_queue.EVENING_UNTIL)
+    x_queue.enqueue(today, [(t, post, image) for t, (post, image) in zip(x_queue.evening_times(today), posts[1:])], x_queue.EVENING_UNTIL)
     if x_media.x_enabled() and posts:
         wait_for_first_post_time("evening", now_jst())
     x_result = x_media.post_all_to_x(posts[:1])
@@ -2085,10 +2089,12 @@ def main():
             x_replies.main(sys.modules[__name__], now_jst(), scheduled)
             return
         if mode == "xqueue":
-            # Xの予約投稿（昼11:50のくじら枠、夕方18:00・19:00…、共感ポスト7:21・18:39）。記録は x_queue.json に分けて持つ
-            # 共感ポスト（毎日7:21・18:39）は、この回の最初にストックから今日の2本を並べる
+            # Xの予約投稿（昼のくじら枠、夕方の2本目以降、共感ポスト、「〇万円あったら」、大型株の値動き）。記録は x_queue.json に分けて持つ
+            # 共感ポスト（毎日3本）は、この回の最初にストックから今日の分を並べる
+            # 「〇万円あったら」（毎日2本）と大型株の値動き（平日の引け後）は、AIを使わずに作って並べる（quick_posts.py）
             prepare = lambda now: kyokan_posts.prepare(now, lambda: ai.Client("kyokan", now.date()), send_line_text)  # noqa: E731
-            x_queue.run(now_jst, x_media.post_all_to_x, send_line_text, x_media.x_enabled(), EARLY_LIMIT_MIN, prepare=prepare)
+            refresh = lambda now: quick_posts.prepare(sys.modules[__name__], now)  # noqa: E731
+            x_queue.run(now_jst, x_media.post_all_to_x, send_line_text, x_media.x_enabled(), EARLY_LIMIT_MIN, prepare=prepare, refresh=refresh)
             return
         if mode == "topics":
             # 徹底解説のネタ候補（毎日16:00）。記録は topics_state.json に分けて持つ
