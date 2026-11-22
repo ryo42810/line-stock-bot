@@ -41,7 +41,15 @@ POSTS = [
     {"type": "honne", "theme": "カタログ", "post": "正直に言うと\n\nカタログが届く日のほうが\n配当の入金日よりワクワクする"},
     {"type": "flip", "theme": "長期保有", "post": "株って長く持つほど\n正義みたいな空気あるけど\n\n長く持つことと\nほったらかしにすることって\n全く別の話だよね"},
     {"type": "join", "theme": "株主総会", "post": "株主総会のお知らせが届いたとき\n\n中身まで読む人ー？"},
+    {"type": "kazu", "theme": "手取り", "post": "配当金って、額面より手取りで見たほうがいい\n\n年10万円の配当でも\n税金で約2割引かれて\n手元に残るのは約8万円"},
+    {"type": "aruaru", "theme": "権利日", "post": "権利付き最終日の夜だけ\n\nやたら早く寝る株クラ民"},
+    {"type": "honne", "theme": "含み損", "post": "ぶっちゃけ\n\n含み損の銘柄ほど\n優待が届くとうれしい"},
 ]
+
+
+def slots(day):
+    """その日の共感ポストの時刻（日ごとに数分ずれる）"""
+    return [x_queue.slot_time(datetime.date(2026, 11, day), base) for base, _ in k.SLOTS]
 
 
 class KyokanTest(unittest.TestCase):
@@ -63,6 +71,8 @@ class KyokanTest(unittest.TestCase):
             {"type": "flip", "theme": "a", "post": "NTTは100株で買える"},
             {"type": "honne", "theme": "b", "post": "正直に言うと #株クラ"},
             {"type": "nope", "theme": "c", "post": "型がない投稿"},
+            {"type": "honne", "theme": "d", "post": "正直に言うと\n\n利回り4%あれば十分だと思ってる"},  # 数字は kazu の型だけ
+            {"type": "join", "theme": "e", "post": "優待が届いたら何に使う？\n\nリプで教えて"},  # 反応のお願いは書かない
         ]
         self.assertEqual(k.add(items, bad, "bot", today), [])
         k.add(items, POSTS[:1], "bot", today)
@@ -71,22 +81,31 @@ class KyokanTest(unittest.TestCase):
         self.assertEqual(k.add(items, [again], "bot", today), [])
         self.assertEqual(len(items), 1)
 
-    def test_refill_and_book_two_slots_without_same_type_in_a_row(self):
+    def test_numbers_are_allowed_only_in_kazu_type(self):
+        today = datetime.date(2026, 11, 22)
+        items = []
+        added = k.add(items, [p for p in POSTS if p["type"] == "kazu"], "bot", today)
+        self.assertEqual(len(added), 1)
+        # 例えの数字でも、銘柄コードが入っていたらはじく
+        self.assertEqual(k.add(items, [{"type": "kazu", "theme": "x", "post": "ある会社(9432)は100株で2万円"}], "bot", today), [])
+
+    def test_refill_and_book_three_slots_without_same_type_in_a_row(self):
         client = FakeClient([POSTS])
         k.prepare(at(22, 6, 0), lambda: client, self.lines.append)
         stock = k.load()
         self.assertEqual(client.calls, 1)
         self.assertEqual(len(stock), len(POSTS))
-        self.assertIn("共感ポストのストックを7本作り足しました", self.lines[0])
+        self.assertIn(f"共感ポストのストックを{len(POSTS)}本作り足しました", self.lines[0])
         queue = x_queue.load()
-        self.assertEqual([q["time"] for q in queue], ["07:21", "18:39"])
+        self.assertEqual([q["time"] for q in queue], slots(22))
         # どの投稿も最後に #株 #株クラ が付く
         self.assertTrue(all(q["post"].endswith("\n\n#株 #株クラ") for q in queue))
         types = {k.with_tags(i["post"]): i["type"] for i in stock}
         self.assertNotEqual(types[queue[0]["post"]], types[queue[1]["post"]])
+        self.assertNotEqual(types[queue[1]["post"]], types[queue[2]["post"]])
         # 同じ日にもう一度起動しても、二重には並べない（ストックは十分なので作り足さない）
         k.prepare(at(22, 7, 0), lambda: client, self.lines.append)
-        self.assertEqual(len(x_queue.load()), 2)
+        self.assertEqual(len(x_queue.load()), 3)
         self.assertEqual(client.calls, 1)
 
     def test_skipped_post_goes_back_to_stock(self):
@@ -104,7 +123,7 @@ class KyokanTest(unittest.TestCase):
     def test_late_start_skips_slots_already_past(self):
         client = FakeClient([POSTS])
         k.prepare(at(22, 10, 0), lambda: client, self.lines.append)
-        self.assertEqual([q["time"] for q in x_queue.load()], ["18:39"])
+        self.assertEqual([q["time"] for q in x_queue.load()], slots(22)[1:])
 
     def test_chat_posts_go_first(self):
         today = datetime.date(2026, 11, 22)
@@ -113,7 +132,7 @@ class KyokanTest(unittest.TestCase):
         k.add(items, POSTS[3:4], "chat", today)
         self.assertEqual(k.pick(items, "")["source"], "chat")
 
-    def test_queue_runs_prepare_and_posts_at_721(self):
+    def test_queue_runs_prepare_and_posts_at_its_time(self):
         client = FakeClient([POSTS])
         now = [at(22, 7, 0)]
         posted = []
@@ -127,7 +146,7 @@ class KyokanTest(unittest.TestCase):
 
         prepare = lambda n: k.prepare(n, lambda: client, self.lines.append)  # noqa: E731
         x_queue.run(lambda: now[0], post, self.lines.append, sleep=sleep, weekday_only=False, prepare=prepare)
-        self.assertEqual(posted[0][0], "07:21")
+        self.assertEqual(posted[0][0], slots(22)[0])
 
 
 if __name__ == "__main__":

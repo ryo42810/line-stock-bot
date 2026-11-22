@@ -29,6 +29,12 @@ def at(day, hour, minute):
     return datetime.datetime(2026, 11, day, hour, minute, tzinfo=JST)
 
 
+def hm(text):
+    """ "HH:MM" を、0時からの分にする"""
+    h, m = map(int, text.split(":"))
+    return h * 60 + m
+
+
 class ScheduleGateTest(unittest.TestCase):
     """定時実行のずれ対策"""
 
@@ -83,7 +89,7 @@ class ScheduleGateTest(unittest.TestCase):
 
 
 class XQueueTest(unittest.TestCase):
-    """Xの予約投稿：株ニュースは朝6:50、くじら枠は昼11:50、夕方は17:00から1時間おき"""
+    """Xの予約投稿：株ニュースは朝6:50ごろ、くじら枠は昼11:50ごろ、夕方は17:05ごろから1時間おき（日ごとに数分ずらす）"""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -109,43 +115,60 @@ class XQueueTest(unittest.TestCase):
 
     def test_first_post_waits_until_its_time(self):
         waited = []
-        self.assertEqual(app.wait_for_first_post_time("morning", at(16, 6, 46), sleep=waited.append), 4 * 60)
-        self.assertEqual(app.wait_for_first_post_time("evening", at(16, 16, 57), sleep=waited.append), 3 * 60)
+        day = datetime.date(2026, 11, 16)
+        morning = hm(x_queue.slot_time(day, app.FIRST_POST_BASE["morning"]))
+        evening = hm(x_queue.slot_time(day, app.FIRST_POST_BASE["evening"]))
+        self.assertEqual(app.wait_for_first_post_time("morning", at(16, 6, 44), sleep=waited.append), (morning - (6 * 60 + 44)) * 60)
+        self.assertEqual(app.wait_for_first_post_time("evening", at(16, 16, 57), sleep=waited.append), (evening - (16 * 60 + 57)) * 60)
         # 時刻を過ぎていたら待たない。ずっと前（手動実行など）も待たない
-        self.assertEqual(app.wait_for_first_post_time("morning", at(16, 6, 55), sleep=waited.append), 0)
+        self.assertEqual(app.wait_for_first_post_time("morning", at(16, 6, 58), sleep=waited.append), 0)
         self.assertEqual(app.wait_for_first_post_time("morning", at(16, 3, 0), sleep=waited.append), 0)
-        self.assertEqual(waited, [4 * 60, 3 * 60])
+        self.assertEqual(len(waited), 2)
 
-    def test_midday_post_goes_out_at_1150(self):
+    def test_slot_time_avoids_round_minutes_and_moves_day_by_day(self):
+        seen = set()
+        for i in range(60):
+            day = datetime.date(2026, 11, 1) + datetime.timedelta(days=i)
+            for base in ("06:46", "11:47", "17:03", "18:04", "19:08", "07:21", "12:34", "18:39", "08:26", "21:13", "15:52", "17:52", "17:22"):
+                t = hm(x_queue.slot_time(day, base))
+                self.assertNotEqual(t % 5, 0)  # きりのいい分（:00・:05・:10…）は予約っぽく見えるので出さない
+                self.assertTrue(hm(base) <= t <= hm(base) + x_queue.JITTER_MIN + 1)
+                self.assertEqual(x_queue.slot_time(day, base), x_queue.slot_time(day, base))  # 同じ日は同じ時刻
+            seen.add(x_queue.slot_time(day, "18:04"))
+        self.assertGreater(len(seen), 4)  # 日によって分が変わる
+
+    def test_midday_post_goes_out_at_its_time(self):
         today = datetime.date(2026, 11, 17)
-        x_queue.enqueue(today, [(x_queue.MIDDAY_TIME, "今日の1銘柄", os.path.join(self.tmp.name, "none.png"))], x_queue.MIDDAY_UNTIL)
-        self.run_queue(at(17, 7, 50))  # 4時間前に起動 → 11:50まで待って出す（画像が無ければ文章だけ）
-        self.assertEqual(self.posted, [("11:50", "今日の1銘柄", None)])
-        self.run_queue(at(17, 12, 0))  # 出したあとの回は何もしない（夕方の18:00は5時間より先）
+        midday = x_queue.midday_time(today)
+        x_queue.enqueue(today, [(midday, "今日の1銘柄", os.path.join(self.tmp.name, "none.png"))], x_queue.MIDDAY_UNTIL)
+        self.run_queue(at(17, 7, 50))  # 4時間前に起動 → 昼の時刻まで待って出す（画像が無ければ文章だけ）
+        self.assertEqual(self.posted, [(midday, "今日の1銘柄", None)])
+        self.run_queue(at(17, 12, 10))  # 出したあとの回は何もしない（夕方の分は5時間より先）
         self.assertEqual(len(self.posted), 1)
 
     def test_waits_for_posts_that_arrive_later(self):
-        # 13:20に起動した回は、まだ何も並んでいなくても18:00まで待つ。そのあいだに夕方の回が並べる
+        # 13:20に起動した回は、まだ何も並んでいなくても夕方まで待つ。そのあいだに夕方の回が並べる
         today = datetime.date(2026, 11, 17)
+        first, second = x_queue.evening_times(today)[:2]
         old_sync = x_queue.sync
         def arrive():
             if self.now >= at(17, 17, 0) and not x_queue.load():
                 x_queue.sync = old_sync
-                x_queue.enqueue(today, [("18:00", "明日の決算", None), ("19:00", "株ニュース", None)], x_queue.EVENING_UNTIL)
+                x_queue.enqueue(today, [(first, "明日の決算", None), (second, "株ニュース", None)], x_queue.EVENING_UNTIL)
 
         x_queue.sync = arrive
         try:
             self.run_queue(at(17, 13, 20))
         finally:
             x_queue.sync = old_sync
-        # 19:00の分は、1回の起動の長さ（320分）を超えるので次の回に任せる
-        self.assertEqual(self.posted, [("18:00", "明日の決算", None)])
-        self.run_queue(at(17, 18, 2))
-        self.assertEqual([p[:2] for p in self.posted], [("18:00", "明日の決算"), ("19:00", "株ニュース")])
+        # 2本目は、1回の起動の長さ（320分）を超えるので次の回に任せる
+        self.assertEqual(self.posted, [(first, "明日の決算", None)])
+        self.run_queue(at(17, 18, 32))
+        self.assertEqual([p[:2] for p in self.posted], [(first, "明日の決算"), (second, "株ニュース")])
 
     def test_too_early_and_too_late(self):
         today = datetime.date(2026, 11, 17)
-        x_queue.enqueue(today, [(x_queue.MIDDAY_TIME, "今日の1銘柄", None)], x_queue.MIDDAY_UNTIL)
+        x_queue.enqueue(today, [(x_queue.midday_time(today), "今日の1銘柄", None)], x_queue.MIDDAY_UNTIL)
         self.run_queue(at(17, 6, 0))  # 5時間より前 → 何もしない
         self.assertEqual(self.posted, [])
         self.run_queue(at(17, 14, 0))  # 13:30より後 → Xは見送ってLINEで知らせる
@@ -343,15 +366,24 @@ class NewsPostsTest(unittest.TestCase):
             self.item("5555", "大きい増配", "配当予想の修正（増配）に関するお知らせ"),
         ])
         picked = news_posts.choose(news, {"2222": 0, "5555": 1, "4444": 2})
-        # 1社目は優待（軸）。残りは知られた会社から、種類が重ならないように
-        self.assertEqual([d["code"] for d in picked], ["1111", "2222", "5555"])
+        # 1社1論点：知られた会社（順位のある会社）の中で、優待・配当・自社株買いのニュースを先にする
+        self.assertEqual([d["code"] for d in picked], ["5555"])
+        # 知られた会社に軸のニュースが無ければ、知られた会社のほかのニュース
+        picked = news_posts.choose(news, {"2222": 0, "4444": 2})
+        self.assertEqual([d["code"] for d in picked], ["2222"])
+        # 知られた会社が1社も無ければ、今までどおり軸のニュースから
+        picked = news_posts.choose(news, {})
+        self.assertEqual([d["code"] for d in picked], ["1111"])
 
     def test_market_line(self):
         rows = [{"symbol": "^N225", "name": "日経平均", "value": "50,123", "change": 0.82}]
         self.assertEqual(news_posts.market_line(rows), "日経平均は50,123円（+0.82%）")
         self.assertEqual(news_posts.market_line([]), "")
-        post = news_posts.fallback_post([{"name": "A社", "code": "1111", "kind": "増配"}], "今日", rows)
-        self.assertIn("日経平均は50,123円（+0.82%）", post)
+        # 決まった型の文章は、1行目に会社名が入る（相場の行は入れない）
+        post = news_posts.fallback_post([{"name": "A社", "code": "1111", "kind": "増配", "point": "年間配当を60円から70円に増額"}], "今日", rows)
+        self.assertTrue(post.startswith("A社(1111)が増配を発表"))
+        self.assertIn("年間配当を60円から70円に増額", post)
+        self.assertNotIn("日経平均", post)
 
     def test_numbers_must_come_from_pdf(self):
         source = "年間配当金 60円 → 70円"

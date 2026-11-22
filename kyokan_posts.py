@@ -1,9 +1,11 @@
-"""共感ポスト：読んだ人が「わかる」「自分はこう思う」と言いたくなる短い投稿を、毎日 7:21 と 18:39 にXへ出す
+"""共感ポスト：読んだ人が「わかる」「自分はこう思う」と言いたくなる短い投稿を、毎日 7:21ごろ・12:34ごろ・18:39ごろ にXへ出す
+（時刻は日ごとに数分ずらす。x_queue.slot_time）
 
-- 投稿は kyokan_stock.json にストックしておき、x_queue.py の回（1時間おき）が、その日の2本を予約に並べる
+- 投稿は kyokan_stock.json にストックしておき、x_queue.py の回（1時間おき）が、その日の3本を予約に並べる
   （GitHub Actionsの起動は数時間遅れることがあるので、その場で作らずに前もって作っておく）
 - ストックが少なくなったら、AI（ai.py の Opus）がまとめて作り足し、LINEに一覧を送る
-- 型は5種類（TYPES）。続けて同じ型が出ないように並べる
+- 型は6種類（TYPES）。続けて同じ型が出ないように並べる
+- 「数字で見方を変える」の型（kazu）だけ、例えの数字（実在の銘柄を指さない数字）を使ってよい
 - 過去に作った投稿（出したもの・ストック中のもの）と似ている投稿は、作り足すときにはじく
 - 投稿の最後には、かならず HASHTAGS（#株 #株クラ）を付ける。ストックには本文だけを持つ
 - チャットのスキル「投稿文作成」で作った投稿も、このファイルに source="chat" で入れれば同じように出る
@@ -20,9 +22,10 @@ import ai
 import x_queue
 
 STOCK_FILE = "kyokan_stock.json"
-SLOTS = (("07:21", "09:30"), ("18:39", "21:30"))  # （出す時刻, これより遅れたら見送る）
-MIN_STOCK = 6  # これより少なくなったら作り足す（3日分）
-BATCH = 12  # 1回に作り足す本数
+SLOTS = (("07:21", "09:30"), ("12:34", "14:30"), ("18:39", "21:30"))  # （出す時刻のもと, これより遅れたら見送る）。実際の時刻は日ごとに数分ずらす
+MIN_STOCK = 9  # これより少なくなったら作り足す（3日分）
+BATCH = 15  # 1回に作り足す本数
+NUMBER_TYPES = ("kazu",)  # 例えの数字を使ってよい型
 SIMILAR = 0.6  # これ以上似ていたら同じ内容とみなす（0〜1）
 HASHTAGS = "#株 #株クラ"  # すべての投稿の最後に付ける（AIには書かせず、予約に並べるときにプログラムで付ける）
 MAX_CHARS = 130  # 本文の長さの上限（全角で数える。ハッシュタグを付けても140字に収まるように）
@@ -55,13 +58,18 @@ TYPES = {
         "how": "「正直に言うと」「ぶっちゃけ」から入り、多くの人が思っているけど言いにくい本音を1つだけ言う。強い主張ではなく、共感されるくらいの温度にする。",
         "example": "正直に言うと\n\n優待のカタログが届く日のほうが\n配当金が入る日よりワクワクする",
     },
+    "kazu": {
+        "name": "数字で見方を変える",
+        "how": "かんたんな例えの数字を1つ使って、ふだんの見方をひっくり返す。計算は暗算で確かめられるものだけにする（割合・かけ算1回まで）。実在の会社の株価・利回り・配当額は書かず、「年10万円の配当」「利回り3%の株」のような例えにする。",
+        "example": "配当金って、額面より手取りで見たほうがいい\n\n年10万円の配当でも\n税金で約2割引かれて\n手元に残るのは約8万円\n\nNISAの枠を先に使う理由、ここだよね",
+    },
 }
 ORDER = list(TYPES)
 
 PROMPT = """あなたはXで「くじら@20代|株主優待🐳」という、優待・高配当株のアカウントを運用している20代の個人投資家です。
 読んだ人が「わかる」「自分はこう思う」とリプや引用をしたくなる、短い投稿を{n}本作ってください。
 
-# 5つの型（各型を{per}本前後ずつ）
+# 6つの型（各型を{per}本前後ずつ）
 {types}
 
 # 書き方
@@ -72,7 +80,9 @@ PROMPT = """あなたはXで「くじら@20代|株主優待🐳」という、�
 - 「じゃ、見ていこう🐳」は使わない（別の投稿の合図なので）。くじらの比喩も使わない
 
 # やってはいけないこと
-- 具体的な株価・利回り・金額・日付・銘柄名・社名を書かない（間違いを書かないため）
+- 実在の会社の株価・利回り・配当額・日付・銘柄名・社名を書かない（間違いを書かないため）
+- 数字（〇円・〇%・〇株・〇倍）を使ってよいのは「数字で見方を変える」（kazu）の型だけ。それも例えの数字に限り、計算が合っているかを必ず検算する。ほかの型では数字を使わない
+- 「教えて」「リプして」「いいねして」「保存して」「フォローして」のように、反応をお願いする言い方（問いかけはよいが、行動を頼まない）
 - 「〇〇株を買った」「優待が届いた」など、自分の保有・売買・受け取りの体験談として書かない（気持ちや考えはOK）
 - 株価の断定、売買のすすめ、特定の人やグループを見下す言い方、炎上をねらった言い方
 - 下の「これまでの投稿」と同じ内容・同じ切り口・同じオチ。言い回しを変えただけのものもダメ
@@ -131,16 +141,18 @@ def is_duplicate(post, theme, items):
     return False
 
 
-def problem_of(post):
-    """出してはいけない投稿なら理由を返す"""
+def problem_of(post, kind=""):
+    """出してはいけない投稿なら理由を返す。kind が NUMBER_TYPES のときだけ、例えの数字を通す"""
     if not post.strip():
         return "空"
     if width(post) > MAX_CHARS:
         return "長すぎる"
     if re.search(r"https?://|[#＃@＠]", post):
         return "URL・ハッシュタグ・@が入っている"
-    if re.search(r"[0-9０-９]+\s*(円|%|％|株|倍)", post):
+    if kind not in NUMBER_TYPES and re.search(r"[0-9０-９]+\s*(円|%|％|株|倍)", post):
         return "具体的な数字が入っている"
+    if re.search(r"(教えて|リプして|リプで|いいねして|保存して|フォローして|リポストして)", post):
+        return "反応をお願いする言い方が入っている"
     if re.search(r"[（(][0-9０-９]{4}[）)]", post):
         return "銘柄コードが入っている"
     hit = [w for w in NG_WORDS if w in post]
@@ -156,7 +168,7 @@ def add(items, candidates, source, today):
         post = (c.get("post") or "").strip()
         kind = c.get("type") if c.get("type") in TYPES else ""
         theme = (c.get("theme") or "").strip()
-        problem = problem_of(post) or ("型が分からない" if not kind else "")
+        problem = problem_of(post, kind) or ("型が分からない" if not kind else "")
         if problem:
             print(f"共感ポストをはじきました（{problem}）: {post[:30]}")
             continue
@@ -211,7 +223,7 @@ def refill(items, today, client_fn, notify):
             break
     if added:
         body = "\n\n―――\n\n".join(f"【{TYPES[a['type']]['name']}】\n{a['post']}" for a in added)
-        notify(f"🗣 共感ポストのストックを{len(added)}本作り足しました（毎日7:21・18:39に順番に出ます）\n\n{body}")
+        notify(f"🗣 共感ポストのストックを{len(added)}本作り足しました（毎日7:21ごろ・12:34ごろ・18:39ごろに順番に出ます）\n\n{body}")
     return len(added)
 
 
@@ -246,7 +258,7 @@ def last_type(items):
 
 
 def prepare(now, client_fn, notify):
-    """x_queue.py の回の最初に呼ぶ。ストックを整えて、今日の2本を予約に並べる"""
+    """x_queue.py の回の最初に呼ぶ。ストックを整えて、今日の3本を予約に並べる"""
     today = now.date()
     x_queue.sync()
     items = load()
@@ -258,7 +270,8 @@ def prepare(now, client_fn, notify):
         print("共感ポストを作り足せませんでした:", type(e).__name__, str(e)[:200])
     booked = {(q.get("date"), q.get("time")) for q in queue}
     entries = []
-    for hhmm, until in SLOTS:
+    for base, until in SLOTS:
+        hhmm = x_queue.slot_time(today, base)
         if (today.isoformat(), hhmm) in booked or now > x_queue._at(today, until, now.tzinfo):
             continue
         item = pick(items, last_type(items))

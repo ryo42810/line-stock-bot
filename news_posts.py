@@ -1,4 +1,7 @@
-"""株ニュースの投稿（朝と夕方に1本ずつ）と、週まとめ（土曜の朝に1本）
+"""株ニュースの投稿（朝と夕方に1本ずつ。1社1論点・文字だけ）と、週まとめ（土曜の朝に1本）
+
+2026/11/22から、3社を並べる形をやめて「知られた会社を1社だけ、何が変わったか＋自分の見方」にした。
+（3社まとめ・画像つきは表示が100〜260、1社1論点・文字だけは400〜1,500だったため）
 
 株価に関わりそうな会社の発表を広く拾う（優待・配当・自社株買いに加えて、業績予想の修正・株式分割・TOB・提携など）。
 相場全体の動き（日経平均・ドル円・米国株）も1行入れる。
@@ -17,8 +20,9 @@ import unicodedata
 
 import earnings_watch
 
-HASHTAGS = "#株主優待 #高配当株 #日本株 #株クラ #NISA"
-MAX_STOCKS = 3  # 1本の投稿で紹介する数
+HASHTAGS = "#株 #株クラ"  # すべての投稿で、この2つにそろえる（2026/11/22に決定）
+MAX_STOCKS = 1  # 1本の投稿で紹介する数（1社1論点）
+WITH_IMAGE = False  # 株ニュースの画像は付けない（文字だけのほうが読まれている）。週まとめの画像は今までどおり
 X_GO = "じゃ、見ていこう🐳"  # 合図（app.X_GO と同じ）
 # 知られた会社かどうかの目安に使う、時価総額ランキング（上位300社）
 CAP_RANK_URL = "https://finance.yahoo.co.jp/stocks/ranking/marketCapitalHigh?market=all&page={page}"
@@ -117,16 +121,21 @@ def cap_rank(tools):
 
 
 def choose(news, rank):
-    """投稿に使う3社。
-    1社目：優待・配当・自社株買いのニュース（あれば）。種類の優先順のあと、知られた会社を先に
-    残り　：すべての種類から、知られた会社（時価総額ランキングの上位）を先に。同じ種類は1社まで"""
+    """投稿に使う会社（MAX_STOCKS社。今は1社）。
+    1社目：知られた会社（時価総額ランキングの上位300社）の中で、優待・配当・自社株買いのニュース（あれば）。
+    　　　　知られた会社に無ければ、知られた会社のほかの種類のニュース。それも無ければ、今までどおり全体から選ぶ
+    残り　：すべての種類から、知られた会社を先に。同じ種類は1社まで"""
     unknown = len(rank) + 1
     for d in news:
         d["rank"] = rank.get(d["code"], unknown)
     picked = []
-    axis = sorted((d for d in news if d["kind"] in AXIS_KINDS), key=lambda d: (KIND_ORDER.index(d["kind"]), d["rank"]))
+    known = [d for d in news if d["rank"] < unknown]
+    pool = known or news  # 持っている人が多い会社を先にする（小さい会社の発表は、読む人が少ない）
+    axis = sorted((d for d in pool if d["kind"] in AXIS_KINDS), key=lambda d: (KIND_ORDER.index(d["kind"]), d["rank"]))
     if axis:
         picked.append(axis[0])
+    elif known:
+        picked.append(min(known, key=lambda d: (d["rank"], KIND_ORDER.index(d["kind"]))))
     rest = sorted((d for d in news if d not in picked), key=lambda d: (d["rank"], KIND_ORDER.index(d["kind"])))
     kinds = {d["kind"] for d in picked}
     for d in rest:
@@ -188,11 +197,12 @@ def numbers_ok(text, source):
 
 
 def fallback_post(picked, when, market_rows=()):
-    blocks = [f"{when}の株ニュース、気になる発表はどれ？📰\n{X_GO}"]
-    if market_line(market_rows):
-        blocks.append(market_line(market_rows))
-    for i, d in enumerate(picked):
-        blocks.append(f"{'①②③'[i]}{d['name']}({d['code']})\n{d['kind']}を発表")
+    """AIが使えないとき・数字が合わないときの、決まった型の文章（1行目に会社名を入れる）"""
+    first = picked[0]
+    blocks = [f"{first['name']}({first['code']})が{first['kind']}を発表📰\n{X_GO}"]
+    for d in picked:
+        point = d.get("point") or f"{d['kind']}を発表"
+        blocks.append(point if len(picked) == 1 else f"{d['name']}({d['code']})\n{point}")
     return "\n\n".join(blocks)
 
 
@@ -221,9 +231,15 @@ def write_news(tools, client, model, picked, when, today, market_rows=()):
 - 資料から読み取れないときは「{picked[0]['kind']}を発表」のように、種類だけを書く
 
 ## 2. post（X投稿）
-- 1〜2行目で「{when}の株ニュース」だとわかるようにしつつ、入り方の型で書く（例:「増配なのに株価は下がった会社も。{when}の株ニュース📰」）
-- 「相場の動き」があれば、日経平均の動きを1行で入れる（数字は相場の動きに書いてあるとおりに）
-- 資料の会社を①②③で並べ、それぞれ何が変わったかを数字つきで書く
+- 資料の会社は1社だけ。その1社について「何が変わったか」と「自分はどこが気になったか」を書く（会社を①②③で並べる形にはしない）
+- 1行目：会社名(コード)と、何がどう変わったかを数字つきで書く（例:「〇〇(1234)、年間配当を60円→70円に増配📰」）。「{when}の株ニュース」のような題の行は書かない
+- 2行目：合図「じゃ、見ていこう🐳」
+- そのあと：何が変わったかを、資料の数字で2〜3行
+- 続けて：資料の中から、1行目とは別の数字や条件を1つだけ取り上げ、「でも僕が気になったのは〜」の形で自分の見方を2〜3行で書く
+  （例: いつから変わるのか／対象になる株数や保有期間／配当性向／修正の理由として資料に書いてあること）
+- 自分の見方は「気になる」「見ておきたい」「ここは確かめたい」まで。良い・悪いの決めつけや、資料に無い理由づけは書かない
+- 相場全体の動き（日経平均など）は書かない
+- 長さは140〜200字。共通ルールの「銘柄は3つ」「①②③」は、この投稿では使わない
 - 「買い」「おすすめ」のような売買のすすめは書かない。株価がどう動くかの予想も書かない。減配・下方修正・優待廃止も、事実として淡々と書く
 
 {tools.X_POST_STYLE}
@@ -283,10 +299,12 @@ def build(tools, client, model, tdnet_items, today, state, when, held=(), market
     print(f"株ニュースに使う会社: {[(d['code'], d['kind'], d['rank']) for d in picked]}")
     post = tools.format_x_post(write_news(tools, client, model, picked, when, today, market_rows))
     if any(d["code"] in held for d in picked):
-        post = post.rstrip() + "\n\n※この中に保有中の銘柄があります"
-    stocks = tools.add_price_info(
-        [{"code": d["code"], "name": d["name"], "category": d["kind"], "headline": d["point"], "source_url": d["url"]} for d in picked], today
-    )
+        post = post.rstrip() + ("\n\n※保有中の銘柄です" if len(picked) == 1 else "\n\n※この中に保有中の銘柄があります")
+    stocks = []
+    if WITH_IMAGE:  # 画像を付けるときだけ、株価を調べる
+        stocks = tools.add_price_info(
+            [{"code": d["code"], "name": d["name"], "category": d["kind"], "headline": d["point"], "source_url": d["url"]} for d in picked], today
+        )
     for d in picked:
         news_state["posted"][doc_key(d)] = today.isoformat()
         news_state["week"].append({"date": today.isoformat(), "code": d["code"], "name": d["name"], "kind": d["kind"], "point": d["point"]})

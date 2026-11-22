@@ -1,9 +1,11 @@
 name: X Scheduled Posts
 
 # 朝・夕方の回が作って時刻を付けた投稿（x_queue.json）を、その時刻にXへ出す（x_queue.py。AIは共感ポストの作り足しだけ）
-# - 昼 11:50：くじら枠（火・木：今日の1銘柄／月：整理／水：解説）
-# - 夕方 18:00・19:00（週の最終営業日は 20:00 も）：夕方の2本目以降
-# - 毎日 7:21・18:39：共感ポスト（kyokan_stock.json のストックから並べる。少なくなったらAIで作り足す）
+# 時刻は「ちょうど」を避けた半端な分で、日ごとに数分ずらす（x_queue.slot_time）
+# - 昼 11:50ごろ：くじら枠（火・木：今日の1銘柄／月：整理／水：解説）
+# - 夕方 18:05ごろ・19:10ごろ（週の最終営業日は 20:05ごろも）：夕方の2本目以降
+# - 毎日 7:21ごろ・12:34ごろ・18:39ごろ：共感ポスト（kyokan_stock.json のストックから並べる。少なくなったらAIで作り足す）
+# - 毎日 8:26ごろ・21:13ごろ：「〇万円あったら」、平日 16時すぎ：大型株の値動き（quick_posts.py。AIは使わない）
 on:
   workflow_dispatch: # 手動実行用ボタン
   schedule:
@@ -12,7 +14,7 @@ on:
     - cron: '20 * * * *'
 
 permissions:
-  contents: write # 予約投稿の記録（x_queue.json・kyokan_stock.json）を保存するため
+  contents: write # 予約投稿の記録（x_queue.json・kyokan_stock.json・quick_state.json）を保存するため
 
 concurrency:
   group: x-scheduled-posts
@@ -47,6 +49,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           AI_MODEL: ${{ vars.AI_MODEL }}
           BUDGET_USD: ${{ vars.BUDGET_USD }}
+          # 「〇万円あったら」・大型株の値動きで、保有中の銘柄に「※保有中の銘柄です」を付けるため（スプシの「購入済」を読む）
+          WATCHLIST_SHEET_ID: ${{ vars.WATCHLIST_SHEET_ID }}
           # Xの自動投稿（Variables の X_AUTO_POST=on と、4つのキーが揃ったときだけ投稿）
           X_AUTO_POST: ${{ vars.X_AUTO_POST }}
           X_API_KEY: ${{ secrets.X_API_KEY }}
