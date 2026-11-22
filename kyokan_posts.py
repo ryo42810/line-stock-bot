@@ -5,7 +5,9 @@
   （GitHub Actionsの起動は数時間遅れることがあるので、その場で作らずに前もって作っておく）
 - ストックが少なくなったら、AI（ai.py の Opus）がまとめて作り足し、LINEに一覧を送る
 - 型は6種類（TYPES）。続けて同じ型が出ないように並べる
-- 「数字で見方を変える」の型（kazu）だけ、例えの数字（実在の銘柄を指さない数字）を使ってよい
+- 6つ目の「仮の数字で見方を変える」の型（kazu）だけ、仮の数字（「仮に」「〜とする」などの、実在の銘柄を指さない数字）を使ってよい
+  - この型は、チャットで作って検算したもの（source="chat"）だけをストックに入れる。botの自動作り足し（refill）では作らない
+  - 18:39ごろの枠は、ストックにこの型があれば先に出す（2026/11/22の投稿で、この型の反応が良かったため）
 - 過去に作った投稿（出したもの・ストック中のもの）と似ている投稿は、作り足すときにはじく
 - 投稿の最後には、かならず HASHTAGS（#株 #株クラ）を付ける。ストックには本文だけを持つ
 - チャットのスキル「投稿文作成」で作った投稿も、このファイルに source="chat" で入れれば同じように出る
@@ -19,13 +21,17 @@ import re
 import unicodedata
 
 import ai
+import quick_posts
 import x_queue
 
 STOCK_FILE = "kyokan_stock.json"
 SLOTS = (("07:21", "09:30"), ("12:34", "14:30"), ("18:39", "21:30"))  # （出す時刻のもと, これより遅れたら見送る）。実際の時刻は日ごとに数分ずらす
 MIN_STOCK = 9  # これより少なくなったら作り足す（3日分）
 BATCH = 15  # 1回に作り足す本数
-NUMBER_TYPES = ("kazu",)  # 例えの数字を使ってよい型
+NUMBER_TYPES = ("kazu",)  # 仮の数字を使ってよい型
+CHAT_ONLY_TYPES = ("kazu",)  # チャットで作って検算したもの（source="chat"）だけ入れる型。botの作り足しでは作らない
+PREFER_AT = {"18:39": "kazu"}  # この枠（もとの時刻）は、ストックにこの型があれば先に出す
+ASK_WORDS = ("教えて", "リプで", "リプして", "いいねして", "フォローして", "リポストして", "保存して")  # 反応を頼む言い方（Xの収益化のルールで禁止）
 SIMILAR = 0.6  # これ以上似ていたら同じ内容とみなす（0〜1）
 HASHTAGS = "#株 #株クラ"  # すべての投稿の最後に付ける（AIには書かせず、予約に並べるときにプログラムで付ける）
 MAX_CHARS = 130  # 本文の長さの上限（全角で数える。ハッシュタグを付けても140字に収まるように）
@@ -59,17 +65,18 @@ TYPES = {
         "example": "正直に言うと\n\n優待のカタログが届く日のほうが\n配当金が入る日よりワクワクする",
     },
     "kazu": {
-        "name": "数字で見方を変える",
-        "how": "かんたんな例えの数字を1つ使って、ふだんの見方をひっくり返す。計算は暗算で確かめられるものだけにする（割合・かけ算1回まで）。実在の会社の株価・利回り・配当額は書かず、「年10万円の配当」「利回り3%の株」のような例えにする。",
-        "example": "配当金って、額面より手取りで見たほうがいい\n\n年10万円の配当でも\n税金で約2割引かれて\n手元に残るのは約8万円\n\nNISAの枠を先に使う理由、ここだよね",
+        "name": "仮の数字で見方を変える",
+        "how": "「仮に」「〜とする」などの仮の数字を1つ使って、ふだんの見方をひっくり返す。計算は暗算で確かめられるものだけにし、必ず検算する。銘柄名・社名・銘柄コード・実際の株価は書かない。",
+        "example": "仮に、年10万円の配当が出るとする\n\n税金で約2割引かれて\n手元に残るのは約8万円\n\n配当は額面より\n手取りで見たほうがいいよね",
     },
 }
+BOT_TYPES = [key for key in TYPES if key not in CHAT_ONLY_TYPES]  # botが自分で作り足す型
 ORDER = list(TYPES)
 
 PROMPT = """あなたはXで「くじら@20代|株主優待🐳」という、優待・高配当株のアカウントを運用している20代の個人投資家です。
 読んだ人が「わかる」「自分はこう思う」とリプや引用をしたくなる、短い投稿を{n}本作ってください。
 
-# 6つの型（各型を{per}本前後ずつ）
+# 5つの型（各型を{per}本前後ずつ）
 {types}
 
 # 書き方
@@ -81,8 +88,8 @@ PROMPT = """あなたはXで「くじら@20代|株主優待🐳」という、�
 
 # やってはいけないこと
 - 実在の会社の株価・利回り・配当額・日付・銘柄名・社名を書かない（間違いを書かないため）
-- 数字（〇円・〇%・〇株・〇倍）を使ってよいのは「数字で見方を変える」（kazu）の型だけ。それも例えの数字に限り、計算が合っているかを必ず検算する。ほかの型では数字を使わない
-- 「教えて」「リプして」「いいねして」「保存して」「フォローして」のように、反応をお願いする言い方（問いかけはよいが、行動を頼まない）
+- 数字（〇円・〇%・〇株・〇倍）を使わない
+- 「教えてください」「リプで」「いいねして」「フォローして」「リポストして」「保存して」のように、反応を頼む言い方（問いかけはよいが、行動を頼まない。Xの収益化のルールで禁止されているため）
 - 「〇〇株を買った」「優待が届いた」など、自分の保有・売買・受け取りの体験談として書かない（気持ちや考えはOK）
 - 株価の断定、売買のすすめ、特定の人やグループを見下す言い方、炎上をねらった言い方
 - 下の「これまでの投稿」と同じ内容・同じ切り口・同じオチ。言い回しを変えただけのものもダメ
@@ -151,8 +158,12 @@ def problem_of(post, kind=""):
         return "URL・ハッシュタグ・@が入っている"
     if kind not in NUMBER_TYPES and re.search(r"[0-9０-９]+\s*(円|%|％|株|倍)", post):
         return "具体的な数字が入っている"
-    if re.search(r"(教えて|リプして|リプで|いいねして|保存して|フォローして|リポストして)", post):
-        return "反応をお願いする言い方が入っている"
+    asked = [w for w in ASK_WORDS if w in post]
+    if asked:
+        return f"反応を頼む言い方が入っている {asked}"
+    names = [name for _, name in quick_posts.WIDE if name in unicodedata.normalize("NFKC", post)]
+    if names:
+        return f"社名が入っている {names}"
     if re.search(r"[（(][0-9０-９]{4}[）)]", post):
         return "銘柄コードが入っている"
     hit = [w for w in NG_WORDS if w in post]
@@ -169,6 +180,8 @@ def add(items, candidates, source, today):
         kind = c.get("type") if c.get("type") in TYPES else ""
         theme = (c.get("theme") or "").strip()
         problem = problem_of(post, kind) or ("型が分からない" if not kind else "")
+        if not problem and kind in CHAT_ONLY_TYPES and source != "chat":
+            problem = "この型はチャットで作って検算したものだけ"
         if problem:
             print(f"共感ポストをはじきました（{problem}）: {post[:30]}")
             continue
@@ -204,8 +217,8 @@ def generate(client, items, n=BATCH):
     """AIにn本作らせる（まだストックには足さない）"""
     past = [i for i in items if i.get("post")][-120:]
     lines = "\n".join(f"- [{TYPES.get(i.get('type'), {}).get('name', '')}] " + i["post"].replace("\n", " ") for i in past) or "（まだありません）"
-    types = "\n\n".join(f"## {key}：{t['name']}\n{t['how']}\n例：\n{t['example']}" for key, t in TYPES.items())
-    prompt = PROMPT.format(n=n, per=max(1, n // len(TYPES)), types=types, max_chars=MAX_CHARS, past=lines, type_keys="/".join(TYPES))
+    types = "\n\n".join(f"## {key}：{TYPES[key]['name']}\n{TYPES[key]['how']}\n例：\n{TYPES[key]['example']}" for key in BOT_TYPES)
+    prompt = PROMPT.format(n=n, per=max(1, n // len(BOT_TYPES)), types=types, max_chars=MAX_CHARS, past=lines, type_keys="/".join(BOT_TYPES))
     response = client.messages.create(effort="high", max_tokens=6000, messages=[{"role": "user", "content": prompt}])
     return parse(ai.text_of(response))
 
@@ -227,12 +240,20 @@ def refill(items, today, client_fn, notify):
     return len(added)
 
 
-def pick(items, last_type):
-    """出番待ちから1本選ぶ。チャットで作ったものを先に、前と同じ型は避ける"""
+def pick(items, last_type, prefer=""):
+    """出番待ちから1本選ぶ。チャットで作ったものを先に、前と同じ型は避ける。prefer の型があれば、それをいちばん先にする"""
     pending = [i for i in items if i.get("status") == "pending"]
     if not pending:
         return None
     pending.sort(key=lambda i: (i.get("source") != "chat", i.get("created", ""), i.get("id", "")))
+    if prefer:
+        first = next((i for i in pending if i.get("type") == prefer), None)
+        if first:
+            return first
+    else:
+        # ほかの枠で先に出すと決めている型は、その枠のために取っておく（ほかに出すものが無いときだけ使う）
+        others = [i for i in pending if i.get("type") not in PREFER_AT.values()]
+        pending = others or pending
     for item in pending:
         if item.get("type") != last_type:
             return item
@@ -274,7 +295,7 @@ def prepare(now, client_fn, notify):
         hhmm = x_queue.slot_time(today, base)
         if (today.isoformat(), hhmm) in booked or now > x_queue._at(today, until, now.tzinfo):
             continue
-        item = pick(items, last_type(items))
+        item = pick(items, last_type(items), PREFER_AT.get(base, ""))
         if not item:
             print("共感ポストのストックがありません")
             break
