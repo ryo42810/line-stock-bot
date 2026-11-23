@@ -8010,5 +8010,135 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-24": [
+  {
+   "code": "285A",
+   "name": "キオクシアHD",
+   "category": "好材料",
+   "price": 7307.0,
+   "buy": false,
+   "headline": "前営業日11%安から、米ハイテク株急反発を受け買い戻し期待",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6857",
+   "name": "アドバンテスト",
+   "category": "好材料",
+   "price": 24255.0,
+   "buy": false,
+   "headline": "AI・半導体売りの影響銘柄、ナスダック6.5%高で反発期待",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5803",
+   "name": "フジクラ",
+   "category": "好材料",
+   "price": 2252.0,
+   "buy": false,
+   "headline": "前営業日12%安、米株急反発でAI関連の買い戻しに期待",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6481",
+   "name": "THK",
+   "category": "好材料",
+   "price": 4249.0,
+   "buy": false,
+   "headline": "26年12月期3Qは増益、経常利益は282%増",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6167",
+   "name": "冨士ダイス",
+   "category": "好材料",
+   "price": 1091.0,
+   "buy": false,
+   "headline": "27年3月期2Qは増益、経常利益は492.2%増",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6317",
+   "name": "北川鉄工所",
+   "category": "好材料",
+   "price": 2532.0,
+   "buy": false,
+   "headline": "今期経常を7%上方修正、配当も25円増額",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3624",
+   "name": "アクセルマーク",
+   "category": "好材料",
+   "price": 185.0,
+   "buy": false,
+   "headline": "26年9月期決算発表後に33%急騰、閲覧者数9.2倍",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9501",
+   "name": "東京電力HD",
+   "category": "好材料",
+   "price": 415.5,
+   "buy": false,
+   "headline": "アナリストの27年3月期経常予想が対前週6%上昇",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3048",
+   "name": "ビックカメラ",
+   "category": "好材料",
+   "price": 1861.5,
+   "buy": false,
+   "headline": "日系大手証券が目標株価を1,830円に引上げ",
+   "yutai": "自社買物優待券（100株で2月2,000円・8月1,000円分、長期保有で8月に追加）",
+   "kenri_months": [
+    2,
+    8
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "9468",
+   "name": "KADOKAWA",
+   "category": "懸念材料",
+   "price": 3404.0,
+   "buy": false,
+   "headline": "アナリストの27年3月期経常予想が対前週8.1%下降",
+   "yutai": "1年以上継続保有の100株以上に優待ポイント30pt（3,000円以上相当）、保有期間・株数で増加",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "1605",
+   "name": "INPEX",
+   "category": "優待",
+   "price": 3312.0,
+   "buy": true,
+   "headline": "12月末権利の人気優待銘柄、配当利回り3.38%",
+   "yutai": "400株以上・1年以上継続保有でオリジナルQUOカード1,000円分（期間・株数で最大8,000円）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  }
  ]
 }
