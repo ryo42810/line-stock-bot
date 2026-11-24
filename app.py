@@ -25,6 +25,7 @@ import news_posts
 import x_queue
 import kyokan_posts
 import quick_posts
+import market_board
 import note_topics
 import notion_log
 import x_media
@@ -2089,12 +2090,17 @@ def main():
             x_replies.main(sys.modules[__name__], now_jst(), scheduled)
             return
         if mode == "xqueue":
-            # Xの予約投稿（昼のくじら枠、夕方の2本目以降、共感ポスト、「〇万円あったら」、大型株の値動き）。記録は x_queue.json に分けて持つ
+            # Xの予約投稿（朝の市況、昼のくじら枠、夕方の2本目以降、共感ポスト、「〇万円あったら」、大型株の値動き）。記録は x_queue.json に分けて持つ
             # 共感ポスト（毎日3本）は、この回の最初にストックから今日の分を並べる
             # 「〇万円あったら」（毎日2本）と大型株の値動き（平日の引け後）は、AIを使わずに作って並べる（quick_posts.py）
             prepare = lambda now: kyokan_posts.prepare(now, lambda: ai.Client("kyokan", now.date()), send_line_text)  # noqa: E731
-            refresh = lambda now: quick_posts.prepare(sys.modules[__name__], now)  # noqa: E731
-            x_queue.run(now_jst, x_media.post_all_to_x, send_line_text, x_media.x_enabled(), EARLY_LIMIT_MIN, prepare=prepare, refresh=refresh)
+            # 朝の市況（毎日 6:12ごろ・おはよう投稿）は、枠だけ先に並べて、出す時刻に撮影して文章を作る（market_board.py）
+            def refresh(now):
+                market_board.prepare(now)
+                quick_posts.prepare(sys.modules[__name__], now)
+
+            builders = {market_board.KIND: lambda now: market_board.build(now, lambda day: ai.Client("board", day))}
+            x_queue.run(now_jst, x_media.post_all_to_x, send_line_text, x_media.x_enabled(), EARLY_LIMIT_MIN, prepare=prepare, refresh=refresh, builders=builders)
             return
         if mode == "topics":
             # 徹底解説のネタ候補（毎日16:00）。記録は topics_state.json に分けて持つ

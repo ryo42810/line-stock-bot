@@ -6,6 +6,7 @@
 - 夕方 18:05ごろ・19:10ごろ（週の最終営業日は 20:05ごろも）：夕方の2本目以降
 - 毎日 7:21ごろ・12:34ごろ・18:39ごろ：共感ポスト（kyokan_posts.py。ストックからこの回が並べる）
 - 毎日 8:26ごろ・21:13ごろ：「〇万円あったら」、平日 16時すぎ：大型株の値動き（quick_posts.py。AIは使わない）
+- 毎日 6:12ごろ：朝の市況（おはよう投稿。market_board.py）。枠だけ先に並べ、画像と文章は出す時刻に builders で作る
 
 時刻はきりのいい分（:00・:05・:10…）だと予約っぽく見えるので、半端な分にしたうえで、日ごとに数分ずらす（slot_time）。
 
@@ -131,10 +132,11 @@ def next_item(items, now):
     return min(pending, key=lambda i: i["time"]) if pending else None
 
 
-def run(now_fn, post_fn, notify, enabled=True, early_limit_min=300, sleep=time.sleep, weekday_only=True, prepare=None, refresh=None):
+def run(now_fn, post_fn, notify, enabled=True, early_limit_min=300, sleep=time.sleep, weekday_only=True, prepare=None, refresh=None, builders=None):
     """予約を時刻どおりに出す。now_fn: いまの時刻（JST）/ post_fn: [(文章, 画像)] を投稿して結果の文言を返す / notify: LINEに知らせる
     prepare: 最初に1回呼ぶ（共感ポストの今日の分を予約に並べる。kyokan_posts.prepare）
-    refresh: 待ちから戻るたびに呼ぶ（その時刻にならないと作れない投稿を並べる。quick_posts.prepare）"""
+    refresh: 待ちから戻るたびに呼ぶ（その時刻にならないと作れない投稿を並べる。quick_posts.prepare）
+    builders: {印: 関数(いまの時刻) → (文章, 画像)}。予約に "kind" の印がある枠は、出す時刻にこれで中身を作る（朝の市況）"""
     if not enabled:
         print("Xの自動投稿はオフなので、予約投稿は出しません")
         return
@@ -185,11 +187,27 @@ def run(now_fn, post_fn, notify, enabled=True, early_limit_min=300, sleep=time.s
         if wait_sec > 0:
             continue  # 待ったあとは、最新の記録を取り直してから出す（次の周では待ち時間0になる）
         now = now_fn()
+        builder = (builders or {}).get(item.get("kind"))
+        if builder and now <= _at(now.date(), item.get("until") or "23:59", tz):
+            try:
+                item["post"], item["image"] = builder(now)
+            except Exception as e:
+                item["status"] = "skipped"
+                print(f"{item['time']}の投稿を作れなかったので見送ります:", type(e).__name__, str(e)[:300])
+                notify(f"⚠️ {item['time']}に出す予定だった朝の市況を作れなかったため、見送りました。\n{type(e).__name__}: {str(e)[:200]}")
+                save(items, now.date())
+                push(f"Xの予約投稿を更新（{now:%m/%d %H:%M}）")
+                continue
+            now = now_fn()
         image = item.get("image") or None
         if image and not os.path.exists(image):
             print("画像が見つからないので、文章だけで投稿します:", image)
             image = None
-        if now > _at(now.date(), item.get("until") or "23:59", tz):
+        if item.get("kind") and not item.get("post"):
+            item["status"] = "skipped"
+            print(f"{item['time']}の枠は、{now:%H:%M}まで遅れたので見送ります")
+            notify(f"⏭ {item['time']}に出す予定だった朝の市況は、起動が{now:%H:%M}まで遅れたため見送りました。")
+        elif now > _at(now.date(), item.get("until") or "23:59", tz):
             item["status"] = "skipped"
             print(f"{item['time']}の予約は、{now:%H:%M}まで遅れたので見送ります")
             notify(f"⏭ {item['time']}に出す予定だったXの投稿は、起動が{now:%H:%M}まで遅れたため見送りました。\n使うときは、LINEに届いている下書きをコピーして投稿してください。")
