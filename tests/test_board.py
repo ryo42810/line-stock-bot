@@ -89,7 +89,7 @@ class MarketBoardTest(unittest.TestCase):
     def test_build_uses_ai_post_when_numbers_match(self):
         ai_post = "おはようございます🐳\nSOX指数が+14.03%の大幅高。\n派手な日ほど、高配当株は落ち着いて見たい。"
         post, path = mb.build(at(6, 14), lambda day: FakeClient(ai_post), fake_capture)
-        self.assertEqual(post, f"{ai_post}\n#株 #株クラ")
+        self.assertEqual(post, f"{ai_post}\n#朝活")
         self.assertTrue(path.endswith("2026-11-24-board.png"))
 
     def test_build_falls_back_when_ai_adds_unknown_numbers(self):
@@ -98,7 +98,21 @@ class MarketBoardTest(unittest.TestCase):
         self.assertTrue(post.startswith("おはようございます🐳\n\n日経平均 +3.91%"))
         self.assertIn("NYダウ +3.01%／NASDAQ +6.51%", post)
         self.assertIn("ドル円 159.52円", post)
-        self.assertTrue(post.endswith("#株 #株クラ"))
+        self.assertIn(post.splitlines()[-2], mb.CLOSINGS["us_up"])  # 米国株が大きく上がった朝の一言
+        self.assertTrue(post.endswith("\n#朝活"))
+
+    def test_closing_comment_follows_the_market_and_weekday(self):
+        rows = mb.read_values(TEXTS)
+        calm = [(label, dict(v, pct=0.1)) for label, v in rows]
+        down = [(label, dict(v, pct=-2.5 if label == "NASDAQ" else 0.1)) for label, v in rows]
+        tue, sat, mon = datetime.date(2026, 11, 24), datetime.date(2026, 11, 28), datetime.date(2026, 11, 30)
+        self.assertIn(mb.closing_comment(rows, tue), mb.CLOSINGS["us_up"])
+        self.assertIn(mb.closing_comment(down, tue), mb.CLOSINGS["us_down"])
+        self.assertIn(mb.closing_comment(calm, tue), mb.CLOSINGS["calm"])
+        self.assertIn(mb.closing_comment(calm, mon), mb.CLOSINGS["mon"])
+        self.assertIn(mb.closing_comment(rows, sat), mb.CLOSINGS["sat"])
+        # 同じ場面でも、日によって言い回しが替わる
+        self.assertNotEqual(mb.closing_comment(calm, tue), mb.closing_comment(calm, tue + datetime.timedelta(days=1)))
 
     def test_queue_builds_the_slot_at_post_time_and_posts_it_first(self):
         mb.prepare(at(5, 0))
