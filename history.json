@@ -8140,5 +8140,192 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-25": [
+  {
+   "code": "4661",
+   "name": "オリエンタルランド",
+   "category": "好材料",
+   "price": 3820.0,
+   "buy": false,
+   "headline": "自己株式の取得と消却を決定。株主還元強化を好感か",
+   "yutai": "株主用パスポート。500株以上で1枚（3月末のみ）、100株以上3年継続保有で9月末に1枚追加",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "9009",
+   "name": "京成電鉄",
+   "category": "懸念材料",
+   "price": 1521.0,
+   "buy": false,
+   "headline": "OLCの自己株立会外買付に応募へ。特別利益・特別損失の計上見込み",
+   "yutai": "100株以上で電車乗車証（定期券式等）1枚、施設入園券等に交換可。保有株数に応じ増枚・長期保有でQUOカード",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3106",
+   "name": "クラボウ",
+   "category": "好材料",
+   "price": 2055.0,
+   "buy": true,
+   "headline": "ToSTNeT-3による自己株買いと消却を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5592",
+   "name": "くすりの窓口",
+   "category": "好材料",
+   "price": 1951.0,
+   "buy": true,
+   "headline": "ToSTNeT-3による自己株式の取得を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4628",
+   "name": "エスケー化研",
+   "category": "好材料",
+   "price": 10210.0,
+   "buy": false,
+   "headline": "ToSTNeT-3による自己株式の取得を発表",
+   "yutai": "グルメ・日用品等と交換可能なポイント（100株以上で5,000pt、1年以上継続で6,000pt）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "9063",
+   "name": "岡山県貨物運送",
+   "category": "好材料",
+   "price": 3780.0,
+   "buy": true,
+   "headline": "ToSTNeT-3による自己株式の取得を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "296A",
+   "name": "令和アカウンティング・ホールディングス",
+   "category": "好材料",
+   "price": 850.0,
+   "buy": false,
+   "headline": "通期業績予想と配当予想を修正し増配を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4826",
+   "name": "CIJ",
+   "category": "好材料",
+   "price": 522.0,
+   "buy": true,
+   "headline": "自己株消却と取得を好感し後場急騰、続伸なるか注目",
+   "yutai": "200株以上・1年以上継続保有で500円分のプリペイドカード等（株数・期間に応じ最大6,000円分）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "156A",
+   "name": "マテリアルグループ",
+   "category": "好材料",
+   "price": 689.0,
+   "buy": false,
+   "headline": "通期決算で売上38.6%増、営業利益63.9%増と大幅増益",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3038",
+   "name": "神戸物産",
+   "category": "懸念材料",
+   "price": 2967.5,
+   "buy": false,
+   "headline": "10月単体月次の営業利益が減益、前日6.48%安と大幅反落",
+   "yutai": "業務スーパーで使えるGyomucaカード1,000円分（100株、3年以上継続で3,000円分）",
+   "kenri_months": [
+    10
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2782",
+   "name": "セリア",
+   "category": "懸念材料",
+   "price": 4070.0,
+   "buy": false,
+   "headline": "日系大手証券がレーティングを中立に引下げ、前日8%超下落",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9444",
+   "name": "トーシンホールディングス",
+   "category": "懸念材料",
+   "price": 114.0,
+   "buy": false,
+   "headline": "東京地裁が更生計画を認可、前日17%超の急落で値下がり率首位",
+   "yutai": "携帯電話購入優待・ゴルフ練習場等利用優待（300株以上でゴルフ場無料招待）",
+   "kenri_months": [
+    4,
+    10
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2391",
+   "name": "プラネット",
+   "category": "決算",
+   "price": 1165.0,
+   "buy": false,
+   "headline": "本日、第1四半期決算を発表予定",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3003",
+   "name": "ヒューリック",
+   "category": "優待",
+   "price": 1939.0,
+   "buy": true,
+   "headline": "12月末権利の優待人気上位銘柄、配当利回り3.61%",
+   "yutai": "300株以上・2年以上継続保有でカタログギフト6,000円相当（3,000円相当2点）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "3197",
+   "name": "すかいらーくホールディングス",
+   "category": "優待",
+   "price": 3741.0,
+   "buy": false,
+   "headline": "12月末権利の食事券優待で人気上位",
+   "yutai": "半年以上継続保有で自社グループ店の食事優待2,000円分（100株）、ポイント付与率加算",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  }
  ]
 }
