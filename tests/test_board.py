@@ -87,19 +87,29 @@ class MarketBoardTest(unittest.TestCase):
         self.assertEqual(len(x_queue.load()), 1)
 
     def test_build_uses_ai_post_when_numbers_match(self):
-        ai_post = "おはようございます🐳\nSOX指数が+14.03%の大幅高。\n派手な日ほど、高配当株は落ち着いて見たい。"
+        ai_post = "おはようございます🐳\nSOX指数が+14.03%の大幅高。\n派手な日ほど、高配当株は落ち着いて見ていきたいですね。"
         post, path = mb.build(at(6, 14), lambda day: FakeClient(ai_post), fake_capture)
         self.assertEqual(post, f"{ai_post}\n#朝活")
         self.assertTrue(path.endswith("2026-11-24-board.png"))
 
     def test_build_falls_back_when_ai_adds_unknown_numbers(self):
-        ai_post = "おはようございます🐳\n日経平均は60,000円を目指す展開。"
+        ai_post = "おはようございます🐳\n日経平均は60,000円を目指す展開ですね。"
         post, _ = mb.build(at(6, 14), lambda day: FakeClient(ai_post), fake_capture)
         self.assertTrue(post.startswith("おはようございます🐳\n\n日経平均 +3.91%"))
         self.assertIn("NYダウ +3.01%／NASDAQ +6.51%", post)
         self.assertIn("ドル円 159.52円", post)
         self.assertIn(post.splitlines()[-2], mb.CLOSINGS["us_up"])  # 米国株が大きく上がった朝の一言
         self.assertTrue(post.endswith("\n#朝活"))
+
+    def test_build_falls_back_when_ai_does_not_end_with_desune(self):
+        ai_post = "おはようございます🐳\nSOX指数が+14.03%の大幅高。\n今日も落ち着いていきたい。"
+        post, _ = mb.build(at(6, 14), lambda day: FakeClient(ai_post), fake_capture)
+        self.assertTrue(post.startswith("おはようございます🐳\n\n日経平均 +3.91%"))
+
+    def test_every_closing_ends_with_desune(self):
+        for key, lines in mb.CLOSINGS.items():
+            for line in lines:
+                self.assertTrue(line.endswith("ですね。"), (key, line))
 
     def test_closing_comment_follows_the_market_and_weekday(self):
         rows = mb.read_values(TEXTS)
