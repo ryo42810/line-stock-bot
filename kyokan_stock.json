@@ -39,9 +39,9 @@
   "post": "ちょっと気になるんですが\n\n配当金が口座に入ったの\nみんな毎回ちゃんと確認してます？",
   "source": "chat",
   "created": "2026-11-22",
-  "status": "pending",
-  "date": "",
-  "time": ""
+  "status": "queued",
+  "date": "2026-11-24",
+  "time": "12:41"
  },
  {
   "id": "20261122-chat-005",
@@ -139,8 +139,8 @@
   "source": "chat",
   "created": "2026-11-22",
   "status": "queued",
-  "date": "2026-11-23",
-  "time": "18:46"
+  "date": "2026-11-24",
+  "time": "18:43"
  },
  {
   "id": "20261122-chat-014",
