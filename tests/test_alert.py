@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import openpyxl  # noqa: E402
 import pandas as pd  # noqa: E402
 
+import alert_image  # noqa: E402
 import app  # noqa: E402
 import price_alert as pa  # noqa: E402
 
@@ -29,16 +30,22 @@ def bars(prev, last, high, last_day=TODAY):
 
 
 STOCKS = {
-    "5288": {"name": "アジアパイルHD", "groups": [pa.DIEGO], "div": 70.0, "verdict": "◎ 合格"},
-    "3922": {"name": "PRTIMES", "groups": [pa.GROWTH], "div": None, "verdict": ""},
+    "5288": {"name": "アジアパイルHD", "groups": [pa.DIEGO], "div": 70.0, "max_yield": 5.63, "verdict": "◎ 合格"},
+    "3922": {"name": "PRTIMES", "groups": [pa.GROWTH], "div": None, "max_yield": None, "verdict": ""},
 }
 
 
 class FakeTools:
     """株価を決まった数字で返す。prices: {コード or "^N225": (前日の終値, 今日の終値, 52週高値)}"""
 
-    def __init__(self, prices, last_day=TODAY, tdnet=()):
-        self.prices, self.last_day, self.tdnet, self.sent = prices, last_day, list(tdnet), []
+    def __init__(self, prices, last_day=TODAY, tdnet=(), image_dir=None):
+        self.prices, self.last_day, self.tdnet, self.sent, self.images = prices, last_day, list(tdnet), [], []
+        if image_dir:  # 画像を作る回（公開はせず、URLだけ決まった形で返す）
+            self.x_media = SimpleNamespace(
+                image_path=lambda day, kind: os.path.join(image_dir, f"{day:%Y-%m-%d}-{kind}.png"),
+                publish_images=lambda paths, day: {p: "https://example.com/" + os.path.basename(p) for p in paths},
+                line_image_message=lambda url: {"type": "image", "originalContentUrl": url, "previewImageUrl": url},
+            )
         self.yf = SimpleNamespace(Ticker=lambda symbol: SimpleNamespace(history=lambda **kw: self._bars(symbol)))
 
     def _bars(self, symbol):
@@ -54,14 +61,15 @@ class FakeTools:
         return self.tdnet
 
     def push_line(self, messages):
-        self.sent += [m["text"] for m in messages]
+        self.sent += [m["text"] for m in messages if m["type"] == "text"]
+        self.images += [m["originalContentUrl"] for m in messages if m["type"] == "image"]
 
     def send_line_text(self, text):
         self.sent.append(text)
 
 
 def fresh_state(**extra):
-    state = {"done": {}, "dd": {}, "yield": {}, "drop": {}, "seeded": "2026-11-24"}
+    state = {"done": {}, "dd": {}, "yield": {}, "drop": {}, "seeded": "2026-11-24", "dd_levels": list(pa.DD_LEVELS), "yield_levels": list(pa.YIELD_LEVELS)}
     state.update(extra)
     return state
 
@@ -75,6 +83,8 @@ class StageTest(unittest.TestCase):
 
     def test_jumping_two_stages_reports_the_deepest_only(self):
         self.assertEqual(pa.step(0, 21.0, pa.DD_LEVELS, pa.DD_RESET), (20, 20))
+        self.assertEqual(pa.step(20, 31.0, pa.DD_LEVELS, pa.DD_RESET), (30, 30))
+        self.assertEqual(pa.step(30, 45.0, pa.DD_LEVELS, pa.DD_RESET), (40, 40))
 
     def test_stage_is_reported_again_after_recovering(self):
         self.assertEqual(pa.step(20, 18.0, pa.DD_LEVELS, pa.DD_RESET), (20, None))  # 少し戻っただけでは外さない
@@ -87,60 +97,107 @@ class EvaluateTest(unittest.TestCase):
     def quotes(self, prices):
         return {code: pa.quote(bars(*p), TODAY) for code, p in prices.items()}
 
-    def test_big_drop_is_reported_with_market_note_and_disclosure(self):
+    def test_big_drop_is_reported_once_a_day(self):
         quotes = self.quotes({"5288": (1500, 1350, 1600), "3922": (2300, 2290, 2400)})
         nikkei = pa.quote(bars(50000, 49800, 52000), TODAY)
         state = fresh_state(dd={"5288": 15, "3922": 0}, **{"yield": {"5288": 4.5}})
-        text = "\n".join(pa.evaluate(STOCKS, quotes, state, TODAY, nikkei, {"5288": ["業績予想の修正に関するお知らせ"]}))
-        self.assertIn("【急落：前日比 −8%以上】", text)
-        self.assertIn("アジアパイルHD(5288)［Diego］ 1,350円 −10.0%", text)
-        self.assertIn("この銘柄だけの下げ（日経平均 −0.4%）", text)
-        self.assertIn("「業績予想の修正に関するお知らせ」", text)
+        hits = pa.evaluate(STOCKS, quotes, state, TODAY, nikkei)
+        self.assertEqual(hits, {"drops": ["5288"], "dd": [], "yield": [], "ranking": []})
+        text = "\n".join(pa.summary_lines(STOCKS, quotes, hits, nikkei, {"5288": ["業績予想の修正に関するお知らせ"]}, True))
+        self.assertIn("急落 1（くわしくは下の表）", text)
+        self.assertIn("■ 急落：相場全体は大きく下げていません。銘柄ごとの材料を確認", text)
+        self.assertIn("・アジアパイルHD −10.0%　開示：「業績予想の修正に関するお知らせ」", text)
         self.assertNotIn("PRTIMES", text)
         # 同じ日の次の回では、同じ銘柄の急落を知らせない
-        self.assertEqual(pa.evaluate(STOCKS, quotes, state, TODAY, nikkei), [])
+        self.assertFalse(pa.has_hits(pa.evaluate(STOCKS, quotes, state, TODAY, nikkei)))
 
     def test_drop_under_threshold_is_not_reported(self):
         quotes = self.quotes({"5288": (1500, 1385, 1500)})  # -7.7%
         state = fresh_state(dd={"5288": 0}, **{"yield": {"5288": 4.5}})
-        self.assertEqual(pa.evaluate(STOCKS, quotes, state, TODAY, None), [])
+        self.assertFalse(pa.has_hits(pa.evaluate(STOCKS, quotes, state, TODAY, None)))
 
     def test_drawdown_stage_and_yield_level(self):
         # 52週高値 2000 → 1690（-15.5%）。1株配当70円 → 利回り4.14%（4.0%の段階に届く）
         quotes = self.quotes({"5288": (1700, 1690, 2000)})
         state = fresh_state(dd={"5288": 10}, **{"yield": {"5288": 0}})
-        text = "\n".join(pa.evaluate(STOCKS, quotes, state, TODAY, None))
-        self.assertIn("・−15%に到達：アジアパイルHD(5288)［Diego］ 1,690円（高値 2,000円 から −15.5%）", text)
-        self.assertIn("・4%超え：アジアパイルHD(5288)［Diego］ 利回り 4.14%（株価 1,690円・1株配当 70円）", text)
+        hits = pa.evaluate(STOCKS, quotes, state, TODAY, None)
+        self.assertEqual((hits["dd"], hits["yield"]), ([(15, "5288")], [(4, "5288")]))
         self.assertEqual((state["dd"]["5288"], state["yield"]["5288"]), (15, 4.0))
-        self.assertEqual(pa.evaluate(STOCKS, quotes, state, TODAY, None), [])  # 2回目は知らせない
+        sections = pa.build_sections(STOCKS, quotes, hits, None)
+        self.assertEqual([title for title, _ in sections], ["52週高値から −15%に到達", "配当利回り 4%超え（Diego式）"])
+        row = sections[0][1][0]
+        self.assertEqual((row["name"], row["groups"], row["hot"]), ("アジアパイルHD", [pa.DIEGO], {"dd", "yield"}))
+        self.assertAlmostEqual(row["yield"], 70 / 1690 * 100)
+        # 画像を作れなかったときは、文章に銘柄を1行ずつ書く
+        text = "\n".join(pa.summary_lines(STOCKS, quotes, hits, None, {}, False))
+        self.assertIn("■ 52週高値から −15%に到達\n・アジアパイルHD 1,690円 −0.6%｜高値から −15.5%｜利回り 4.14%", text)
+        self.assertFalse(pa.has_hits(pa.evaluate(STOCKS, quotes, state, TODAY, None)))  # 2回目は知らせない
+
+    def test_buy_price_follows_the_sheet_rule(self):
+        q = {"low": 1339.0, "price": 1423.0}
+        # Diego式：「1株配当÷実績4期の最高利回り」（70÷5.63%＝1243.3円）と「52週安値×115%」（1539.9円）の低いほう
+        self.assertAlmostEqual(pa.buy_target(STOCKS["5288"], q), 70 / 0.0563)
+        self.assertAlmostEqual(pa.buy_gap(STOCKS["5288"], q), 14.45, places=1)  # スプシの「買いたい価格まで」は 14.5%
+        ncd = {"name": "NCD", "groups": [pa.DIEGO, pa.GROWTH], "div": 140.0, "max_yield": 4.26}
+        self.assertAlmostEqual(pa.buy_target(ncd, {"low": 2254.0, "price": 2314.0}), 2254 * 1.15)  # 安値×115%のほうが低い
+        # 利回りのデータが無いDiego式の銘柄と、成長株は、52週安値×110%
+        self.assertAlmostEqual(pa.buy_target({**STOCKS["5288"], "max_yield": None}, q), 1339 * 1.10)
+        self.assertAlmostEqual(pa.buy_target(STOCKS["3922"], {"low": 1971.0, "price": 2298.0}), 1971 * 1.10)
+        self.assertLess(pa.buy_gap(STOCKS["3922"], {"low": 1971.0, "price": 2100.0}), 0)  # 買いたい価格より安い＝買い時
+
+    def test_changing_stages_only_records_position(self):
+        # -30%・-40% を足す前の記録（-20%まで通知済み）で、すでに -35% にいる銘柄：足した回は知らせず、記録だけ進める
+        quotes = self.quotes({"5288": (1310, 1300, 2000)})
+        state = fresh_state(dd={"5288": 20}, **{"yield": {"5288": 4.5}})
+        state.pop("dd_levels")
+        self.assertFalse(pa.has_hits(pa.evaluate(STOCKS, quotes, state, TODAY, None)))
+        self.assertEqual((state["dd"]["5288"], state["dd_levels"]), (30, list(pa.DD_LEVELS)))
+        # 次の回からは、新しい段階に届いたら知らせる
+        quotes = self.quotes({"5288": (1300, 1190, 2000)})  # -40.5%
+        self.assertEqual(pa.evaluate(STOCKS, quotes, state, TODAY, None)["dd"], [(40, "5288")])
 
     def test_growth_stock_has_no_yield_alert(self):
-        stocks = {"3922": {"name": "PRTIMES", "groups": [pa.GROWTH], "div": 100.0, "verdict": ""}}
+        stocks = {"3922": {"name": "PRTIMES", "groups": [pa.GROWTH], "div": 100.0, "max_yield": None, "verdict": ""}}
         quotes = self.quotes({"3922": (2000, 1990, 2050)})
         state = fresh_state(dd={"3922": 0})
-        self.assertEqual(pa.evaluate(stocks, quotes, state, TODAY, None), [])
+        self.assertFalse(pa.has_hits(pa.evaluate(stocks, quotes, state, TODAY, None)))
         self.assertEqual(state["yield"], {})
 
     def test_first_run_and_new_stock_only_record_position(self):
         quotes = self.quotes({"5288": (1700, 1690, 2000)})
         state = fresh_state()
         state.pop("seeded")
-        self.assertEqual(pa.evaluate(STOCKS, quotes, state, TODAY, None), [])  # 初回は記録するだけ
+        self.assertFalse(pa.has_hits(pa.evaluate(STOCKS, quotes, state, TODAY, None)))  # 初回は記録するだけ
         self.assertEqual(state["dd"]["5288"], 15)
         state = fresh_state()  # 2回目以降に足した銘柄も、記録するだけ
-        self.assertEqual(pa.evaluate(STOCKS, quotes, state, TODAY, None), [])
+        self.assertFalse(pa.has_hits(pa.evaluate(STOCKS, quotes, state, TODAY, None)))
         self.assertEqual(state["dd"]["5288"], 15)
 
     def test_market_wide_fall_sends_ranking_once_a_day(self):
         quotes = self.quotes({"5288": (1500, 1440, 1500), "3922": (2300, 2150, 2300)})
         nikkei = pa.quote(bars(50000, 48400, 52000), TODAY)  # -3.2%
         state = fresh_state(dd={"5288": 0, "3922": 0}, **{"yield": {"5288": 4.5}})
-        lines = pa.evaluate(STOCKS, quotes, state, TODAY, nikkei)
-        text = "\n".join(lines)
-        self.assertIn("【相場全体の下げ：日経平均 −3.2%】", text)
-        self.assertLess(text.index("1. PRTIMES(3922)［成長］"), text.index("2. アジアパイルHD(5288)［Diego］"))
-        self.assertEqual(pa.evaluate(STOCKS, quotes, state, TODAY, nikkei), [])
+        hits = pa.evaluate(STOCKS, quotes, state, TODAY, nikkei)
+        self.assertEqual(hits["ranking"], ["3922", "5288"])
+        self.assertEqual(pa.build_sections(STOCKS, quotes, hits, nikkei)[0][0], "相場全体の下げ（日経平均 −3.2%）：下げ幅ランキング")
+        self.assertFalse(pa.has_hits(pa.evaluate(STOCKS, quotes, state, TODAY, nikkei)))
+
+
+class ImageTest(unittest.TestCase):
+    def row(self, i):
+        return {"code": f"{1000 + i}", "name": f"銘柄{i}", "groups": [pa.DIEGO], "price": 1000.0 + i, "change": -8.5, "dd": 21.0, "gap": 3.0, "yield": 4.2, "hot": {"change"}}
+
+    def test_table_image_is_drawn(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "alert.png")
+            rows = [self.row(1), {**self.row(2), "name": "とても長い名前の会社ホールディングスグループ", "groups": [pa.DIEGO, pa.GROWTH], "yield": None, "gap": None}]
+            alert_image.render(path, "値下がりアラート 11/25（水）引け後（終値）", "日経平均 48,123（−1.2%）", [("急落（前日比 −8%以上）", rows)])
+            self.assertGreater(os.path.getsize(path), 10000)
+
+    def test_long_table_is_split_into_pages(self):
+        sections = [("急落", [self.row(i) for i in range(20)]), ("高値から", [self.row(i) for i in range(20)])]
+        paged = alert_image.pages(sections, max_rows=28)
+        self.assertEqual([[(title, len(rows)) for title, rows in page] for page in paged], [[("急落", 20), ("高値から", 8)], [("高値から（続き）", 12)]])
 
 
 class WatchlistTest(unittest.TestCase):
@@ -160,12 +217,19 @@ class WatchlistTest(unittest.TestCase):
         ws.append([3922.0, "ＰＲＴＩＭＥＳ", "商業サービス"])
         ws.append(["285A", "キオクシアホールディングス", "半導体"])
         ws.append([8065.0, "佐藤商事", "卸売"])
+        ws = wb.create_sheet("実績利回り")
+        ws.append(["コード", "銘柄名", "実績4期の最高利回り(判定に使用)", "使った期数"])
+        ws.append([4783, "ＮＣＤ", 0.0426, 4])
+        ws.append([9999, "一覧に無い会社", 0.05, 4])
+        ws.append([8065, "佐藤商事", None, 1])
         return wb
 
     def test_reads_both_tabs(self):
         stocks = pa.parse_workbook(self.workbook())
         self.assertEqual(set(stocks), {"4783", "208A", "8065", "3922", "285A"})  # 判定が × の日宣は対象外
-        self.assertEqual(stocks["4783"], {"name": "NCD", "groups": [pa.DIEGO], "div": 140.0, "verdict": "◎ 合格"})
+        self.assertEqual(stocks["4783"], {"name": "NCD", "groups": [pa.DIEGO], "div": 140.0, "max_yield": 4.26, "verdict": "◎ 合格"})
+        self.assertIsNone(stocks["8065"]["max_yield"])  # 利回りのデータが無い銘柄
+        self.assertNotIn("9999", stocks)
         self.assertEqual(stocks["208A"]["name"], "構造計画研究所HD")
         self.assertEqual(stocks["8065"]["groups"], [pa.DIEGO, pa.GROWTH])
         self.assertEqual(stocks["285A"]["groups"], [pa.GROWTH])
@@ -228,8 +292,9 @@ class RunTest(unittest.TestCase):
         self.assertEqual(slept, [52 * 60, 243 * 60])  # 11:52 まで待って昼の分、15:55 まで待って引け後の分
         self.assertEqual(len(tools.sent), 1)
         self.assertIn("🔰 値下がりアラートを始めました（対象 2銘柄：Diego式 1／成長株 1）", tools.sent[0])
-        self.assertIn("【52週高値から −15〜−20%】1銘柄\n・アジアパイルHD(5288)［Diego］ −15.5%", tools.sent[0])
-        self.assertIn("【配当利回り 4.5%以上（Diego式）】0銘柄\n【配当利回り 4〜4.5%（Diego式）】1銘柄：アジアパイルHD 4.1%", tools.sent[0])
+        self.assertIn("52週高値から：−40%以下 0／−30%台 0／−20%台 0／−15%台 1／−10%台 0（銘柄数）\n・アジアパイルHD −15.5%", tools.sent[0])
+        self.assertIn("配当利回り（Diego式）：4.5%以上 0／4%台 1（銘柄数）\n・アジアパイルHD 4.14%", tools.sent[0])
+        self.assertEqual(tools.images, [])  # 初回の「いまの位置」は文章だけ
         # 引け後の分は、変化が無いので送っていない
         self.assertEqual(pa.load_state()["done"], {"midday": "2026-11-25", "close": "2026-11-25"})
         # 同じ日のあとの回は、何もしない
@@ -267,15 +332,26 @@ class RunTest(unittest.TestCase):
         self.assertIn("対象の銘柄を読めませんでした", tools.sent[0])
 
     def test_manual_run_uses_latest_prices(self):
-        tools = FakeTools({"5288": (1500, 1350, 1600), "3922": (2300, 2290, 2400), "^N225": (50000, 49000, 52000)}, tdnet=[{"code": "5288", "title": "業績予想の修正に関するお知らせ"}])
+        tools = FakeTools({"5288": (1500, 1350, 1600), "3922": (2300, 2290, 2400), "^N225": (50000, 49000, 52000)}, tdnet=[{"code": "5288", "title": "業績予想の修正に関するお知らせ"}], image_dir=self.tmp.name)
         with open(pa.STATE_FILE, "w", encoding="utf-8") as f:
             f.write('{"seeded": "2026-11-24", "dd": {"5288": 15, "3922": 0}, "yield": {"5288": 5.0}}')
         pa.run(tools, self.clock(at(10, 15))[0], False)
         self.assertEqual(len(tools.sent), 1)
         self.assertIn("📉 値下がりアラート 11/25（水）手動（10:15時点）\n日経平均 49,000（−2.0%）", tools.sent[0])
-        self.assertIn("相場全体も下げ（日経平均 −2.0%）", tools.sent[0])
-        self.assertIn("今日の開示：「業績予想の修正に関するお知らせ」", tools.sent[0])
+        self.assertIn("急落 1（くわしくは下の表）", tools.sent[0])
+        self.assertIn("■ 急落：相場全体も下げています\n・アジアパイルHD −10.0%　開示：「業績予想の修正に関するお知らせ」", tools.sent[0])
+        self.assertEqual(tools.images, ["https://example.com/2026-11-25-alert-manual-1015.png"])  # 表の画像を1枚添える
+        self.assertTrue(os.path.exists(os.path.join(self.tmp.name, "2026-11-25-alert-manual-1015.png")))
         self.assertEqual(pa.load_state()["done"], {})  # 手動実行は、定時の回の「済み」にしない
+
+    def test_text_only_when_image_cannot_be_made(self):
+        tools = FakeTools({"5288": (1500, 1350, 1600), "3922": (2300, 2290, 2400), "^N225": (50000, 49900, 52000)})  # 画像の部品が無い
+        with open(pa.STATE_FILE, "w", encoding="utf-8") as f:
+            f.write('{"seeded": "2026-11-24", "dd": {"5288": 15, "3922": 0}, "yield": {"5288": 5.0}}')
+        pa.run(tools, self.clock(at(10, 15))[0], False)
+        self.assertEqual(tools.images, [])
+        self.assertIn("急落 1\n", tools.sent[0])
+        self.assertIn("・アジアパイルHD −10.0%　今日の開示なし", tools.sent[0])
 
     def test_long_message_is_split(self):
         parts = pa.chunks(["あ" * 100] * 100, limit=1000)
