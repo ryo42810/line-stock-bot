@@ -1,0 +1,67 @@
+name: Price Alert
+
+# 値下がりアラート：Diego式の銘柄と成長株が下がったときに、LINEで知らせる（price_alert.py。AIは使わない）
+# - 平日の昼休み 11:52ごろ（前場の終値）と、引け後 15:55ごろ（終値）の2回。知らせるものが無い回は送らない
+# - 対象の銘柄は、スプシ「気になるテーマ株_一覧表」の「Diego式」タブと「成長株スクリーニング」タブから読む
+on:
+  workflow_dispatch: # 手動実行用ボタン（待たずに、いまの株価で動かす）
+  schedule:
+    # 定時実行は5〜9時間遅れることが多いので、1時間おきに予約しておく。
+    # 起動できた回が、次の時刻（11:52 / 15:55）まで待つ（待てるのは5時間まで）。受け持つ分が無ければすぐ終わる
+    - cron: '37 * * * *'
+
+permissions:
+  contents: write # 通知済みの記録（alert_state.json）を保存するため
+
+concurrency:
+  group: price-alert
+  cancel-in-progress: false
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          # 定時実行は、予約した時点のコミットを取ってくる（前の回が保存した「通知済み」の記録が入っていない）。
+          # 同じ通知を2回送らないように、いまの最新の main を取ってくる
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: ./scripts/setup.sh
+
+      - name: Run price alert
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID }}
+          # 対象の銘柄を読むスプシ（「リンクを知っている全員・閲覧者」にしておく）
+          WATCHLIST_SHEET_ID: ${{ vars.WATCHLIST_SHEET_ID }}
+          # 知らせる条件（空なら初期値：前日比 -8% ／ 高値から -10,15,20% ／ 利回り 3.5,4.0% ／ 日経平均 -3%）
+          ALERT_DROP_PCT: ${{ vars.ALERT_DROP_PCT }}
+          ALERT_DD_LEVELS: ${{ vars.ALERT_DD_LEVELS }}
+          ALERT_YIELD_LEVELS: ${{ vars.ALERT_YIELD_LEVELS }}
+          ALERT_MARKET_PCT: ${{ vars.ALERT_MARKET_PCT }}
+          # タブ名を変えたとき用（空なら「Diego式」「成長株スクリーニング」）
+          ALERT_DIEGO_SHEET: ${{ vars.ALERT_DIEGO_SHEET }}
+          ALERT_GROWTH_SHEET: ${{ vars.ALERT_GROWTH_SHEET }}
+        run: python app.py alert
+
+      - name: Save state
+        if: always()
+        run: ./scripts/save_state.sh
+
+      - name: Notify failure
+        if: failure() && hashFiles('notified.flag') == ''
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.USER_ID }}
+        run: ./scripts/notify_failure.sh "⚠️ 値下がりアラートが失敗しました。ログを確認してください。"
