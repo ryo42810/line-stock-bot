@@ -1,8 +1,9 @@
 """値下がりアラートの表の画像（price_alert.py から使う）
 
 LINEで文字だけを並べると読みにくいので、1枚の表にまとめる（2026/11/25。3案を見比べて「表の画像」に決定）。
-- 列：銘柄（コード）／区分（Diego・成長・両方）／株価／前日比／52週高値から／買値まで／配当利回り
-- 「買値まで」は、スプシの「買いたい価格（52週安値×110%）」までの残り。0%以下が買い時（緑）、5%以内がもうすぐ（黄）、それより上は待ち（灰）
+- 列：銘柄（コード）／区分（Diego・成長・両方）／株価／前日比／52週高値から／買い時まで／配当利回り
+- 「買い時まで」は、スプシの「買いたい価格（52週安値×110%）」まで、あと何％か。もう買いたい価格より安ければ「買い時」（緑）と書き、
+  まだなら「あと○%」と書く（5%以内は黄色の太字）。マイナスの％は意味が伝わりにくいので使わない（2026/11/25）
 - 知らせる条件に当たった項目は、黄色の地で目立たせる
 - 自分用の通知なので、Xの画像（ミッドナイト×金）とは別の、白地の見やすさ優先の表にしている
 """
@@ -10,7 +11,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-from matplotlib.patches import Circle, FancyBboxPatch, Rectangle  # noqa: E402
+from matplotlib.patches import FancyBboxPatch, Rectangle  # noqa: E402
 
 import x_media  # noqa: E402  日本語フォントの設定と、文字幅の見積もり（text_px・fit_size）を使う
 
@@ -28,15 +29,14 @@ C = {
     "section": "#0B1F3A", "section_text": "#FFFFFF",
     "up": "#D32F2F", "down": "#1565C0",  # 上げは赤・下げは青（日本の株価表示の色）
     "hot": "#FFE08A",  # 条件に当たった項目の地
-    "buy": "#2E7D32", "soon": "#E6A100", "wait": "#B5BEC8",
+    "buy": "#2E7D32", "soon_text": "#B26A00",  # 買い時（緑）・もうすぐ（5%以内。こい黄）
     "diego": ("#FFF1CC", "#7A5200"), "growth": ("#DCEBFB", "#0C447C"), "both": ("#E4F3E0", "#1E5B21"),
 }
 # 列：（見出し, 右端のx）。銘柄と区分は左寄せ
 X_NAME, X_GROUP = PAD, 348
-NUM_COLS = (("price", "株価", 548), ("change", "前日比", 676), ("dd", "高値から", 804), ("gap", "買値まで", 942), ("yield", "利回り", W - PAD))
+NUM_COLS = (("price", "株価", 548), ("change", "前日比", 676), ("dd", "高値から", 804), ("gap", "買い時まで", 942), ("yield", "利回り", W - PAD))
 NAME_W = X_GROUP - X_NAME - 12
 NUM_SIZE = 19
-GAP_DOT_X = 824  # 「買値まで」の丸（買い時・もうすぐ・待ち）を置く位置。数字の長さに関係なく、たてにそろえる
 BUY_SOON_PCT = 5.0  # 買いたい価格まであと何％以内なら「もうすぐ」
 
 
@@ -48,19 +48,14 @@ def price_text(price):
     return f"{price:,.0f}" if price >= 1000 else f"{price:,.1f}".replace(".0", "")
 
 
-def gap_color(gap):
-    if gap is None:
-        return C["wait"]
-    return C["buy"] if gap <= 0 else C["soon"] if gap <= BUY_SOON_PCT else C["wait"]
-
-
 def cells(row):
     """1行分の（列のキー, 文字, 文字の色）"""
     out = {"price": (price_text(row["price"]), C["ink"])}
     change = row.get("change")
     out["change"] = (signed(change), C["down"] if change < 0 else C["up"] if change > 0 else C["ink"]) if change is not None else ("—", C["sub"])
     out["dd"] = (signed(-row["dd"]), C["ink"]) if row.get("dd") is not None else ("—", C["sub"])
-    out["gap"] = (signed(row["gap"]), C["ink"]) if row.get("gap") is not None else ("—", C["sub"])
+    gap = row.get("gap")
+    out["gap"] = ("—", C["sub"]) if gap is None else ("買い時", C["buy"]) if gap <= 0 else (f"あと{gap:.0f}%" if gap >= 100 else f"あと{gap:.1f}%", C["soon_text"] if gap <= BUY_SOON_PCT else C["ink"])
     out["yield"] = (f"{row['yield']:.2f}%", C["ink"]) if row.get("yield") else ("—", C["sub"])
     return out
 
@@ -158,24 +153,23 @@ def render(path, title, subtitle, sections, page_text=""):
             hot = row.get("hot") or ()
             for key, _, right in NUM_COLS:
                 text, color = cells(row)[key]
-                t = ax.text(right, mid, text, fontsize=NUM_SIZE, color=color, weight="bold" if key in hot or key == "change" else "normal", ha="right", va="center", zorder=4)
+                t = ax.text(right, mid, text, fontsize=NUM_SIZE, color=color, weight="bold" if key in hot or key == "change" or color in (C["buy"], C["soon_text"]) else "normal", ha="right", va="center", zorder=4)
                 if key in hot:
                     w = _width(ax, t) + 20
                     ax.add_patch(FancyBboxPatch((right - w + 10, mid - 19), w, 38, boxstyle="round,pad=0,rounding_size=8", facecolor=C["hot"], edgecolor="none", zorder=2))
-                if key == "gap" and row.get("gap") is not None:
-                    ax.add_patch(Circle((GAP_DOT_X, mid), 7, facecolor=gap_color(row["gap"]), edgecolor="none", zorder=4))
             y += ROW_H
 
     # 注記
     ax.plot([PAD, W - PAD], [y + 14, y + 14], color=C["line"], linewidth=1, zorder=2)
     ax.add_patch(FancyBboxPatch((PAD, y + 26), 26, 22, boxstyle="round,pad=0,rounding_size=5", facecolor=C["hot"], edgecolor="none", zorder=3))
     ax.text(PAD + 34, y + 37, "＝知らせる条件に当たった項目", fontsize=14, color=C["sub"], va="center", zorder=4)
-    x = PAD + 34 + x_media.text_px("＝知らせる条件に当たった項目", 14) + 30
-    for label, color in (("買い時", C["buy"]), ("もうすぐ(5%以内)", C["soon"]), ("待ち", C["wait"])):
-        ax.add_patch(Circle((x + 7, y + 37), 7, facecolor=color, edgecolor="none", zorder=4))
-        ax.text(x + 20, y + 37, label, fontsize=14, color=C["sub"], va="center", zorder=4)
-        x += 20 + x_media.text_px(label, 14) + 22
-    ax.text(PAD, y + 70, "買値まで＝買いたい価格（52週安値×110%）までの残り。株価はYahoo!ファイナンス（約20分遅れ）", fontsize=13, color=C["sub"], va="center", zorder=4)
+    x = PAD + 34 + x_media.text_px("＝知らせる条件に当たった項目", 14) + 36
+    for label, color, note in (("買い時", C["buy"], "＝もう買いたい価格より安い"), ("あと○%", C["soon_text"], "＝あと5%以内")):
+        t = ax.text(x, y + 37, label, fontsize=14, color=color, weight="bold", va="center", zorder=4)
+        x += _width(ax, t) + 4
+        t = ax.text(x, y + 37, note, fontsize=14, color=C["sub"], va="center", zorder=4)
+        x += _width(ax, t) + 26
+    ax.text(PAD, y + 70, "買い時まで＝買いたい価格（52週安値×110%）まで、あと何％か。株価はYahoo!ファイナンス（約20分遅れ）", fontsize=13, color=C["sub"], va="center", zorder=4)
 
     fig.savefig(path, facecolor=C["bg"])
     plt.close(fig)
