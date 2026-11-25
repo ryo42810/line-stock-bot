@@ -45,7 +45,7 @@ jobs:
           NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID }}
           # 対象の銘柄を読むスプシ（「リンクを知っている全員・閲覧者」にしておく）
           WATCHLIST_SHEET_ID: ${{ vars.WATCHLIST_SHEET_ID }}
-          # 知らせる条件（空なら初期値：前日比 -8% ／ 高値から -10,15,20% ／ 利回り 3.5,4.0% ／ 日経平均 -3%）
+          # 知らせる条件（空なら初期値：前日比 -8% ／ 高値から -10,15,20% ／ 利回り 4.0,4.5% ／ 日経平均 -3%）
           ALERT_DROP_PCT: ${{ vars.ALERT_DROP_PCT }}
           ALERT_DD_LEVELS: ${{ vars.ALERT_DD_LEVELS }}
           ALERT_YIELD_LEVELS: ${{ vars.ALERT_YIELD_LEVELS }}

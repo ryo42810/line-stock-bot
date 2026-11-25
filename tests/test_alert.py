@@ -90,7 +90,7 @@ class EvaluateTest(unittest.TestCase):
     def test_big_drop_is_reported_with_market_note_and_disclosure(self):
         quotes = self.quotes({"5288": (1500, 1350, 1600), "3922": (2300, 2290, 2400)})
         nikkei = pa.quote(bars(50000, 49800, 52000), TODAY)
-        state = fresh_state(dd={"5288": 15, "3922": 0}, **{"yield": {"5288": 4.0}})
+        state = fresh_state(dd={"5288": 15, "3922": 0}, **{"yield": {"5288": 4.5}})
         text = "\n".join(pa.evaluate(STOCKS, quotes, state, TODAY, nikkei, {"5288": ["業績予想の修正に関するお知らせ"]}))
         self.assertIn("【急落：前日比 −8%以上】", text)
         self.assertIn("アジアパイルHD(5288)［Diego］ 1,350円 −10.0%", text)
@@ -102,13 +102,13 @@ class EvaluateTest(unittest.TestCase):
 
     def test_drop_under_threshold_is_not_reported(self):
         quotes = self.quotes({"5288": (1500, 1385, 1500)})  # -7.7%
-        state = fresh_state(dd={"5288": 0}, **{"yield": {"5288": 4.0}})
+        state = fresh_state(dd={"5288": 0}, **{"yield": {"5288": 4.5}})
         self.assertEqual(pa.evaluate(STOCKS, quotes, state, TODAY, None), [])
 
     def test_drawdown_stage_and_yield_level(self):
-        # 52週高値 2000 → 1690（-15.5%）。1株配当70円 → 利回り4.14%
+        # 52週高値 2000 → 1690（-15.5%）。1株配当70円 → 利回り4.14%（4.0%の段階に届く）
         quotes = self.quotes({"5288": (1700, 1690, 2000)})
-        state = fresh_state(dd={"5288": 10}, **{"yield": {"5288": 3.5}})
+        state = fresh_state(dd={"5288": 10}, **{"yield": {"5288": 0}})
         text = "\n".join(pa.evaluate(STOCKS, quotes, state, TODAY, None))
         self.assertIn("・−15%に到達：アジアパイルHD(5288)［Diego］ 1,690円（高値 2,000円 から −15.5%）", text)
         self.assertIn("・4%超え：アジアパイルHD(5288)［Diego］ 利回り 4.14%（株価 1,690円・1株配当 70円）", text)
@@ -135,7 +135,7 @@ class EvaluateTest(unittest.TestCase):
     def test_market_wide_fall_sends_ranking_once_a_day(self):
         quotes = self.quotes({"5288": (1500, 1440, 1500), "3922": (2300, 2150, 2300)})
         nikkei = pa.quote(bars(50000, 48400, 52000), TODAY)  # -3.2%
-        state = fresh_state(dd={"5288": 0, "3922": 0}, **{"yield": {"5288": 4.0}})
+        state = fresh_state(dd={"5288": 0, "3922": 0}, **{"yield": {"5288": 4.5}})
         lines = pa.evaluate(STOCKS, quotes, state, TODAY, nikkei)
         text = "\n".join(lines)
         self.assertIn("【相場全体の下げ：日経平均 −3.2%】", text)
@@ -229,7 +229,7 @@ class RunTest(unittest.TestCase):
         self.assertEqual(len(tools.sent), 1)
         self.assertIn("🔰 値下がりアラートを始めました（対象 2銘柄：Diego式 1／成長株 1）", tools.sent[0])
         self.assertIn("【52週高値から −15〜−20%】1銘柄\n・アジアパイルHD(5288)［Diego］ −15.5%", tools.sent[0])
-        self.assertIn("【配当利回り 4%以上（Diego式）】1銘柄：アジアパイルHD 4.1%", tools.sent[0])
+        self.assertIn("【配当利回り 4.5%以上（Diego式）】0銘柄\n【配当利回り 4〜4.5%（Diego式）】1銘柄：アジアパイルHD 4.1%", tools.sent[0])
         # 引け後の分は、変化が無いので送っていない
         self.assertEqual(pa.load_state()["done"], {"midday": "2026-11-25", "close": "2026-11-25"})
         # 同じ日のあとの回は、何もしない
