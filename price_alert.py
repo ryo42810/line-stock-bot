@@ -134,6 +134,7 @@ def _col(header, *names, prefix=""):
 def parse_workbook(wb):
     """スプシ（Excel形式）から、{コード: {name, groups, div, verdict}} を作る。タブが無ければ WatchlistError"""
     stocks = {}
+    low_only = set()  # スプシが「52週安値×110%」で買いたい価格を出している、Diego式の銘柄
     for sheet, group in ((DIEGO_SHEET, DIEGO), (GROWTH_SHEET, GROWTH)):
         if sheet not in wb.sheetnames:
             raise WatchlistError(f"スプシに「{sheet}」タブがありません（タブ名を変えたときは Variables の ALERT_DIEGO_SHEET / ALERT_GROWTH_SHEET で指定）")
@@ -141,6 +142,7 @@ def parse_workbook(wb):
         i_code, i_name = _col(header, "コード"), _col(header, "銘柄名", "企業名")
         i_verdict = _col(header, "判定") if group == DIEGO else None
         i_div = _col(header, prefix="1株配当") if group == DIEGO else None
+        i_low, i_target = (_col(header, "52週安値"), _col(header, prefix="買いたい価格(")) if group == DIEGO else (None, None)
         count = 0
         for row in rows:
             code = clean_code(row[i_code]) if len(row) > i_code else ""
@@ -158,6 +160,11 @@ def parse_workbook(wb):
                 stock["verdict"] = verdict
                 div = _number(row[i_div]) if i_div is not None and len(row) > i_div else None
                 stock["div"] = div if div and div > 0 else None
+                # スプシがこの銘柄の買いたい価格を「52週安値×110%」で出しているとき（利回りのデータを使えていない銘柄）は、botも同じにする
+                low = _number(row[i_low]) if i_low is not None and len(row) > i_low else None
+                target = _number(row[i_target]) if i_target is not None and len(row) > i_target else None
+                if low and target and abs(target - low * BUY_LOW_RATIO) <= max(0.06, target * 0.0005):
+                    low_only.add(code)
             count += 1
         print(f"値下がりアラートの対象（{sheet}）: {count}件")
     # 実績4期の最高利回り（Diego式の買いたい価格に使う。タブが無ければ、52週安値×110%で代用する）
@@ -167,7 +174,7 @@ def parse_workbook(wb):
         for row in rows:
             code = clean_code(row[i_code]) if len(row) > i_code else ""
             value = _number(row[i_max]) if i_max is not None and len(row) > i_max else None
-            if code in stocks and value and value > 0:
+            if code in stocks and code not in low_only and value and value > 0:
                 stocks[code]["max_yield"] = round(value * 100 if value < 1 else value, 4)  # スプシは 0.0426 の形。％にそろえる
     return stocks
 
