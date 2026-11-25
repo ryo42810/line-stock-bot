@@ -8327,5 +8327,177 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-26": [
+  {
+   "code": "6473",
+   "name": "ジェイテクト",
+   "category": "好材料",
+   "price": 1898.5,
+   "buy": true,
+   "headline": "自己株式の取得、自社株公開買付けと消却を発表し需給改善に期待",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3678",
+   "name": "メディアドゥ",
+   "category": "好材料",
+   "price": 1230.0,
+   "buy": true,
+   "headline": "特別配当の実施で配当予想を上方修正、株主還元強化を好感か",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9731",
+   "name": "白洋舎",
+   "category": "好材料",
+   "price": 2755.0,
+   "buy": true,
+   "headline": "株式分割と株主優待制度の変更を発表、投資しやすさ向上に注目",
+   "yutai": "クリーニング無料券・3割引券各1枚、QUOカード500円等（半年以上継続保有）",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "5133",
+   "name": "テリロジーホールディングス",
+   "category": "好材料",
+   "price": 368.0,
+   "buy": true,
+   "headline": "上限58万株の自己株式取得枠を新たに設定、株価下支えに期待",
+   "yutai": "優待品を選べるポイント5,000pt（2,000株以上・1年以上継続保有）",
+   "kenri_months": [
+    3
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4528",
+   "name": "小野薬品工業",
+   "category": "好材料",
+   "price": 2699.0,
+   "buy": false,
+   "headline": "ディフェンシブ買いで医薬品が相対優位、前日10%超高と物色集中",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4552",
+   "name": "ＪＣＲファーマ",
+   "category": "好材料",
+   "price": 510.0,
+   "buy": false,
+   "headline": "アナリストの経常予想が対前週30.5%上昇、前日6%超高で注目",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9009",
+   "name": "京成",
+   "category": "懸念材料",
+   "price": 1589.0,
+   "buy": false,
+   "headline": "オリエンタルランドの自社株買付けへの応募結果と特別損益計上見込み",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4178",
+   "name": "Ｇ－Ｓイノベーション",
+   "category": "懸念材料",
+   "price": 940.0,
+   "buy": true,
+   "headline": "当社株式の上場廃止に関するお知らせを開示、動向に注意",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "8035",
+   "name": "東京エレクトロン",
+   "category": "懸念材料",
+   "price": 7825.0,
+   "buy": false,
+   "headline": "半導体株が一転売りで前日12%超安、指数への逆風が続くか注目",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "5255",
+   "name": "モンスターラボ",
+   "category": "懸念材料",
+   "price": 49.0,
+   "buy": false,
+   "headline": "3Q経常利益66.4%減の減益決算で前日18%超安、続落リスク",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6861",
+   "name": "キーエンス",
+   "category": "懸念材料",
+   "price": 14655.0,
+   "buy": false,
+   "headline": "MSMUFGが投資判断を引き下げ、市場マルチプル縮小を反映",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2590",
+   "name": "ダイドーグループホールディングス",
+   "category": "決算",
+   "price": 3090.0,
+   "buy": false,
+   "headline": "本日第3四半期決算を発表予定、プライム銘柄で内容に注目",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7590",
+   "name": "タカショー",
+   "category": "決算",
+   "price": 389.0,
+   "buy": false,
+   "headline": "本日第3四半期決算を発表予定、業績動向を確認したい",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "1419",
+   "name": "タマホーム",
+   "category": "優待",
+   "price": 2357.0,
+   "buy": false,
+   "headline": "11月末権利確定、配当利回り5.52%と買い物券等の優待が人気",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "2702",
+   "name": "日本マクドナルドホールディングス",
+   "category": "優待",
+   "price": 10260.0,
+   "buy": false,
+   "headline": "12月末権利確定の食事券優待が人気上位、権利取りに注目",
+   "yutai": "不明",
+   "kenri_months": [],
+   "kenri_day": 0
+  }
  ]
 }
