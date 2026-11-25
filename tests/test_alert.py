@@ -206,11 +206,12 @@ class WatchlistTest(unittest.TestCase):
         ws = wb.active
         ws.title = "Diego式"
         ws.append([None, "Diego式スクリーニング（…）", "条件：…"])
-        ws.append(["めも", "判定", "買い時", "銘柄名", "配当利回り(みんかぶ)", "株価", "コード", "1株配当(11/16の利回り×株価から逆算)"])
-        ws.append([None, "◎ 合格", "🟢 買い時", "ＮＣＤ", 0.0608, 2304.0, 4783.0, 140.0])
-        ws.append([None, "○ 合格（BPS未確認）", "🟢 買い時", "構造計画研究所ホールディングス", 0.0424, 2595.0, "208A", 110.0])
-        ws.append(["即買い", "△ BPSで不合格", "⚪ 待ち", "佐藤商事", 0.0428, 2454.0, 8065.0, 105.0])
-        ws.append([None, "× 利回り3%未満", "🟢 買い時", "日宣", 0.028, 1179.0, 6543.0, 33.0])
+        ws.append(["めも", "判定", "買い時", "銘柄名", "配当利回り(みんかぶ)", "株価", "コード", "1株配当(11/16の利回り×株価から逆算)", "52週安値", "買いたい価格(「1株配当÷実績4期の最高利回り」と「52週安値×115%」の低いほう。利回りがなければ安値×110%)"])
+        ws.append([None, "◎ 合格", "🟢 買い時", "ＮＣＤ", 0.0608, 2304.0, 4783.0, 140.0, 2254.0, 2592.1])
+        ws.append([None, "○ 合格（BPS未確認）", "🟢 買い時", "構造計画研究所ホールディングス", 0.0424, 2595.0, "208A", 110.0, 2513.0, 2764.3])
+        ws.append(["即買い", "△ BPSで不合格", "⚪ 待ち", "佐藤商事", 0.0428, 2454.0, 8065.0, 105.0, 2107.0, 2423.1])
+        ws.append([None, "× 利回り3%未満", "🟢 買い時", "日宣", 0.028, 1179.0, 6543.0, 33.0, 1130.0, 1243.0])
+        ws.append([None, "◎ 合格", "⚪ 待ち", "ロジネット ジャパン", 0.0346, 1240.0, 9027.0, 43.0, 932.5, 1025.75])
         ws = wb.create_sheet("成長株スクリーニング")
         ws.append(["コード", "銘柄名", "業種"])
         ws.append(["【抽出条件】2026-11-14時点", None, None])
@@ -222,14 +223,20 @@ class WatchlistTest(unittest.TestCase):
         ws.append([4783, "ＮＣＤ", 0.0426, 4])
         ws.append([9999, "一覧に無い会社", 0.05, 4])
         ws.append([8065, "佐藤商事", None, 1])
+        ws.append([9027, "ロジネット ジャパン", 0.043, 4])
+        ws.append(["208A", "構造計画研究所ホールディングス", 0.045, 4])
         return wb
 
     def test_reads_both_tabs(self):
         stocks = pa.parse_workbook(self.workbook())
-        self.assertEqual(set(stocks), {"4783", "208A", "8065", "3922", "285A"})  # 判定が × の日宣は対象外
+        self.assertEqual(set(stocks), {"4783", "208A", "8065", "3922", "285A", "9027"})  # 判定が × の日宣は対象外
         self.assertEqual(stocks["4783"], {"name": "NCD", "groups": [pa.DIEGO], "div": 140.0, "max_yield": 4.26, "verdict": "◎ 合格"})
         self.assertIsNone(stocks["8065"]["max_yield"])  # 利回りのデータが無い銘柄
         self.assertNotIn("9999", stocks)
+        # スプシが「52週安値×110%」で買いたい価格を出している銘柄は、利回りのデータがあっても使わない（スプシに合わせる）
+        self.assertIsNone(stocks["9027"]["max_yield"])  # 932.5×110%＝1025.75
+        self.assertIsNone(stocks["208A"]["max_yield"])  # 2513×110%＝2764.3
+        self.assertAlmostEqual(pa.buy_target(stocks["9027"], {"low": 932.5, "price": 1240.0}), 1025.75)
         self.assertEqual(stocks["208A"]["name"], "構造計画研究所HD")
         self.assertEqual(stocks["8065"]["groups"], [pa.DIEGO, pa.GROWTH])
         self.assertEqual(stocks["285A"]["groups"], [pa.GROWTH])
