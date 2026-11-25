@@ -27,6 +27,7 @@ import kyokan_posts
 import quick_posts
 import note_topics
 import notion_log
+import price_alert
 import x_media
 
 # yfinanceは、ETFなど決算データが無い銘柄で「HTTP Error 404」を表示するので、ログに出さない
@@ -2078,10 +2079,14 @@ def run_evening(today, allow_x=True):
 
 
 def main():
-    mode = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in ("xqueue", "evening", "topics", "replies") else "morning"
-    notion_log.set_kind({"xqueue": "Xの予約投稿", "evening": "夕方の配信", "topics": "ネタ候補", "replies": "リプ案"}.get(mode, "朝の配信"))
+    mode = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in ("xqueue", "evening", "topics", "replies", "alert") else "morning"
+    notion_log.set_kind({"xqueue": "Xの予約投稿", "evening": "夕方の配信", "topics": "ネタ候補", "replies": "リプ案", "alert": "値下がりアラート"}.get(mode, "朝の配信"))
     try:
         scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
+        if mode == "alert":
+            # 値下がりアラート（平日の昼休みと引け後）。記録は alert_state.json に分けて持つ。AIは使わない
+            price_alert.run(sys.modules[__name__], now_jst, scheduled)
+            return
         if mode == "replies":
             # Xのリプ案（平日10:00・13:00・18:00）。記録は replies_state.json に分けて持つ
             import x_replies
