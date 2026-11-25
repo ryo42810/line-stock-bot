@@ -30,8 +30,8 @@ def bars(prev, last, high, last_day=TODAY):
 
 
 STOCKS = {
-    "5288": {"name": "アジアパイルHD", "groups": [pa.DIEGO], "div": 70.0, "verdict": "◎ 合格"},
-    "3922": {"name": "PRTIMES", "groups": [pa.GROWTH], "div": None, "verdict": ""},
+    "5288": {"name": "アジアパイルHD", "groups": [pa.DIEGO], "div": 70.0, "max_yield": 5.63, "verdict": "◎ 合格"},
+    "3922": {"name": "PRTIMES", "groups": [pa.GROWTH], "div": None, "max_yield": None, "verdict": ""},
 }
 
 
@@ -69,7 +69,7 @@ class FakeTools:
 
 
 def fresh_state(**extra):
-    state = {"done": {}, "dd": {}, "yield": {}, "drop": {}, "seeded": "2026-11-24"}
+    state = {"done": {}, "dd": {}, "yield": {}, "drop": {}, "seeded": "2026-11-24", "dd_levels": list(pa.DD_LEVELS), "yield_levels": list(pa.YIELD_LEVELS)}
     state.update(extra)
     return state
 
@@ -83,6 +83,8 @@ class StageTest(unittest.TestCase):
 
     def test_jumping_two_stages_reports_the_deepest_only(self):
         self.assertEqual(pa.step(0, 21.0, pa.DD_LEVELS, pa.DD_RESET), (20, 20))
+        self.assertEqual(pa.step(20, 31.0, pa.DD_LEVELS, pa.DD_RESET), (30, 30))
+        self.assertEqual(pa.step(30, 45.0, pa.DD_LEVELS, pa.DD_RESET), (40, 40))
 
     def test_stage_is_reported_again_after_recovering(self):
         self.assertEqual(pa.step(20, 18.0, pa.DD_LEVELS, pa.DD_RESET), (20, None))  # 少し戻っただけでは外さない
@@ -131,13 +133,31 @@ class EvaluateTest(unittest.TestCase):
         self.assertIn("■ 52週高値から −15%に到達\n・アジアパイルHD 1,690円 −0.6%｜高値から −15.5%｜利回り 4.14%", text)
         self.assertFalse(pa.has_hits(pa.evaluate(STOCKS, quotes, state, TODAY, None)))  # 2回目は知らせない
 
-    def test_buy_gap_follows_the_sheet_rule(self):
-        hist = bars(1000, 1045, 1500)
-        hist["Low"] = [950, 1040]  # 52週安値 950 → 買いたい価格 1045
-        self.assertAlmostEqual(pa.quote(hist, TODAY)["gap"], 0.0)
+    def test_buy_price_follows_the_sheet_rule(self):
+        q = {"low": 1339.0, "price": 1423.0}
+        # Diego式：「1株配当÷実績4期の最高利回り」（70÷5.63%＝1243.3円）と「52週安値×115%」（1539.9円）の低いほう
+        self.assertAlmostEqual(pa.buy_target(STOCKS["5288"], q), 70 / 0.0563)
+        self.assertAlmostEqual(pa.buy_gap(STOCKS["5288"], q), 14.45, places=1)  # スプシの「買いたい価格まで」は 14.5%
+        ncd = {"name": "NCD", "groups": [pa.DIEGO, pa.GROWTH], "div": 140.0, "max_yield": 4.26}
+        self.assertAlmostEqual(pa.buy_target(ncd, {"low": 2254.0, "price": 2314.0}), 2254 * 1.15)  # 安値×115%のほうが低い
+        # 利回りのデータが無いDiego式の銘柄と、成長株は、52週安値×110%
+        self.assertAlmostEqual(pa.buy_target({**STOCKS["5288"], "max_yield": None}, q), 1339 * 1.10)
+        self.assertAlmostEqual(pa.buy_target(STOCKS["3922"], {"low": 1971.0, "price": 2298.0}), 1971 * 1.10)
+        self.assertLess(pa.buy_gap(STOCKS["3922"], {"low": 1971.0, "price": 2100.0}), 0)  # 買いたい価格より安い＝買い時
+
+    def test_changing_stages_only_records_position(self):
+        # -30%・-40% を足す前の記録（-20%まで通知済み）で、すでに -35% にいる銘柄：足した回は知らせず、記録だけ進める
+        quotes = self.quotes({"5288": (1310, 1300, 2000)})
+        state = fresh_state(dd={"5288": 20}, **{"yield": {"5288": 4.5}})
+        state.pop("dd_levels")
+        self.assertFalse(pa.has_hits(pa.evaluate(STOCKS, quotes, state, TODAY, None)))
+        self.assertEqual((state["dd"]["5288"], state["dd_levels"]), (30, list(pa.DD_LEVELS)))
+        # 次の回からは、新しい段階に届いたら知らせる
+        quotes = self.quotes({"5288": (1300, 1190, 2000)})  # -40.5%
+        self.assertEqual(pa.evaluate(STOCKS, quotes, state, TODAY, None)["dd"], [(40, "5288")])
 
     def test_growth_stock_has_no_yield_alert(self):
-        stocks = {"3922": {"name": "PRTIMES", "groups": [pa.GROWTH], "div": 100.0, "verdict": ""}}
+        stocks = {"3922": {"name": "PRTIMES", "groups": [pa.GROWTH], "div": 100.0, "max_yield": None, "verdict": ""}}
         quotes = self.quotes({"3922": (2000, 1990, 2050)})
         state = fresh_state(dd={"3922": 0})
         self.assertFalse(pa.has_hits(pa.evaluate(stocks, quotes, state, TODAY, None)))
@@ -197,12 +217,19 @@ class WatchlistTest(unittest.TestCase):
         ws.append([3922.0, "ＰＲＴＩＭＥＳ", "商業サービス"])
         ws.append(["285A", "キオクシアホールディングス", "半導体"])
         ws.append([8065.0, "佐藤商事", "卸売"])
+        ws = wb.create_sheet("実績利回り")
+        ws.append(["コード", "銘柄名", "実績4期の最高利回り(判定に使用)", "使った期数"])
+        ws.append([4783, "ＮＣＤ", 0.0426, 4])
+        ws.append([9999, "一覧に無い会社", 0.05, 4])
+        ws.append([8065, "佐藤商事", None, 1])
         return wb
 
     def test_reads_both_tabs(self):
         stocks = pa.parse_workbook(self.workbook())
         self.assertEqual(set(stocks), {"4783", "208A", "8065", "3922", "285A"})  # 判定が × の日宣は対象外
-        self.assertEqual(stocks["4783"], {"name": "NCD", "groups": [pa.DIEGO], "div": 140.0, "verdict": "◎ 合格"})
+        self.assertEqual(stocks["4783"], {"name": "NCD", "groups": [pa.DIEGO], "div": 140.0, "max_yield": 4.26, "verdict": "◎ 合格"})
+        self.assertIsNone(stocks["8065"]["max_yield"])  # 利回りのデータが無い銘柄
+        self.assertNotIn("9999", stocks)
         self.assertEqual(stocks["208A"]["name"], "構造計画研究所HD")
         self.assertEqual(stocks["8065"]["groups"], [pa.DIEGO, pa.GROWTH])
         self.assertEqual(stocks["285A"]["groups"], [pa.GROWTH])
@@ -265,7 +292,7 @@ class RunTest(unittest.TestCase):
         self.assertEqual(slept, [52 * 60, 243 * 60])  # 11:52 まで待って昼の分、15:55 まで待って引け後の分
         self.assertEqual(len(tools.sent), 1)
         self.assertIn("🔰 値下がりアラートを始めました（対象 2銘柄：Diego式 1／成長株 1）", tools.sent[0])
-        self.assertIn("52週高値から：−20%以下 0／−15%台 1／−10%台 0（銘柄数）\n・アジアパイルHD −15.5%", tools.sent[0])
+        self.assertIn("52週高値から：−40%以下 0／−30%台 0／−20%台 0／−15%台 1／−10%台 0（銘柄数）\n・アジアパイルHD −15.5%", tools.sent[0])
         self.assertIn("配当利回り（Diego式）：4.5%以上 0／4%台 1（銘柄数）\n・アジアパイルHD 4.14%", tools.sent[0])
         self.assertEqual(tools.images, [])  # 初回の「いまの位置」は文章だけ
         # 引け後の分は、変化が無いので送っていない

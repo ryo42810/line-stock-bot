@@ -7,14 +7,15 @@
 - 回数：平日の昼休み（11:52ごろ。前場の終値）と、引け後（15:55ごろ。終値）の2回。知らせるものが無い回は送らない
 - 知らせる条件（数字は Variables で変えられる）
   1. 急落：前日比 -8%以上（1銘柄につき1日1回）
-  2. 52週高値からの下げ：-10% / -15% / -20% の段階ごとに1回だけ
+  2. 52週高値からの下げ：-10% / -15% / -20% / -30% / -40% の段階ごとに1回だけ
   3. 配当利回り（Diego式だけ）：4.0% / 4.5% を超えたとき、段階ごとに1回だけ
   4. 相場全体の下げ：日経平均が -3%以上の日に、対象銘柄の下げ幅ランキングを1通（1日1回）
 - 「段階ごとに1回だけ」のやり直し：その段階より 3ポイント（利回りは0.2ポイント）戻ったら、次に同じ段階まで下がったときにもう一度知らせる
 - 初めて動かした回は、いまの位置（すでに -10%以下の銘柄など）を1通にまとめて送り、そこから先の変化だけを知らせる
 - 通知の形：短い文章（何が何件か・日経平均・急落した銘柄のその日の適時開示のタイトル）＋表の画像（alert_image.py）
   表の列は、銘柄／区分（Diego・成長・両方）／株価／前日比／52週高値から／買い時まで／配当利回り。条件に当たった項目は黄色
-  「買い時まで」は、スプシの「買いたい価格（52週安値×110%）」まで、あと何％か（もう安ければ「買い時」と書く）。画像を作れないときは、文章だけで送る
+  「買い時まで」は、スプシの「買いたい価格」まで、あと何％か（もう安ければ「買い時」と書く）。
+  買いたい価格は、Diego式が「1株配当÷実績4期の最高利回り」と「52週安値×115%」の低いほう、成長株が52週安値×110%（buy_target）。画像を作れないときは、文章だけで送る
 
 数字のあつかい
 - 株価は yfinance（Yahoo!ファイナンス。約20分遅れ）。配当で調整していない値を使う（証券アプリの前日比・52週高値と合わせるため）
@@ -52,14 +53,17 @@ def _numbers(name, default):
 
 
 DROP_PCT = _numbers("ALERT_DROP_PCT", (8.0,))[0]  # 急落：前日比がこの％以上の下げ
-DD_LEVELS = _numbers("ALERT_DD_LEVELS", (10.0, 15.0, 20.0))  # 52週高値からの下げの段階（％）
+DD_LEVELS = _numbers("ALERT_DD_LEVELS", (10.0, 15.0, 20.0, 30.0, 40.0))  # 52週高値からの下げの段階（％）
 YIELD_LEVELS = _numbers("ALERT_YIELD_LEVELS", (4.0, 4.5))  # 配当利回りの段階（％）
 MARKET_PCT = _numbers("ALERT_MARKET_PCT", (3.0,))[0]  # 相場全体の下げ：日経平均がこの％以上の下げ
 DD_RESET = 3.0  # 段階よりこれだけ戻ったら、その段階の「通知済み」を外す（ポイント）
 YIELD_RESET = 0.2
 MARKET_WEAK_PCT = 1.5  # 日経平均がこれ以上下げていたら「相場全体も下げ」と書く
 RANKING_COUNT = 10
-BUY_TARGET_RATIO = 1.10  # 買いたい価格＝52週安値×これ（スプシと同じ）
+# 買いたい価格（スプシの決め方に合わせる。2026/11/25にスプシが変わったので合わせた）
+BUY_LOW_RATIO = 1.10  # 成長株と、利回りのデータが無い銘柄：52週安値×これ
+BUY_LOW_RATIO_DIEGO = 1.15  # Diego式：「1株配当÷実績4期の最高利回り」と「52週安値×これ」の低いほう
+YIELD_SHEET = (os.environ.get("ALERT_YIELD_SHEET") or "実績利回り").strip()  # 実績4期の最高利回りが入っているタブ
 SEED_TOP = 5  # 初回の「いまの位置」に名前を出す銘柄の数
 
 # (目標の時刻, これより遅れたら見送る時刻, 見送る時刻は次の日か)
@@ -145,7 +149,7 @@ def parse_workbook(wb):
             verdict = str(row[i_verdict] or "").strip() if i_verdict is not None and len(row) > i_verdict else ""
             if group == DIEGO and verdict.startswith(DIEGO_EXCLUDE_PREFIX):
                 continue
-            stock = stocks.setdefault(code, {"name": "", "groups": [], "div": None, "verdict": ""})
+            stock = stocks.setdefault(code, {"name": "", "groups": [], "div": None, "max_yield": None, "verdict": ""})
             name = row[i_name] if i_name is not None and len(row) > i_name else ""
             stock["name"] = stock["name"] or short_name(name) or code
             if group not in stock["groups"]:
@@ -156,6 +160,15 @@ def parse_workbook(wb):
                 stock["div"] = div if div and div > 0 else None
             count += 1
         print(f"値下がりアラートの対象（{sheet}）: {count}件")
+    # 実績4期の最高利回り（Diego式の買いたい価格に使う。タブが無ければ、52週安値×110%で代用する）
+    if YIELD_SHEET in wb.sheetnames:
+        header, rows = _table(wb[YIELD_SHEET])
+        i_code, i_max = _col(header, "コード"), _col(header, prefix="実績4期の最高利回り")
+        for row in rows:
+            code = clean_code(row[i_code]) if len(row) > i_code else ""
+            value = _number(row[i_max]) if i_max is not None and len(row) > i_max else None
+            if code in stocks and value and value > 0:
+                stocks[code]["max_yield"] = round(value * 100 if value < 1 else value, 4)  # スプシは 0.0426 の形。％にそろえる
     return stocks
 
 
@@ -187,7 +200,7 @@ def load_watchlist():
             code = clean_code(row.get("code"))
             if code:
                 div = _number(row.get("div"))
-                stocks[code] = {"name": short_name(row.get("name")) or code, "groups": list(row.get("groups") or [GROWTH]), "div": div, "verdict": ""}
+                stocks[code] = {"name": short_name(row.get("name")) or code, "groups": list(row.get("groups") or [GROWTH]), "div": div, "max_yield": _number(row.get("max_yield")), "verdict": ""}
         if stocks:
             print(f"{FALLBACK_FILE} の銘柄一覧を使います: {len(stocks)}件")
             return stocks
@@ -216,9 +229,8 @@ def fetch_bars(tools, symbol):
 
 
 def quote(hist, day=None):
-    """日足から {day, price, change, high, dd, low, gap} を作る。day を渡したときは、その日の値が入っているときだけ返す
-    change: 前日比（％）/ high: 52週高値 / dd: 52週高値からの下げ（％。下がっているほど大きい正の数）
-    low: 52週安値 / gap: 買いたい価格（52週安値×110%）までの残り（％。0以下なら、もう買いたい価格より安い）"""
+    """日足から {day, price, change, high, dd, low} を作る。day を渡したときは、その日の値が入っているときだけ返す
+    change: 前日比（％）/ high: 52週高値 / dd: 52週高値からの下げ（％。下がっているほど大きい正の数）/ low: 52週安値"""
     if hist is None or len(hist) < 2:
         return None
     last_day = hist.index[-1].date()
@@ -231,9 +243,7 @@ def quote(hist, day=None):
     lows = hist["Low"] if "Low" in hist else hist["Close"]
     high = max(float(highs.max()), float(hist["Close"].max()))
     low = min(float(lows.min()), float(hist["Close"].min()))
-    target = low * BUY_TARGET_RATIO  # スプシの「買いたい価格（52週安値×110%）」と同じ決め方
-    gap = (price - target) / target * 100 if target > 0 else None
-    return {"day": last_day, "price": price, "change": (price - prev) / prev * 100, "high": high, "dd": (high - price) / high * 100, "low": low, "gap": gap}
+    return {"day": last_day, "price": price, "change": (price - prev) / prev * 100, "high": high, "dd": (high - price) / high * 100, "low": low}
 
 
 def fetch_quotes(tools, stocks, day=None):
@@ -310,11 +320,32 @@ def yield_of(stock, q):
     return stock["div"] / q["price"] * 100 if stock.get("div") and DIEGO in stock["groups"] else None
 
 
+def buy_target(stock, q):
+    """買いたい価格（スプシと同じ決め方）。
+    Diego式：「1株配当÷実績4期の最高利回り」と「52週安値×115%」の低いほう。利回りのデータが無ければ52週安値×110%
+    成長株：52週安値×110%"""
+    if DIEGO in stock["groups"] and stock.get("div") and stock.get("max_yield"):
+        return min(stock["div"] / (stock["max_yield"] / 100), q["low"] * BUY_LOW_RATIO_DIEGO)
+    return q["low"] * BUY_LOW_RATIO
+
+
+def buy_gap(stock, q):
+    """買いたい価格までの残り（％）。0以下なら、もう買いたい価格より安い（買い時）"""
+    target = buy_target(stock, q)
+    return (q["price"] - target) / target * 100 if target > 0 else None
+
+
 def evaluate(stocks, quotes, state, day, nikkei):
     """条件に当たった銘柄を返す。state の記録もここで書きかえる。
     戻り値：{"drops": [コード], "dd": [(段階, コード)], "yield": [(段階, コード)], "ranking": [コード]}（どれも無ければ空）"""
     iso = day.isoformat()
     first = not state.get("seeded")
+    # 段階の設定を変えた回（例：-30%・-40% を足した）は、いまの位置を記録するだけにする。
+    # そうしないと、すでにその段階より下にいる銘柄が、いっぺんに通知される
+    # （記録が無いのは、段階を記録する前の版で動いていたとき。そのときの段階は -10・-15・-20% と 4.0・4.5%）
+    dd_changed = state.get("dd_levels", [10.0, 15.0, 20.0]) != list(DD_LEVELS)
+    yield_changed = state.get("yield_levels", [4.0, 4.5]) != list(YIELD_LEVELS)
+    state["dd_levels"], state["yield_levels"] = list(DD_LEVELS), list(YIELD_LEVELS)
     hits = {"drops": [], "dd": [], "yield": [], "ranking": []}
     for code, stock in stocks.items():
         q = quotes.get(code)
@@ -323,14 +354,14 @@ def evaluate(stocks, quotes, state, day, nikkei):
         # 52週高値からの下げ
         new_code = code not in state["dd"]
         state["dd"][code], hit = step(state["dd"].get(code), q["dd"], DD_LEVELS, DD_RESET)
-        if hit and not (first or new_code):  # 初回と、あとから足した銘柄は、いまの位置を記録するだけ
+        if hit and not (first or new_code or dd_changed):  # 初回と、あとから足した銘柄は、いまの位置を記録するだけ
             hits["dd"].append((hit, code))
         # 配当利回り（Diego式だけ）
         y = yield_of(stock, q)
         if y:
             new_code = code not in state["yield"]
             state["yield"][code], hit = step(state["yield"].get(code), y, YIELD_LEVELS, YIELD_RESET)
-            if hit and not (first or new_code):
+            if hit and not (first or new_code or yield_changed):
                 hits["yield"].append((hit, code))
         # 急落
         if q["change"] <= -DROP_PCT and state["drop"].get(code) != iso:
@@ -351,7 +382,7 @@ def has_hits(hits):
 
 def table_row(code, stock, q, hot=()):
     """表の1行（alert_image.render に渡す形）"""
-    return {"code": code, "name": stock["name"], "groups": stock["groups"], "price": q["price"], "change": q["change"], "dd": q["dd"], "gap": q.get("gap"), "yield": yield_of(stock, q), "hot": set(hot)}
+    return {"code": code, "name": stock["name"], "groups": stock["groups"], "price": q["price"], "change": q["change"], "dd": q["dd"], "gap": buy_gap(stock, q), "yield": yield_of(stock, q), "hot": set(hot)}
 
 
 def build_sections(stocks, quotes, hits, nikkei):
