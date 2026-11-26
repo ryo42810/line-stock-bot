@@ -8499,5 +8499,159 @@
    "kenri_months": [],
    "kenri_day": 0
   }
+ ],
+ "2026-11-27": [
+  {
+   "code": "4450",
+   "name": "PSOL",
+   "category": "好材料",
+   "price": 2177.0,
+   "buy": true,
+   "headline": "26日引け後に2026年12月期の通期連結業績予想を上方修正",
+   "yutai": "買い物券・プリペイドカード4,000円分（半年以上継続保有で4,500円分）",
+   "kenri_months": [
+    4,
+    10
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4437",
+   "name": "GDH",
+   "category": "好材料",
+   "price": 564.0,
+   "buy": true,
+   "headline": "自己株式の取得とToSTNeT-3による買付けを発表、需給改善に期待",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "558A",
+   "name": "SQUEEZE",
+   "category": "好材料",
+   "price": 6850.0,
+   "buy": false,
+   "headline": "前日11%高に続き、自社株取得とToSTNeT-3による買付けを発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6668",
+   "name": "アドテック プラズマ テクノロジー",
+   "category": "好材料",
+   "price": 3230.0,
+   "buy": false,
+   "headline": "自己株式の取得とToSTNeT-3による買付けを発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "7590",
+   "name": "タカショー",
+   "category": "決算",
+   "price": 383.0,
+   "buy": true,
+   "headline": "3Q累計の営業益が216.6%増、最終損益は黒字転換",
+   "yutai": "500株以上でガーデニング商品と交換できるポイント3,000P〜。100株以上の優待②③は内容不明",
+   "kenri_months": [
+    1,
+    7
+   ],
+   "kenri_day": 20
+  },
+  {
+   "code": "2590",
+   "name": "ダイドーグループホールディングス",
+   "category": "決算",
+   "price": 3060.0,
+   "buy": true,
+   "headline": "3Q累計は1.4%減収、海外飲料の拡大などで増益を確保",
+   "yutai": "200株以上・半年以上継続保有で株主優待品6,000円相当（1月）、5年以上で記念品",
+   "kenri_months": [
+    1,
+    7
+   ],
+   "kenri_day": 20
+  },
+  {
+   "code": "6044",
+   "name": "三機サービス",
+   "category": "懸念材料",
+   "price": 1844.0,
+   "buy": false,
+   "headline": "26日引け後に当社株式の上場廃止に関するお知らせを開示",
+   "yutai": "買い物券・プリペイドカード500円分（継続保有で最大2,000円分）。株式交換成立で廃止予定",
+   "kenri_months": [
+    5
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "9250",
+   "name": "GRCS",
+   "category": "懸念材料",
+   "price": 979.0,
+   "buy": true,
+   "headline": "訴訟が和解で解決、特別損失の計上を発表",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3769",
+   "name": "GMOペイメントゲートウェイ",
+   "category": "懸念材料",
+   "price": 8214.0,
+   "buy": false,
+   "headline": "米系大手証券が目標株価を8,470円に引き下げ（中立据え置き）",
+   "yutai": "半年以上継続保有でGMOクリック証券での自社株買付代金×0.03%相当のビットコイン（上限1万円）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "9303",
+   "name": "住友倉庫",
+   "category": "懸念材料",
+   "price": 3750.0,
+   "buy": false,
+   "headline": "レーティング弱気継続の報道、前日は2.47%安",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9008",
+   "name": "京王電鉄",
+   "category": "懸念材料",
+   "price": 737.7000122070312,
+   "buy": false,
+   "headline": "ランサムウエア攻撃で1063万人分の個人情報漏えいの可能性",
+   "yutai": "電車全線優待乗車券2枚（1,000株以上で優待券冊子等追加）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2702",
+   "name": "日本マクドナルドホールディングス",
+   "category": "優待",
+   "price": 10135.0,
+   "buy": false,
+   "headline": "12月末に権利確定する人気の食事券優待、食事券部門で3位",
+   "yutai": "1年以上継続保有でバーガー・サイド・ドリンク引換券6枚ずつの優待券1冊",
+   "kenri_months": [
+    6,
+    12
+   ],
+   "kenri_day": 0
+  }
  ]
 }
