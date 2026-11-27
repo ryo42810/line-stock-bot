@@ -8653,5 +8653,143 @@
    ],
    "kenri_day": 0
   }
+ ],
+ "2026-11-28": [
+  {
+   "code": "6526",
+   "name": "ソシオネクスト",
+   "category": "好材料",
+   "price": 1662.0,
+   "buy": false,
+   "headline": "AI買い継続で半導体に資金波及、前日+12.56%と急伸",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "6472",
+   "name": "ＮＴＮ",
+   "category": "好材料",
+   "price": 314.79998779296875,
+   "buy": false,
+   "headline": "日本精工と共同持株会社設立の最終契約を締結、統合が前進",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "3416",
+   "name": "ピクスタ",
+   "category": "好材料",
+   "price": 907.0,
+   "buy": true,
+   "headline": "取引先から画像素材の大口受注、約6億2000万円",
+   "yutai": "100株ごとに1枚（最大10枚）贈呈。優待品の内容はページに記載なし",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "6099",
+   "name": "エラン",
+   "category": "好材料",
+   "price": 786.0,
+   "buy": true,
+   "headline": "CSセットの申し込み堅調で通期営業益を上方修正",
+   "yutai": "300株以上・1年以上継続保有で各種ギフト等と交換可能な5,000円分（初回は継続条件なし）",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8923",
+   "name": "トーセイ",
+   "category": "好材料",
+   "price": 1875.0,
+   "buy": true,
+   "headline": "三菱HCキャピタルリアルティと資本業務提携を発表",
+   "yutai": "自社ホテル施設利用割引券3,000円分＋継続保有に応じVISAギフトカード1,000～3,000円分",
+   "kenri_months": [
+    11
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4578",
+   "name": "大塚ホールディングス",
+   "category": "好材料",
+   "price": 13025.0,
+   "buy": true,
+   "headline": "米系大手証券が強気継続、目標株価を18,800円に引き上げ",
+   "yutai": "飲食料品等3,000円相当",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "4596",
+   "name": "窪田製薬ホールディングス",
+   "category": "好材料",
+   "price": 51.0,
+   "buy": false,
+   "headline": "フランスで「Retakubo」の最終製剤の製造を開始",
+   "yutai": "1,000株以上・1年以上継続保有で日用品・家電の優待1枚（詳細不明）",
+   "kenri_months": [
+    2
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "2586",
+   "name": "フルッタフルッタ",
+   "category": "好材料",
+   "price": 38.0,
+   "buy": false,
+   "headline": "三井のリパークにアサイー冷凍自販機を続々設置と開示",
+   "yutai": "自社ECサイト割引15～25%（保有株数・継続期間に応じる）",
+   "kenri_months": [
+    3,
+    9
+   ],
+   "kenri_day": 0
+  },
+  {
+   "code": "8630",
+   "name": "ＳＯＭＰＯホールディングス",
+   "category": "懸念材料",
+   "price": 7212.0,
+   "buy": false,
+   "headline": "通期最終益を下方修正、上期は41％減で4日続落",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "9065",
+   "name": "山九",
+   "category": "懸念材料",
+   "price": 1596.5,
+   "buy": false,
+   "headline": "みずほ銀・日本製鉄などが株式売り出し、需給悪化懸念（自社株買いも発表）",
+   "yutai": "なし",
+   "kenri_months": [],
+   "kenri_day": 0
+  },
+  {
+   "code": "4755",
+   "name": "楽天グループ",
+   "category": "優待",
+   "price": 542.5,
+   "buy": true,
+   "headline": "12月末権利確定の優待人気上位、最低投資金額5.42万円",
+   "yutai": "サービス6ヵ月間無料（継続保有条件で追加6ヵ月無料）。対象サービスはページに記載なし",
+   "kenri_months": [
+    12
+   ],
+   "kenri_day": 0
+  }
  ]
 }
